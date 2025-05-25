@@ -16,14 +16,14 @@ export default function Index() {
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
       {/* ヘッダーナビゲーション */}
       <header className="border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex h-16 items-center justify-between">
             <Link to="/" className="text-xl font-bold text-gray-900">
               Sotto Note
             </Link>
             <Link
               to="/settings"
-              className="text-gray-600 hover:text-gray-900 flex items-center space-x-1"
+              className="flex items-center space-x-1 text-gray-600 hover:text-gray-900"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -31,7 +31,7 @@ export default function Index() {
                 viewBox="0 0 24 24"
                 strokeWidth={1.5}
                 stroke="currentColor"
-                className="w-5 h-5"
+                className="h-5 w-5"
               >
                 <path
                   strokeLinecap="round"
@@ -51,31 +51,31 @@ export default function Index() {
       </header>
 
       {/* Hero Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+      <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
         <div className="text-center">
-          <h1 className="text-4xl tracking-tight font-extrabold text-gray-900 sm:text-5xl md:text-6xl">
+          <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 sm:text-5xl md:text-6xl">
             <span className="block">Sotto Note</span>
-            <span className="block text-indigo-600 mt-2">
+            <span className="mt-2 block text-indigo-600">
               静かに、あなたの思考を
             </span>
           </h1>
-          <p className="mt-3 max-w-md mx-auto text-base text-gray-500 sm:text-lg md:mt-5 md:text-xl md:max-w-3xl">
+          <p className="mx-auto mt-3 max-w-md text-base text-gray-500 sm:text-lg md:mt-5 md:max-w-3xl md:text-xl">
             シンプルで使いやすいノートアプリで、あなたのアイデアを整理し、
             創造性を引き出します。
           </p>
-          <div className="mt-5 max-w-md mx-auto sm:flex sm:justify-center md:mt-8">
+          <div className="mx-auto mt-5 max-w-md sm:flex sm:justify-center md:mt-8">
             <div className="rounded-md shadow">
               <Link
                 to="/journal"
-                className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 md:py-4 md:text-lg md:px-10"
+                className="flex w-full items-center justify-center rounded-md border border-transparent bg-indigo-600 px-8 py-3 text-base font-medium text-white hover:bg-indigo-700 md:px-10 md:py-4 md:text-lg"
               >
                 ジャーナルを始める
               </Link>
             </div>
-            <div className="mt-3 rounded-md shadow sm:mt-0 sm:ml-3">
+            <div className="mt-3 rounded-md shadow sm:ml-3 sm:mt-0">
               <Link
                 to="/about"
-                className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-indigo-600 bg-white hover:bg-gray-50 md:py-4 md:text-lg md:px-10"
+                className="flex w-full items-center justify-center rounded-md border border-transparent bg-white px-8 py-3 text-base font-medium text-indigo-600 hover:bg-gray-50 md:px-10 md:py-4 md:text-lg"
               >
                 詳しく見る
               </Link>
@@ -85,11 +85,11 @@ export default function Index() {
       </div>
 
       {/* Features Section */}
-      <div className="py-12 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="bg-white py-12">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {/* Feature 1 */}
-            <div className="p-6 bg-gray-50 rounded-lg">
+            <div className="rounded-lg bg-gray-50 p-6">
               <h3 className="text-lg font-medium text-gray-900">
                 シンプルな操作
               </h3>
@@ -99,7 +99,7 @@ export default function Index() {
             </div>
 
             {/* Feature 2 */}
-            <div className="p-6 bg-gray-50 rounded-lg">
+            <div className="rounded-lg bg-gray-50 p-6">
               <h3 className="text-lg font-medium text-gray-900">安全な保存</h3>
               <p className="mt-2 text-base text-gray-500">
                 あなたのノートは安全に保存され、いつでもアクセスできます。
@@ -107,7 +107,7 @@ export default function Index() {
             </div>
 
             {/* Feature 3 */}
-            <div className="p-6 bg-gray-50 rounded-lg">
+            <div className="rounded-lg bg-gray-50 p-6">
               <h3 className="text-lg font-medium text-gray-900">柔軟な整理</h3>
               <p className="mt-2 text-base text-gray-500">
                 タグやフォルダで、ノートを自由に整理できます。

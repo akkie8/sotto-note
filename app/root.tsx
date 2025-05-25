@@ -1,3 +1,4 @@
+import type { LinksFunction } from "@remix-run/node";
 import {
   Links,
   Meta,
@@ -5,7 +6,6 @@ import {
   Scripts,
   ScrollRestoration,
 } from "@remix-run/react";
-import type { LinksFunction } from "@remix-run/node";
 
 import "./tailwind.css";
 
@@ -32,9 +32,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body className="bg-gray-900">
-        <div className="min-h-screen flex justify-center">
+        <div className="flex min-h-screen justify-center">
           {/* 左サイドバー - PCのみ表示 */}
-          <div className="hidden xl:block w-64 shrink-0 bg-gray-900" />
+          <div className="hidden w-64 shrink-0 bg-gray-900 xl:block" />
 
           {/* メインコンテンツ */}
           <main className="w-full max-w-4xl bg-gradient-to-b from-gray-50 to-white px-4 sm:px-6 lg:px-8">
@@ -42,7 +42,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </main>
 
           {/* 右サイドバー - PCのみ表示 */}
-          <div className="hidden xl:block w-64 shrink-0 bg-gray-900" />
+          <div className="hidden w-64 shrink-0 bg-gray-900 xl:block" />
         </div>
         <ScrollRestoration />
         <Scripts />

@@ -1,6 +1,6 @@
-import { json, type ActionFunction } from "@remix-run/node";
-import { Form, useActionData, Link } from "@remix-run/react";
 import { useState } from "react";
+import { json, type ActionFunction } from "@remix-run/node";
+import { Form, Link, useActionData } from "@remix-run/react";
 
 type ActionData = {
   success?: boolean;
@@ -48,19 +48,19 @@ export default function Settings() {
     <div>
       {/* ヘッダーナビゲーション */}
       <header className="border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex h-16 items-center justify-between">
             <Link to="/" className="text-xl font-bold text-gray-900">
               Sotto Note
             </Link>
-            <div className="text-gray-900 flex items-center space-x-1">
+            <div className="flex items-center space-x-1 text-gray-900">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
                 viewBox="0 0 24 24"
                 strokeWidth={1.5}
                 stroke="currentColor"
-                className="w-5 h-5"
+                className="h-5 w-5"
               >
                 <path
                   strokeLinecap="round"
@@ -80,27 +80,27 @@ export default function Settings() {
       </header>
 
       <div className="py-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">設定</h1>
+        <h1 className="mb-8 text-3xl font-bold text-gray-900">設定</h1>
 
         <div className="space-y-8">
           {/* データ初期化セクション */}
-          <section className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+          <section className="rounded-lg bg-white p-6 shadow">
+            <h2 className="mb-4 text-xl font-semibold text-gray-900">
               データの初期化
             </h2>
-            <p className="text-gray-600 mb-4">
+            <p className="mb-4 text-gray-600">
               すべてのジャーナルデータを削除します。この操作は取り消せません。
             </p>
             {!showResetConfirm ? (
               <button
                 onClick={() => setShowResetConfirm(true)}
-                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                className="rounded bg-red-600 px-4 py-2 text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
               >
                 データを初期化
               </button>
             ) : (
               <div className="space-y-4">
-                <p className="text-red-600 font-medium">
+                <p className="font-medium text-red-600">
                   本当にすべてのデータを削除しますか？
                 </p>
                 <div className="space-x-4">
@@ -108,14 +108,14 @@ export default function Settings() {
                     <input type="hidden" name="action" value="reset" />
                     <button
                       type="submit"
-                      className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                      className="rounded bg-red-600 px-4 py-2 text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
                     >
                       はい、削除します
                     </button>
                   </Form>
                   <button
                     onClick={() => setShowResetConfirm(false)}
-                    className="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                    className="rounded bg-gray-200 px-4 py-2 text-gray-700 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
                   >
                     キャンセル
                   </button>
@@ -130,11 +130,11 @@ export default function Settings() {
           </section>
 
           {/* 投げ銭セクション */}
-          <section className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+          <section className="rounded-lg bg-white p-6 shadow">
+            <h2 className="mb-4 text-xl font-semibold text-gray-900">
               開発者を支援
             </h2>
-            <p className="text-gray-600 mb-4">
+            <p className="mb-4 text-gray-600">
               アプリの開発・維持をサポートしていただける方は、以下のリンクからご支援いただけます。
             </p>
             <div className="space-y-4">
@@ -142,7 +142,7 @@ export default function Settings() {
                 href="https://buy.stripe.com/dummy_link" // TODO: 実際の決済リンクに変更
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-block bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-3 rounded-lg hover:from-purple-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                className="inline-block rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 px-6 py-3 text-white hover:from-purple-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
               >
                 ☕️ コーヒーをご馳走する
               </a>
@@ -150,11 +150,11 @@ export default function Settings() {
           </section>
 
           {/* フィードバックセクション */}
-          <section className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+          <section className="rounded-lg bg-white p-6 shadow">
+            <h2 className="mb-4 text-xl font-semibold text-gray-900">
               フィードバック
             </h2>
-            <p className="text-gray-600 mb-4">
+            <p className="mb-4 text-gray-600">
               アプリの改善にご協力ください。ご要望や気になる点をお聞かせください。
             </p>
             <Form method="post" className="space-y-4">
@@ -162,7 +162,7 @@ export default function Settings() {
               <div>
                 <label
                   htmlFor="feedback"
-                  className="block text-sm font-medium text-gray-700 mb-2"
+                  className="mb-2 block text-sm font-medium text-gray-700"
                 >
                   フィードバック内容
                 </label>
@@ -176,7 +176,7 @@ export default function Settings() {
               </div>
               <button
                 type="submit"
-                className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                className="rounded bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
               >
                 送信する
               </button>

@@ -1,6 +1,6 @@
+import { useState } from "react";
 import { json, type ActionFunction } from "@remix-run/node";
 import { Form, useActionData, useLoaderData } from "@remix-run/react";
-import { useState } from "react";
 
 type JournalEntry = {
   id: string;
@@ -58,16 +58,16 @@ export default function Journal() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">ジャーナル</h1>
+      <div className="mx-auto max-w-4xl px-4 py-8">
+        <h1 className="mb-8 text-3xl font-bold text-gray-900">ジャーナル</h1>
 
         {/* 新規エントリーフォーム */}
-        <div className="bg-white shadow rounded-lg p-6 mb-8">
+        <div className="mb-8 rounded-lg bg-white p-6 shadow">
           <Form method="post" className="space-y-6">
             <div>
               <label
                 htmlFor="mood-selector"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="mb-2 block text-sm font-medium text-gray-700"
               >
                 今日の気分
               </label>
@@ -76,7 +76,7 @@ export default function Journal() {
                   <button
                     key={mood}
                     type="button"
-                    className={`p-2 rounded-full ${
+                    className={`rounded-full p-2 ${
                       selectedMood === mood
                         ? "bg-indigo-100 ring-2 ring-indigo-500"
                         : "hover:bg-gray-100"
@@ -93,7 +93,7 @@ export default function Journal() {
             <div>
               <label
                 htmlFor="content"
-                className="block text-sm font-medium text-gray-700 mb-2"
+                className="mb-2 block text-sm font-medium text-gray-700"
               >
                 今日の記録
               </label>
@@ -101,18 +101,18 @@ export default function Journal() {
                 id="content"
                 name="content"
                 rows={4}
-                className="shadow-sm block w-full focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm border border-gray-300 rounded-md"
+                className="block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                 placeholder="今日はどんな一日でしたか？"
               />
             </div>
 
             {actionData?.error && (
-              <p className="text-red-500 text-sm">{actionData.error}</p>
+              <p className="text-sm text-red-500">{actionData.error}</p>
             )}
 
             <button
               type="submit"
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className="flex w-full justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
             >
               記録を保存
             </button>
@@ -125,15 +125,15 @@ export default function Journal() {
           {entries.map((entry) => (
             <div
               key={entry.id}
-              className="bg-white shadow rounded-lg p-6 hover:shadow-lg transition-shadow"
+              className="rounded-lg bg-white p-6 shadow transition-shadow hover:shadow-lg"
             >
-              <div className="flex justify-between items-start mb-4">
+              <div className="mb-4 flex items-start justify-between">
                 <time className="text-sm text-gray-500">{entry.date}</time>
                 <span className="text-2xl">
                   {moodEmojis[entry.mood as keyof typeof moodEmojis]}
                 </span>
               </div>
-              <p className="text-gray-700 whitespace-pre-wrap">
+              <p className="whitespace-pre-wrap text-gray-700">
                 {entry.content}
               </p>
             </div>
