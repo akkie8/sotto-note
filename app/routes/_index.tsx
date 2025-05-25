@@ -1,5 +1,7 @@
+import { useEffect, useState } from "react";
 import { type MetaFunction } from "@remix-run/node";
 import { Link } from "@remix-run/react";
+import { BookOpen, Pencil, Wind } from "lucide-react";
 
 export const meta: MetaFunction = () => {
   return [
@@ -11,16 +13,40 @@ export const meta: MetaFunction = () => {
   ];
 };
 
+// 気分アイコンの定義
+const moodOptions = [
+  { emoji: "😊", label: "うれしい" },
+  { emoji: "😌", label: "おだやか" },
+  { emoji: "🤔", label: "考え中" },
+  { emoji: "😓", label: "つかれた" },
+  { emoji: "😢", label: "かなしい" },
+  { emoji: "😤", label: "イライラ" },
+];
+
 export default function Index() {
+  const [userName, setUserName] = useState("");
+  const [selectedMood, setSelectedMood] = useState<string | null>(null);
+  const [dailyNote, setDailyNote] = useState("");
+
+  useEffect(() => {
+    const storedName = localStorage.getItem("userName") || "";
+    setUserName(storedName);
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-      {/* ヘッダーナビゲーション */}
+      {/* ヘッダー */}
       <header className="border-b border-gray-200">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
-            <Link to="/" className="text-xl font-bold text-gray-900">
-              Sotto Note
-            </Link>
+            <div className="flex items-center space-x-2">
+              <h1 className="text-xl font-bold text-gray-900">Sotto Note</h1>
+              {userName && (
+                <span className="text-sm text-gray-600">
+                  / {userName}さんの記録
+                </span>
+              )}
+            </div>
             <Link
               to="/settings"
               className="flex items-center space-x-1 text-gray-600 hover:text-gray-900"
@@ -50,72 +76,96 @@ export default function Index() {
         </div>
       </header>
 
-      {/* Hero Section */}
-      <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
-        <div className="text-center">
-          <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 sm:text-5xl md:text-6xl">
-            <span className="block">Sotto Note</span>
-            <span className="mt-2 block text-indigo-600">
-              静かに、あなたの思考を
-            </span>
-          </h1>
-          <p className="mx-auto mt-3 max-w-md text-base text-gray-500 sm:text-lg md:mt-5 md:max-w-3xl md:text-xl">
-            シンプルで使いやすいノートアプリで、あなたのアイデアを整理し、
-            創造性を引き出します。
-          </p>
-          <div className="mx-auto mt-5 max-w-md sm:flex sm:justify-center md:mt-8">
-            <div className="rounded-md shadow">
-              <Link
-                to="/journal"
-                className="flex w-full items-center justify-center rounded-md border border-transparent bg-indigo-600 px-8 py-3 text-base font-medium text-white hover:bg-indigo-700 md:px-10 md:py-4 md:text-lg"
+      {/* メインコンテンツ */}
+      <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
+        {/* 今日の気分セクション */}
+        <section className="mb-8 rounded-lg bg-white p-6 shadow-sm">
+          <h2 className="mb-4 text-lg font-medium text-gray-900">
+            今日の気分は？
+          </h2>
+          <div className="grid grid-cols-3 gap-4 sm:grid-cols-6">
+            {moodOptions.map((mood) => (
+              <button
+                key={mood.emoji}
+                onClick={() => setSelectedMood(mood.emoji)}
+                className={`flex flex-col items-center rounded-lg p-3 transition-colors ${
+                  selectedMood === mood.emoji
+                    ? "bg-indigo-100 text-indigo-700"
+                    : "bg-gray-50 text-gray-600 hover:bg-gray-100"
+                }`}
               >
-                ジャーナルを始める
-              </Link>
-            </div>
-            <div className="mt-3 rounded-md shadow sm:ml-3 sm:mt-0">
-              <Link
-                to="/about"
-                className="flex w-full items-center justify-center rounded-md border border-transparent bg-white px-8 py-3 text-base font-medium text-indigo-600 hover:bg-gray-50 md:px-10 md:py-4 md:text-lg"
+                <span className="text-2xl">{mood.emoji}</span>
+                <span className="mt-1 text-xs">{mood.label}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        {/* 今日のひとことセクション */}
+        <section className="mb-8 rounded-lg bg-white p-6 shadow-sm">
+          <h2 className="mb-4 text-lg font-medium text-gray-900">
+            今日のひとこと
+          </h2>
+          <textarea
+            value={dailyNote}
+            onChange={(e) => setDailyNote(e.target.value)}
+            placeholder="今の気持ちを書き出してみましょう..."
+            className="w-full rounded-lg border border-gray-300 p-3 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            rows={3}
+          />
+        </section>
+
+        {/* アクションボタンセクション */}
+        <section className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Link
+            to="/journal"
+            className="flex items-center justify-center space-x-2 rounded-lg bg-indigo-600 px-6 py-4 text-white transition-colors hover:bg-indigo-700"
+          >
+            <Pencil className="h-5 w-5" />
+            <span>ジャーナルを書く</span>
+          </Link>
+          <Link
+            to="/breathing"
+            className="flex items-center justify-center space-x-2 rounded-lg bg-emerald-600 px-6 py-4 text-white transition-colors hover:bg-emerald-700"
+          >
+            <Wind className="h-5 w-5" />
+            <span>深呼吸する</span>
+          </Link>
+        </section>
+
+        {/* 過去ログセクション */}
+        <section className="rounded-lg bg-white p-6 shadow-sm">
+          <h2 className="mb-4 text-lg font-medium text-gray-900">最近の記録</h2>
+          <div className="space-y-4">
+            {/* TODO: 実際のデータを表示する。現在はダミーデータ */}
+            {[1, 2, 3].map((_, index) => (
+              <div
+                key={index}
+                className="flex items-center justify-between rounded-lg border border-gray-200 p-4"
               >
-                詳しく見る
-              </Link>
-            </div>
+                <div className="flex items-center space-x-3">
+                  <BookOpen className="h-5 w-5 text-gray-400" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">
+                      {new Date(
+                        Date.now() - index * 24 * 60 * 60 * 1000
+                      ).toLocaleDateString("ja-JP")}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      今日は穏やかな一日でした...
+                    </p>
+                  </div>
+                </div>
+                <Link
+                  to={`/journal/${index}`}
+                  className="text-sm text-indigo-600 hover:text-indigo-800"
+                >
+                  詳細
+                </Link>
+              </div>
+            ))}
           </div>
-        </div>
-      </div>
-
-      {/* Features Section */}
-      <div className="bg-white py-12">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            {/* Feature 1 */}
-            <Link
-              to="/breathing"
-              className="rounded-lg bg-gray-50 p-6 transition-colors duration-200 hover:bg-gray-100"
-            >
-              <h3 className="text-lg font-medium text-gray-900">深呼吸</h3>
-              <p className="mt-2 text-base text-gray-500">
-                心を落ち着かせ、集中力を高めるための呼吸エクササイズ。
-              </p>
-            </Link>
-
-            {/* Feature 2 */}
-            <div className="rounded-lg bg-gray-50 p-6">
-              <h3 className="text-lg font-medium text-gray-900">安全な保存</h3>
-              <p className="mt-2 text-base text-gray-500">
-                あなたのノートは安全に保存され、いつでもアクセスできます。
-              </p>
-            </div>
-
-            {/* Feature 3 */}
-            <div className="rounded-lg bg-gray-50 p-6">
-              <h3 className="text-lg font-medium text-gray-900">柔軟な整理</h3>
-              <p className="mt-2 text-base text-gray-500">
-                タグやフォルダで、ノートを自由に整理できます。
-              </p>
-            </div>
-          </div>
-        </div>
+        </section>
       </div>
     </div>
   );
