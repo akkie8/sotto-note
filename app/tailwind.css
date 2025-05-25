@@ -21,7 +21,8 @@
 }
 
 @keyframes float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0) scale(1);
   }
   50% {
@@ -30,7 +31,11 @@
 }
 
 .breathing-circle {
-  background: linear-gradient(135deg, rgba(167, 243, 208, 0.2), rgba(153, 246, 228, 0.2));
+  background: linear-gradient(
+    135deg,
+    rgba(167, 243, 208, 0.2),
+    rgba(153, 246, 228, 0.2)
+  );
   box-shadow: 0 8px 32px rgba(31, 41, 55, 0.1);
 }
 

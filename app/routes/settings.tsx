@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { json, type ActionFunction } from "@remix-run/node";
 import { Form, Link, useActionData } from "@remix-run/react";
+import { ArrowRight } from "lucide-react";
 
 type ActionData = {
   success?: boolean;
@@ -244,6 +245,23 @@ export default function Settings() {
                 フィードバックを送信しました。ありがとうございます。
               </p>
             )}
+          </section>
+
+          {/* アバウトページへのリンク */}
+          <section className="rounded-lg bg-white p-6 shadow">
+            <h2 className="mb-4 text-xl font-semibold text-gray-900">
+              そっとノートについて
+            </h2>
+            <p className="mb-4 text-gray-600">
+              アプリのコンセプトや機能の詳細については、アバウトページをご覧ください。
+            </p>
+            <Link
+              to="/about"
+              className="inline-flex items-center rounded bg-gray-100 px-4 py-2 text-gray-700 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+            >
+              アバウトページを見る
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
           </section>
 
           {/* エラーメッセージ */}
