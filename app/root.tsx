@@ -12,7 +12,7 @@ import {
 } from "@remix-run/react";
 import { BookOpen, Home, Settings, Wind } from "lucide-react";
 
-import styles from "./tailwind.css";
+import tailwindStyles from "~/tailwind.css?url";
 
 export const links: LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -25,7 +25,7 @@ export const links: LinksFunction = () => [
     rel: "stylesheet",
     href: "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap",
   },
-  { rel: "stylesheet", href: styles },
+  { rel: "stylesheet", href: tailwindStyles },
   ...(cssBundleHref ? [{ rel: "stylesheet", href: cssBundleHref }] : []),
 ];
 
@@ -82,7 +82,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <div className="hidden w-64 shrink-0 bg-gray-900 xl:block" />
 
           {/* メインコンテンツ */}
-          <main className="w-full max-w-4xl bg-gradient-to-b from-gray-50 to-white px-4 sm:px-6 lg:px-8">
+          <main className="w-full max-w-4xl bg-gradient-to-b from-gray-50 to-white px-4 pb-20 sm:px-6 lg:px-8">
             {children}
           </main>
 

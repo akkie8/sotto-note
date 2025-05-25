@@ -21,4 +21,9 @@ export default defineConfig({
     }),
     tsconfigPaths(),
   ],
+  css: {
+    modules: {
+      localsConvention: "camelCaseOnly",
+    },
+  },
 });
