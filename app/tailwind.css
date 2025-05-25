@@ -2,6 +2,58 @@
 @tailwind components;
 @tailwind utilities;
 
+@keyframes breathe-in {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.1);
+  }
+}
+
+@keyframes breathe-out {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(0.75);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-20px) scale(1.05);
+  }
+}
+
+.breathing-circle {
+  background: linear-gradient(135deg, rgba(167, 243, 208, 0.2), rgba(153, 246, 228, 0.2));
+  box-shadow: 0 8px 32px rgba(31, 41, 55, 0.1);
+}
+
+.organic-blob {
+  border-radius: 60% 40% 30% 70%/60% 30% 70% 40%;
+  animation: float 8s ease-in-out infinite;
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 html,
 body {
   @apply bg-white dark:bg-gray-950;

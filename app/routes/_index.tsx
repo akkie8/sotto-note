@@ -89,14 +89,14 @@ export default function Index() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {/* Feature 1 */}
-            <div className="rounded-lg bg-gray-50 p-6">
+            <Link to="/breathing" className="rounded-lg bg-gray-50 p-6 hover:bg-gray-100 transition-colors duration-200">
               <h3 className="text-lg font-medium text-gray-900">
-                シンプルな操作
+                深呼吸
               </h3>
               <p className="mt-2 text-base text-gray-500">
-                直感的なインターフェースで、すぐに使い始めることができます。
+                心を落ち着かせ、集中力を高めるための呼吸エクササイズ。
               </p>
-            </div>
+            </Link>
 
             {/* Feature 2 */}
             <div className="rounded-lg bg-gray-50 p-6">
