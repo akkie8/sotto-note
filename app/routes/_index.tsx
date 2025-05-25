@@ -3,6 +3,15 @@ import { type MetaFunction } from "@remix-run/node";
 import { Link } from "@remix-run/react";
 import { Pencil, Wind } from "lucide-react";
 
+// ジャーナルエントリー型
+type JournalEntry = {
+  id: string;
+  content: string;
+  mood: string;
+  timestamp: number;
+  date: string;
+};
+
 export const meta: MetaFunction = () => {
   return [
     { title: "Sotto Note" },
@@ -28,7 +37,9 @@ export default function Index() {
   const [userName, setUserName] = useState("");
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [dailyNote, setDailyNote] = useState("");
+  const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
 
+  // 時間帯による挨拶の更新
   useEffect(() => {
     const getGreeting = () => {
       const hour = new Date().getHours();
@@ -42,7 +53,6 @@ export default function Index() {
     };
 
     setGreeting(getGreeting());
-    // 1分ごとに更新（時間が変わったときに挨拶を更新するため）
     const interval = setInterval(() => {
       setGreeting(getGreeting());
     }, 60000);
@@ -50,9 +60,39 @@ export default function Index() {
     return () => clearInterval(interval);
   }, []);
 
+  // ローカルストレージからデータを読み込む
   useEffect(() => {
     const storedName = localStorage.getItem("userName") || "";
+    const today = new Date().toLocaleDateString();
+    const storedData = localStorage.getItem(`dailyData_${today}`);
+
+    if (storedData) {
+      const { mood, note } = JSON.parse(storedData);
+      setSelectedMood(mood);
+      setDailyNote(note);
+    }
+
     setUserName(storedName);
+  }, []);
+
+  // 気分が変更されたときにローカルストレージに保存
+  useEffect(() => {
+    const today = new Date().toLocaleDateString();
+    localStorage.setItem(
+      `dailyData_${today}`,
+      JSON.stringify({
+        mood: selectedMood,
+        note: dailyNote,
+      })
+    );
+  }, [selectedMood, dailyNote]);
+
+  // ジャーナルエントリー一覧をローカルストレージから取得
+  useEffect(() => {
+    const storedEntries = localStorage.getItem("journalEntries");
+    if (storedEntries) {
+      setJournalEntries(JSON.parse(storedEntries));
+    }
   }, []);
 
   return (
@@ -99,7 +139,7 @@ export default function Index() {
         </section>
 
         {/* アクションボタンセクション */}
-        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <section className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Link
             to="/journal"
             className="flex items-center justify-center space-x-2 rounded-lg bg-indigo-600 px-6 py-4 text-white transition-colors hover:bg-indigo-700"
@@ -114,6 +154,39 @@ export default function Index() {
             <Wind className="h-5 w-5" />
             <span>深呼吸する</span>
           </Link>
+        </section>
+
+        {/* 過去のエントリー一覧 */}
+        <section className="mt-8">
+          <h2 className="mb-4 text-lg font-medium text-gray-900">
+            過去のジャーナル
+          </h2>
+          {journalEntries.length === 0 ? (
+            <p className="text-gray-500">まだ記録がありません。</p>
+          ) : (
+            <div className="space-y-4">
+              {journalEntries.map((entry) => (
+                <div
+                  key={entry.id}
+                  className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
+                >
+                  <div className="mb-2 flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm text-gray-500">
+                        {entry.date}
+                      </span>
+                      <span className="inline-block rounded-full bg-slate-100 px-2 py-0.5 text-xs">
+                        {entry.mood}
+                      </span>
+                    </div>
+                  </div>
+                  <p className="whitespace-pre-wrap text-gray-700">
+                    {entry.content}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
       </div>
     </div>

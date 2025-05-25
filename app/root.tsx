@@ -3,7 +3,7 @@ import type { LinksFunction } from "@remix-run/node";
 import {
   Link,
   Links,
-  LiveReload,
+  // LiveReload,
   Meta,
   Outlet,
   Scripts,
@@ -99,7 +99,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <BottomNav />
         <ScrollRestoration />
         <Scripts />
-        <LiveReload />
+        {/* <LiveReload /> */}
       </body>
     </html>
   );
