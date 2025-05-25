@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { type MetaFunction } from "@remix-run/node";
 import { Link } from "@remix-run/react";
-import { Moon, Sun, Sunrise } from "lucide-react";
+import { Bot, Moon, Sun, Sunrise } from "lucide-react";
 
 import { moodColors } from "../moodColors";
 
@@ -104,31 +104,6 @@ export default function Index() {
         <div className="mb-6 text-lg text-gray-800">
           {greeting}、{userName}さん
         </div>
-        {/* 今日の気分セクション */}
-        <section className="mb-2 rounded-lg bg-white p-2 shadow-sm">
-          <h2 className="mb-2 text-sm font-medium text-gray-900">
-            今日の気分は？
-          </h2>
-          <div className="grid grid-cols-3 gap-1 sm:grid-cols-6">
-            {Object.entries(moodColors).map(
-              ([key, { color, hoverColor, ringColor, label }]) => (
-                <button
-                  key={key}
-                  onClick={() => setSelectedMood(key)}
-                  className={`flex flex-col items-center rounded-lg p-1 transition-colors ${color} ${
-                    selectedMood === key
-                      ? `ring-2 ${ringColor} text-gray-700`
-                      : `${hoverColor} text-gray-600`
-                  }`}
-                >
-                  <span className="mt-0.5 text-[10px] font-medium">
-                    {label}
-                  </span>
-                </button>
-              )
-            )}
-          </div>
-        </section>
         {/* 過去のエントリー一覧 */}
         <section className="mt-8">
           <h2 className="mb-4 text-lg font-medium text-gray-900">
@@ -159,22 +134,24 @@ export default function Index() {
                           {getTimeIcon(entry.timestamp)}
                         </span>
                       </div>
-                      <span
-                        className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${moodColors[entry.mood as keyof typeof moodColors]?.color || "bg-slate-100"} ${moodColors[entry.mood as keyof typeof moodColors]?.ringColor ? "ring-1 " + moodColors[entry.mood as keyof typeof moodColors].ringColor : ""} ${moodColors[entry.mood as keyof typeof moodColors]?.label ? "text-gray-700" : "text-gray-600"} `}
-                      >
-                        {moodColors[entry.mood as keyof typeof moodColors]
-                          ?.label || entry.mood}
-                      </span>
+                      <div className="flex items-center gap-1">
+                        <span
+                          className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${moodColors[entry.mood as keyof typeof moodColors]?.color || "bg-slate-100"} ${moodColors[entry.mood as keyof typeof moodColors]?.ringColor ? "ring-1 " + moodColors[entry.mood as keyof typeof moodColors].ringColor : ""} ${moodColors[entry.mood as keyof typeof moodColors]?.label ? "text-gray-700" : "text-gray-600"} `}
+                        >
+                          {moodColors[entry.mood as keyof typeof moodColors]
+                            ?.label || entry.mood}
+                        </span>
+                        <Link
+                          to={`/counseling/${entry.id}`}
+                          className="flex items-center rounded border border-indigo-200 bg-indigo-100 p-1 text-indigo-700 hover:bg-indigo-200"
+                        >
+                          <Bot size={14} />
+                        </Link>
+                      </div>
                     </div>
                     <p className="whitespace-pre-wrap text-xs text-gray-700">
                       {entry.content}
                     </p>
-                  </Link>
-                  <Link
-                    to={`/counseling/${entry.id}`}
-                    className="absolute right-2 top-2 z-10 rounded border border-indigo-200 bg-indigo-100 px-2 py-1 text-[10px] text-indigo-700 opacity-100 hover:bg-indigo-200"
-                  >
-                    AIカウンセリング
                   </Link>
                 </div>
               ))}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { json, type ActionFunction } from "@remix-run/node";
-import { Form, useActionData, useSubmit } from "@remix-run/react";
+import { Form, useActionData, useNavigate, useSubmit } from "@remix-run/react";
 
 import { moodColors } from "../moodColors";
 
@@ -31,6 +31,7 @@ export default function Journal() {
   const [selectedMood, setSelectedMood] = useState("neutral");
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const submit = useSubmit();
+  const navigate = useNavigate();
 
   useEffect(() => {
     // ページ読み込み時にローカルストレージから既存のエントリーを読み込む
@@ -58,6 +59,8 @@ export default function Journal() {
       const form = document.getElementById("journal-form") as HTMLFormElement;
       form.reset();
       setSelectedMood("neutral");
+      // 保存後にトップページへ遷移
+      navigate("/");
     }
   }, [actionData]);
 
