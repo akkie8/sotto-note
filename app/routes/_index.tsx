@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
 import { type MetaFunction } from "@remix-run/node";
+import { Link } from "@remix-run/react";
+import { Moon, Sun, Sunrise } from "lucide-react";
+
+import { moodColors } from "../moodColors";
 
 // ジャーナルエントリー型
 type JournalEntry = {
@@ -20,15 +24,15 @@ export const meta: MetaFunction = () => {
   ];
 };
 
-// 気分アイコンの定義
-const moodOptions = [
-  { emoji: "😊", label: "うれしい" },
-  { emoji: "😌", label: "おだやか" },
-  { emoji: "🤔", label: "考え中" },
-  { emoji: "😓", label: "つかれた" },
-  { emoji: "😢", label: "かなしい" },
-  { emoji: "😤", label: "イライラ" },
-];
+// 時間帯アイコンを返す関数を追加
+function getTimeIcon(timestamp: number) {
+  const hour = new Date(timestamp).getHours();
+  if (hour >= 5 && hour < 12)
+    return <Sunrise size={16} className="text-yellow-400" />; // 朝
+  if (hour >= 12 && hour < 17)
+    return <Sun size={16} className="text-yellow-500" />; // 昼
+  return <Moon size={16} className="text-indigo-400" />; // 夜
+}
 
 export default function Index() {
   const [greeting, setGreeting] = useState("");
@@ -101,25 +105,28 @@ export default function Index() {
           {greeting}、{userName}さん
         </div>
         {/* 今日の気分セクション */}
-        <section className="mb-8 rounded-lg bg-white p-6 shadow-sm">
-          <h2 className="mb-4 text-lg font-medium text-gray-900">
+        <section className="mb-2 rounded-lg bg-white p-2 shadow-sm">
+          <h2 className="mb-2 text-sm font-medium text-gray-900">
             今日の気分は？
           </h2>
-          <div className="grid grid-cols-3 gap-4 sm:grid-cols-6">
-            {moodOptions.map((mood) => (
-              <button
-                key={mood.emoji}
-                onClick={() => setSelectedMood(mood.emoji)}
-                className={`flex flex-col items-center rounded-lg p-3 transition-colors ${
-                  selectedMood === mood.emoji
-                    ? "bg-indigo-100 text-indigo-700"
-                    : "bg-gray-50 text-gray-600 hover:bg-gray-100"
-                }`}
-              >
-                <span className="text-2xl">{mood.emoji}</span>
-                <span className="mt-1 text-xs">{mood.label}</span>
-              </button>
-            ))}
+          <div className="grid grid-cols-3 gap-1 sm:grid-cols-6">
+            {Object.entries(moodColors).map(
+              ([key, { color, hoverColor, ringColor, label }]) => (
+                <button
+                  key={key}
+                  onClick={() => setSelectedMood(key)}
+                  className={`flex flex-col items-center rounded-lg p-1 transition-colors ${color} ${
+                    selectedMood === key
+                      ? `ring-2 ${ringColor} text-gray-700`
+                      : `${hoverColor} text-gray-600`
+                  }`}
+                >
+                  <span className="mt-0.5 text-[10px] font-medium">
+                    {label}
+                  </span>
+                </button>
+              )
+            )}
           </div>
         </section>
         {/* 過去のエントリー一覧 */}
@@ -128,27 +135,47 @@ export default function Index() {
             過去のジャーナル
           </h2>
           {journalEntries.length === 0 ? (
-            <p className="text-gray-500">まだ記録がありません。</p>
+            <p className="text-xs text-gray-500">まだ記録がありません。</p>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-2">
               {journalEntries.map((entry) => (
-                <div
-                  key={entry.id}
-                  className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
-                >
-                  <div className="mb-2 flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-500">
-                        {entry.date}
-                      </span>
-                      <span className="inline-block rounded-full bg-slate-100 px-2 py-0.5 text-xs">
-                        {entry.mood}
+                <div key={entry.id} className="group relative">
+                  <Link
+                    to={`/journal/${entry.id}`}
+                    className="block rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition-colors hover:bg-gray-50"
+                  >
+                    <div className="mb-1 flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-xs text-gray-500">
+                          {entry.date}
+                        </span>
+                        <span className="text-xs text-gray-400">
+                          {new Date(entry.timestamp).toLocaleTimeString(
+                            "ja-JP",
+                            { hour: "2-digit", minute: "2-digit" }
+                          )}
+                        </span>
+                        <span className="text-xs">
+                          {getTimeIcon(entry.timestamp)}
+                        </span>
+                      </div>
+                      <span
+                        className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${moodColors[entry.mood as keyof typeof moodColors]?.color || "bg-slate-100"} ${moodColors[entry.mood as keyof typeof moodColors]?.ringColor ? "ring-1 " + moodColors[entry.mood as keyof typeof moodColors].ringColor : ""} ${moodColors[entry.mood as keyof typeof moodColors]?.label ? "text-gray-700" : "text-gray-600"} `}
+                      >
+                        {moodColors[entry.mood as keyof typeof moodColors]
+                          ?.label || entry.mood}
                       </span>
                     </div>
-                  </div>
-                  <p className="whitespace-pre-wrap text-gray-700">
-                    {entry.content}
-                  </p>
+                    <p className="whitespace-pre-wrap text-xs text-gray-700">
+                      {entry.content}
+                    </p>
+                  </Link>
+                  <Link
+                    to={`/counseling/${entry.id}`}
+                    className="absolute right-2 top-2 z-10 rounded border border-indigo-200 bg-indigo-100 px-2 py-1 text-[10px] text-indigo-700 opacity-100 hover:bg-indigo-200"
+                  >
+                    AIカウンセリング
+                  </Link>
                 </div>
               ))}
             </div>
