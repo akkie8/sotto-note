@@ -12,6 +12,7 @@ import {
 } from "@remix-run/react";
 import { BookOpen, Home, Settings, Wind } from "lucide-react";
 
+import { Header } from "~/components/Header";
 import tailwindStyles from "~/tailwind.css?url";
 
 export const links: LinksFunction = () => [
@@ -23,7 +24,7 @@ export const links: LinksFunction = () => [
   },
   {
     rel: "stylesheet",
-    href: "https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap",
+    href: "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Zen+Kaku+Gothic+New:wght@300..900&display=swap",
   },
   { rel: "stylesheet", href: tailwindStyles },
   ...(cssBundleHref ? [{ rel: "stylesheet", href: cssBundleHref }] : []),
@@ -75,6 +76,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
         <Links />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap"
+          rel="stylesheet"
+        />
       </head>
       <body className="bg-gray-900">
         <div className="flex min-h-screen justify-center">
@@ -83,6 +88,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
           {/* メインコンテンツ */}
           <div className="flex w-full max-w-4xl flex-col bg-gradient-to-b from-gray-50 to-white">
+            <Header />
             <main className="min-h-screen pb-[3.25rem]">{children}</main>
           </div>
 
