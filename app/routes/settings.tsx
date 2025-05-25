@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { json, type ActionFunction } from "@remix-run/node";
 import { Form, Link, useActionData } from "@remix-run/react";
 
@@ -43,6 +43,23 @@ export const action: ActionFunction = async ({ request }) => {
 export default function Settings() {
   const actionData = useActionData<ActionData>();
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [editingName, setEditingName] = useState("");
+  const [showNameSaved, setShowNameSaved] = useState(false);
+
+  useEffect(() => {
+    const storedName = localStorage.getItem("userName") || "";
+    setEditingName(storedName);
+  }, []);
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEditingName(e.target.value);
+  };
+
+  const handleNameSave = () => {
+    localStorage.setItem("userName", editingName);
+    setShowNameSaved(true);
+    setTimeout(() => setShowNameSaved(false), 3000);
+  };
 
   return (
     <div>
@@ -83,6 +100,47 @@ export default function Settings() {
         <h1 className="mb-8 text-3xl font-bold text-gray-900">設定</h1>
 
         <div className="space-y-8">
+          {/* 名前設定セクション */}
+          <section className="rounded-lg bg-white p-6 shadow">
+            <h2 className="mb-4 text-xl font-semibold text-gray-900">
+              表示名の設定
+            </h2>
+            <p className="mb-4 text-gray-600">
+              アプリ内で使用する表示名を設定できます。
+            </p>
+            <div className="max-w-md space-y-4">
+              <div>
+                <label
+                  htmlFor="userName"
+                  className="mb-2 block text-sm font-medium text-gray-700"
+                >
+                  表示名
+                </label>
+                <input
+                  type="text"
+                  id="userName"
+                  value={editingName}
+                  onChange={handleNameChange}
+                  placeholder="あなたの名前"
+                  className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <button
+                  onClick={handleNameSave}
+                  className="rounded bg-emerald-600 px-4 py-2 text-white hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+                >
+                  保存する
+                </button>
+                {showNameSaved && (
+                  <p className="text-sm text-emerald-600">
+                    ✓ 表示名を保存しました
+                  </p>
+                )}
+              </div>
+            </div>
+          </section>
+
           {/* データ初期化セクション */}
           <section className="rounded-lg bg-white p-6 shadow">
             <h2 className="mb-4 text-xl font-semibold text-gray-900">

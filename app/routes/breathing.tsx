@@ -20,6 +20,7 @@ export default function Breathing() {
   const [timeLeft, setTimeLeft] = useState(0);
   const [currentCycle, setCurrentCycle] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
+  const [userName, setUserName] = useState("");
   const [settings, setSettings] = useState<BreathingSettings>({
     inhaleTime: 4,
     holdInTime: 2,
@@ -27,6 +28,11 @@ export default function Breathing() {
     holdOutTime: 2,
     cycles: 5,
   });
+
+  useEffect(() => {
+    const storedName = localStorage.getItem("userName") || "";
+    setUserName(storedName);
+  }, []);
 
   const getPhaseText = (currentPhase: BreathingPhase) => {
     switch (currentPhase) {
@@ -169,6 +175,7 @@ export default function Breathing() {
             深呼吸
           </h1>
           <p className="text-lg text-emerald-600">
+            {userName ? `${userName}さん、` : ""}
             心を落ち着けて、今この瞬間に集中しましょう
           </p>
         </div>
@@ -368,6 +375,7 @@ export default function Breathing() {
               お疲れさまでした
             </h3>
             <p className="text-emerald-700">
+              {userName ? `${userName}さん、` : ""}
               {settings.cycles}
               サイクルの深呼吸が完了しました。心は落ち着きましたか？
             </p>
