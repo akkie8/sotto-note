@@ -81,7 +81,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           rel="stylesheet"
         />
       </head>
-      <body className="bg-gray-900">
+      <body className="overscroll-none scroll-smooth bg-gray-900">
         <div className="flex min-h-screen justify-center">
           {/* 左サイドバー - PCのみ表示 */}
           <div className="hidden w-64 shrink-0 bg-gray-900 xl:block" />
