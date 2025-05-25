@@ -41,29 +41,29 @@ function BottomNav() {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white/80 backdrop-blur-lg">
-      <div className="mx-auto max-w-md px-4">
-        <div className="flex justify-around py-2">
+    <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white/80 backdrop-blur-lg">
+      <div className="mx-auto max-w-md">
+        <div className="flex justify-around">
           {navItems.map((item) => {
             const Icon = item.icon;
             return (
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex flex-col items-center px-3 py-2 text-xs ${
+                className={`flex flex-col items-center px-2 py-1.5 text-[10px] ${
                   isActive(item.path)
                     ? "text-indigo-600"
                     : "text-gray-600 hover:text-gray-900"
                 }`}
               >
-                <Icon className="mb-1 h-6 w-6" />
+                <Icon className="mb-0.5 h-5 w-5" />
                 <span>{item.label}</span>
               </Link>
             );
           })}
         </div>
       </div>
-    </nav>
+    </div>
   );
 }
 
@@ -82,13 +82,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <div className="hidden w-64 shrink-0 bg-gray-900 xl:block" />
 
           {/* メインコンテンツ */}
-          <main className="w-full max-w-4xl bg-gradient-to-b from-gray-50 to-white px-4 pb-20 sm:px-6 lg:px-8">
-            {children}
-          </main>
+          <div className="flex w-full max-w-4xl flex-col bg-gradient-to-b from-gray-50 to-white">
+            <main className="min-h-screen pb-[3.25rem]">{children}</main>
+          </div>
 
           {/* 右サイドバー - PCのみ表示 */}
           <div className="hidden w-64 shrink-0 bg-gray-900 xl:block" />
         </div>
+
         <BottomNav />
         <ScrollRestoration />
         <Scripts />

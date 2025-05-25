@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { type MetaFunction } from "@remix-run/node";
 import { Link } from "@remix-run/react";
-import { BookOpen, Pencil, Wind } from "lucide-react";
+import { Pencil, Wind } from "lucide-react";
 
 export const meta: MetaFunction = () => {
   return [
@@ -116,7 +116,7 @@ export default function Index() {
         </section>
 
         {/* アクションボタンセクション */}
-        <section className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Link
             to="/journal"
             className="flex items-center justify-center space-x-2 rounded-lg bg-indigo-600 px-6 py-4 text-white transition-colors hover:bg-indigo-700"
@@ -131,40 +131,6 @@ export default function Index() {
             <Wind className="h-5 w-5" />
             <span>深呼吸する</span>
           </Link>
-        </section>
-
-        {/* 過去ログセクション */}
-        <section className="rounded-lg bg-white p-6 shadow-sm">
-          <h2 className="mb-4 text-lg font-medium text-gray-900">最近の記録</h2>
-          <div className="space-y-4">
-            {/* TODO: 実際のデータを表示する。現在はダミーデータ */}
-            {[1, 2, 3].map((_, index) => (
-              <div
-                key={index}
-                className="flex items-center justify-between rounded-lg border border-gray-200 p-4"
-              >
-                <div className="flex items-center space-x-3">
-                  <BookOpen className="h-5 w-5 text-gray-400" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">
-                      {new Date(
-                        Date.now() - index * 24 * 60 * 60 * 1000
-                      ).toLocaleDateString("ja-JP")}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      今日は穏やかな一日でした...
-                    </p>
-                  </div>
-                </div>
-                <Link
-                  to={`/journal/${index}`}
-                  className="text-sm text-indigo-600 hover:text-indigo-800"
-                >
-                  詳細
-                </Link>
-              </div>
-            ))}
-          </div>
         </section>
       </div>
     </div>
