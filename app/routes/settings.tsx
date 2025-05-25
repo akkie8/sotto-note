@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { json, type ActionFunction } from "@remix-run/node";
 import { Form, Link, useActionData } from "@remix-run/react";
-import { ArrowRight } from "lucide-react";
 
 type ActionData = {
   success?: boolean;
@@ -52,6 +51,23 @@ export default function Settings() {
     setEditingName(storedName);
   }, []);
 
+  // データ初期化後にローカルストレージのジャーナルデータも削除
+  useEffect(() => {
+    if (actionData?.action === "reset" && actionData?.success) {
+      // ジャーナルエントリー削除
+      localStorage.removeItem("journalEntries");
+      // dailyData_で始まるキーをすべて削除
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith("dailyData_")) {
+          localStorage.removeItem(key);
+          // localStorageの長さが変わるのでiを1つ戻す
+          i--;
+        }
+      }
+    }
+  }, [actionData]);
+
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEditingName(e.target.value);
   };
@@ -63,222 +79,150 @@ export default function Settings() {
   };
 
   return (
-    <div>
-      {/* ヘッダーナビゲーション */}
-      <header className="border-b border-gray-200">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            <Link to="/" className="text-xl font-bold text-gray-900">
-              Sotto Note
-            </Link>
-            <div className="flex items-center space-x-1 text-gray-900">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={1.5}
-                stroke="currentColor"
-                className="h-5 w-5"
+    <div className="mx-auto max-w-md px-4 py-8">
+      <h1 className="mb-8 text-2xl font-semibold text-gray-900">設定</h1>
+
+      {/* 名前設定セクション */}
+      <section className="mb-8">
+        <h2 className="mb-2 text-lg font-medium text-gray-900">表示名</h2>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            id="userName"
+            value={editingName}
+            onChange={handleNameChange}
+            placeholder="あなたの名前"
+            className="flex-1 rounded border border-gray-300 bg-white px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none"
+          />
+          <button
+            onClick={handleNameSave}
+            className="rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 focus:outline-none"
+          >
+            保存
+          </button>
+        </div>
+        {showNameSaved && (
+          <p className="mt-2 text-xs text-emerald-600">✓ 保存しました</p>
+        )}
+      </section>
+
+      {/* データ初期化セクション */}
+      <section className="mb-8">
+        <h2 className="mb-2 text-lg font-medium text-gray-900">データ初期化</h2>
+        {!showResetConfirm ? (
+          <button
+            onClick={() => setShowResetConfirm(true)}
+            className="rounded bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600 focus:outline-none"
+          >
+            ジャーナルを全て削除
+          </button>
+        ) : (
+          <div className="space-y-2">
+            <p className="text-sm text-red-600">
+              本当に全てのデータを削除しますか？
+            </p>
+            <div className="flex gap-2">
+              <Form method="post" className="inline">
+                <input type="hidden" name="action" value="reset" />
+                <button
+                  type="submit"
+                  className="rounded bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600 focus:outline-none"
+                >
+                  はい、削除
+                </button>
+              </Form>
+              <button
+                onClick={() => setShowResetConfirm(false)}
+                className="rounded bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300 focus:outline-none"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.432l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.432l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.248a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"
-                />
-              </svg>
-              <span>設定</span>
+                キャンセル
+              </button>
             </div>
           </div>
+        )}
+        {actionData?.action === "reset" && actionData?.success && (
+          <p className="mt-2 text-xs text-emerald-600">
+            データを初期化しました
+          </p>
+        )}
+      </section>
+
+      {/* 開発者を支援セクション（目立つボタン） */}
+      <section className="mb-10 text-center">
+        <div className="flex flex-col gap-2">
+          <a
+            href="https://buy.stripe.com/dummy_link"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block w-full rounded border border-emerald-400 bg-white px-3 py-1.5 text-sm font-normal text-emerald-700 transition hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-200 focus:ring-offset-2"
+          >
+            ☕️ コーヒー
+            <br />
+            <span className="text-xs">¥500</span>
+          </a>
+          <a
+            href="https://buy.stripe.com/dummy_link"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block w-full rounded border border-amber-400 bg-white px-3 py-1.5 text-sm font-normal text-amber-700 transition hover:bg-amber-50 focus:outline-none focus:ring-2 focus:ring-amber-200 focus:ring-offset-2"
+          >
+            🍱 ランチ
+            <br />
+            <span className="text-xs">¥1,500</span>
+          </a>
+          <a
+            href="https://buy.stripe.com/dummy_link"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block w-full rounded border border-pink-400 bg-white px-3 py-1.5 text-sm font-normal text-pink-700 transition hover:bg-pink-50 focus:outline-none focus:ring-2 focus:ring-pink-200 focus:ring-offset-2"
+          >
+            🍽️ ディナー
+            <br />
+            <span className="text-xs">¥3,000</span>
+          </a>
         </div>
-      </header>
+        <div className="mt-2 text-xs text-gray-500">
+          アプリの開発・維持をサポートしていただける方はこちらからご支援いただけます。
+        </div>
+      </section>
 
-      <div className="py-8">
-        <h1 className="mb-8 text-3xl font-bold text-gray-900">設定</h1>
-
-        <div className="space-y-8">
-          {/* 名前設定セクション */}
-          <section className="rounded-lg bg-white p-6 shadow">
-            <h2 className="mb-4 text-xl font-semibold text-gray-900">
-              表示名の設定
-            </h2>
-            <p className="mb-4 text-gray-600">
-              アプリ内で使用する表示名を設定できます。
-            </p>
-            <div className="max-w-md space-y-4">
-              <div>
-                <label
-                  htmlFor="userName"
-                  className="mb-2 block text-sm font-medium text-gray-700"
-                >
-                  表示名
-                </label>
-                <input
-                  type="text"
-                  id="userName"
-                  value={editingName}
-                  onChange={handleNameChange}
-                  placeholder="あなたの名前"
-                  className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <button
-                  onClick={handleNameSave}
-                  className="rounded bg-emerald-600 px-4 py-2 text-white hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
-                >
-                  保存する
-                </button>
-                {showNameSaved && (
-                  <p className="text-sm text-emerald-600">
-                    ✓ 表示名を保存しました
-                  </p>
-                )}
-              </div>
-            </div>
-          </section>
-
-          {/* データ初期化セクション */}
-          <section className="rounded-lg bg-white p-6 shadow">
-            <h2 className="mb-4 text-xl font-semibold text-gray-900">
-              データの初期化
-            </h2>
-            <p className="mb-4 text-gray-600">
-              すべてのジャーナルデータを削除します。この操作は取り消せません。
-            </p>
-            {!showResetConfirm ? (
-              <button
-                onClick={() => setShowResetConfirm(true)}
-                className="rounded bg-red-600 px-4 py-2 text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-              >
-                データを初期化
-              </button>
-            ) : (
-              <div className="space-y-4">
-                <p className="font-medium text-red-600">
-                  本当にすべてのデータを削除しますか？
-                </p>
-                <div className="space-x-4">
-                  <Form method="post" className="inline">
-                    <input type="hidden" name="action" value="reset" />
-                    <button
-                      type="submit"
-                      className="rounded bg-red-600 px-4 py-2 text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-                    >
-                      はい、削除します
-                    </button>
-                  </Form>
-                  <button
-                    onClick={() => setShowResetConfirm(false)}
-                    className="rounded bg-gray-200 px-4 py-2 text-gray-700 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
-                  >
-                    キャンセル
-                  </button>
-                </div>
-              </div>
-            )}
-            {actionData?.action === "reset" && actionData?.success && (
-              <p className="mt-4 text-green-600">
-                データの初期化が完了しました。
-              </p>
-            )}
-          </section>
-
-          {/* 投げ銭セクション */}
-          <section className="rounded-lg bg-white p-6 shadow">
-            <h2 className="mb-4 text-xl font-semibold text-gray-900">
-              開発者を支援
-            </h2>
-            <p className="mb-4 text-gray-600">
-              アプリの開発・維持をサポートしていただける方は、以下のリンクからご支援いただけます。
-            </p>
-            <div className="space-y-4">
-              <a
-                href="https://buy.stripe.com/dummy_link" // TODO: 実際の決済リンクに変更
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 px-6 py-3 text-white hover:from-purple-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
-              >
-                ☕️ コーヒーをご馳走する
-              </a>
-            </div>
-          </section>
-
-          {/* フィードバックセクション */}
-          <section className="rounded-lg bg-white p-6 shadow">
-            <h2 className="mb-4 text-xl font-semibold text-gray-900">
-              フィードバック
-            </h2>
-            <p className="mb-4 text-gray-600">
-              アプリの改善にご協力ください。ご要望や気になる点をお聞かせください。
-            </p>
-            <Form method="post" className="space-y-4">
-              <input type="hidden" name="action" value="feedback" />
-              <div>
-                <label
-                  htmlFor="feedback"
-                  className="mb-2 block text-sm font-medium text-gray-700"
-                >
-                  フィードバック内容
-                </label>
-                <textarea
-                  id="feedback"
-                  name="feedback"
-                  rows={4}
-                  className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                  placeholder="アプリへのご意見・ご要望をお聞かせください"
-                />
-              </div>
-              <button
-                type="submit"
-                className="rounded bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-              >
-                送信する
-              </button>
-            </Form>
-            {actionData?.action === "feedback" && actionData?.success && (
-              <p className="mt-4 text-green-600">
-                フィードバックを送信しました。ありがとうございます。
-              </p>
-            )}
-          </section>
-
-          {/* アバウトページへのリンク */}
-          <section className="rounded-lg bg-white p-6 shadow">
-            <h2 className="mb-4 text-xl font-semibold text-gray-900">
-              そっとノートについて
-            </h2>
-            <p className="mb-4 text-gray-600">
-              アプリのコンセプトや機能の詳細については、アバウトページをご覧ください。
-            </p>
-            <Link
-              to="/about"
-              className="inline-flex items-center rounded bg-gray-100 px-4 py-2 text-gray-700 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+      {/* 投げ銭・アバウト・フィードバックは小さくまとめて下部に */}
+      <div className="mt-12 space-y-4 text-center text-xs text-gray-500">
+        <div>
+          <Form method="post" className="inline">
+            <input type="hidden" name="action" value="feedback" />
+            <textarea
+              id="feedback"
+              name="feedback"
+              rows={2}
+              className="mt-2 w-full rounded border border-gray-300 bg-white px-2 py-1 text-xs focus:border-indigo-400 focus:outline-none"
+              placeholder="ご意見・ご要望"
+            />
+            <button
+              type="submit"
+              className="mt-1 rounded bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-600 focus:outline-none"
             >
-              アバウトページを見る
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
-          </section>
-
-          {/* エラーメッセージ */}
-          {actionData?.error && (
-            <div className="rounded-md bg-red-50 p-4">
-              <div className="flex">
-                <div className="ml-3">
-                  <h3 className="text-sm font-medium text-red-800">エラー</h3>
-                  <div className="mt-2 text-sm text-red-700">
-                    {actionData.error}
-                  </div>
-                </div>
-              </div>
-            </div>
+              フィードバック送信
+            </button>
+          </Form>
+          {actionData?.action === "feedback" && actionData?.success && (
+            <p className="mt-1 text-emerald-600">送信しました。ありがとう！</p>
           )}
         </div>
+        {/* アバウトは下部に小さく */}
+        <div className="mt-8">
+          <Link to="/about" className="underline hover:text-indigo-600">
+            そっとノートについて
+          </Link>
+        </div>
       </div>
+
+      {/* エラーメッセージ */}
+      {actionData?.error && (
+        <div className="mt-4 text-center text-xs text-red-600">
+          {actionData.error}
+        </div>
+      )}
     </div>
   );
 }
