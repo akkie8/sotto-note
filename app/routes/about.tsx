@@ -1,45 +1,35 @@
 import { useCallback } from "react";
-import { Link } from "@remix-run/react";
+import { useNavigate } from "@remix-run/react";
 import { ArrowRight, BookHeart, Bot, Wind } from "lucide-react";
 
 import { supabase } from "../lib/supabase.client";
 
 export default function About() {
+  const navigate = useNavigate();
+
   // Googleログイン処理
   const handleLogin = useCallback(async () => {
     await supabase.auth.signInWithOAuth({ provider: "google" });
   }, []);
 
+  const handleJournalClick = useCallback(async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user) {
+      navigate("/journal");
+    } else {
+      await supabase.auth.signInWithOAuth({ provider: "google" });
+    }
+  }, [navigate]);
+
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-b from-gray-50 to-white">
-      {/* 上部ログインボタン */}
-      <div className="flex w-full justify-center pt-8">
-        <button
-          onClick={handleLogin}
-          className="inline-flex items-center gap-2 rounded bg-indigo-600 px-6 py-3 text-base font-semibold text-white shadow transition hover:bg-indigo-700"
-        >
-          はじめて見る → Googleでログイン
-          <ArrowRight className="ml-2 h-5 w-5" />
-        </button>
-      </div>
-
       {/* ヒーローセクション */}
       <section className="relative flex-1 overflow-hidden">
-        {/* 装飾的な背景要素 */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -left-10 top-20 h-72 w-72 rounded-full bg-purple-100/30 blur-3xl"></div>
-          <div className="absolute bottom-10 right-0 h-96 w-96 rounded-full bg-blue-100/30 blur-3xl"></div>
-        </div>
-
         <div className="relative mx-auto flex max-w-7xl flex-col items-center justify-center gap-8 px-4 pb-28 pt-20 text-center sm:px-6 md:flex-row lg:px-8">
           {/* イラスト */}
-          <div className="mb-8 flex flex-1 justify-center md:mb-0 md:justify-end">
-            <img
-              src="/levitate.gif"
-              alt="リラックスする女性のイラスト"
-              className="h-auto w-full max-w-xs"
-            />
-          </div>
+
           {/* テキスト */}
           <div className="flex flex-1 flex-col items-center md:items-start">
             <h1 className="mb-6 text-4xl font-bold text-gray-900 md:text-6xl">
@@ -47,19 +37,26 @@ export default function About() {
               <span className="text-indigo-600">そっと</span>
               置いていく場所。
             </h1>
+            <div className="mb-8 flex flex-1 justify-center md:mb-0 md:justify-end">
+              <img
+                src="/levitate.gif"
+                alt="リラックスする女性のイラスト"
+                className="h-auto w-full max-w-xs"
+              />
+            </div>
             <p className="mb-12 text-xl font-light text-gray-600 md:text-2xl">
               日記 × 瞑想 × AIフィードバックの
               <br className="sm:hidden" />
               ウェルネスアプリ
             </p>
-            <div className="flex flex-col justify-center gap-4 sm:flex-row">
-              <Link
-                to="/journal"
-                className="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-8 py-3 text-base font-medium text-white hover:bg-indigo-700 md:px-10 md:py-4 md:text-lg"
+            <div className="flex flex-col justify-center gap-4">
+              <button
+                onClick={handleJournalClick}
+                className="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-8 py-3 text-base font-medium text-white hover:bg-indigo-700"
               >
                 今日の気持ちを書いてみる
                 <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
+              </button>
             </div>
           </div>
         </div>

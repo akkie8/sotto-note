@@ -109,9 +109,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <div className="bg-wellness-bg hidden w-64 shrink-0 xl:block" />
 
           {/* メインコンテンツ */}
-          <div className="shadow-gentle mx-2 my-8 flex w-full max-w-4xl flex-col rounded-3xl bg-white/80 transition-all duration-300">
-            {/* イラスト用スペース（必要に応じて各ページで使う） */}
-            <div className="illustration-space" />
+          <div className="shadow-gentle flex w-full max-w-4xl flex-col rounded-3xl bg-white/80 transition-all duration-300">
             {isLoggedIn && <Header />}
             <main className="fade-in min-h-screen px-2 pb-[3.25rem]">
               {children}
