@@ -121,6 +121,14 @@ export default function Settings() {
   return (
     <div className="mx-auto max-w-md px-4 py-8">
       <h1 className="mb-8 text-2xl font-semibold text-gray-900">設定</h1>
+      {/* イラスト */}
+      <div className="illustration-space">
+        <img
+          src="/meditating.svg"
+          alt="瞑想するイラスト"
+          className="mx-auto h-auto w-full max-w-xs"
+        />
+      </div>
 
       {/* 名前設定セクション */}
       <section className="mb-8">

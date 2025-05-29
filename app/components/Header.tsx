@@ -31,32 +31,32 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/80 backdrop-blur-lg">
-      <div className="mx-auto max-w-4xl px-4 py-1">
-        <div className="flex items-center justify-between">
-          <Link to="/" className="text-base font-medium text-gray-900">
-            そっとノート
-          </Link>
-          <div>
-            {user ? (
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-700">{user.email}</span>
-                <button
-                  onClick={handleLogout}
-                  className="rounded bg-gray-200 px-2 py-1 text-xs text-gray-700 hover:bg-gray-300"
-                >
-                  ログアウト
-                </button>
-              </div>
-            ) : (
-              <Link
-                to="/login"
-                className="rounded bg-indigo-600 px-3 py-1 text-xs text-white hover:bg-indigo-700"
+    <header className="shadow-gentle sticky top-0 z-50 mx-2 mb-4 rounded-b-3xl bg-white/80 backdrop-blur-lg">
+      <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-3">
+        <Link
+          to="/"
+          className="text-wellness-accent select-none text-2xl font-bold tracking-wide drop-shadow-sm"
+        >
+          そっとノート
+        </Link>
+        <div>
+          {user ? (
+            <div className="flex items-center gap-3">
+              <span className="text-wellness-text bg-wellness-accent/30 rounded-full px-3 py-1 text-sm font-medium">
+                {user.email}
+              </span>
+              <button
+                onClick={handleLogout}
+                className="btn-wellness px-4 py-1.5 text-sm"
               >
-                ログイン
-              </Link>
-            )}
-          </div>
+                ログアウト
+              </button>
+            </div>
+          ) : (
+            <Link to="/login" className="btn-wellness px-4 py-1.5 text-sm">
+              ログイン
+            </Link>
+          )}
         </div>
       </div>
     </header>

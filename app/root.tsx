@@ -44,7 +44,7 @@ function BottomNav() {
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white/80 backdrop-blur-lg">
+    <div className="border-wellness-accent shadow-gentle fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl border-t bg-white/80 backdrop-blur-lg">
       <div className="mx-auto max-w-md">
         <div className="flex justify-around">
           {navItems.map((item) => {
@@ -53,10 +53,10 @@ function BottomNav() {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex flex-col items-center px-2 py-1.5 text-[10px] ${
+                className={`flex flex-col items-center rounded-full px-2 py-1.5 text-[10px] transition-all duration-200 ${
                   isActive(item.path)
-                    ? "text-indigo-600"
-                    : "text-gray-600 hover:text-gray-900"
+                    ? "text-wellness-accent bg-wellness-accent/20"
+                    : "hover:text-wellness-accent hover:bg-wellness-accent/10 text-gray-400"
                 }`}
               >
                 <Icon className="mb-0.5 h-5 w-5" />
@@ -103,19 +103,23 @@ export function Layout({ children }: { children: React.ReactNode }) {
           rel="stylesheet"
         />
       </head>
-      <body className="overscroll-none scroll-smooth bg-gray-900">
+      <body className="bg-wellness-bg min-h-screen overscroll-none scroll-smooth">
         <div className="flex min-h-screen justify-center">
           {/* 左サイドバー - PCのみ表示 */}
-          <div className="hidden w-64 shrink-0 bg-gray-900 xl:block" />
+          <div className="bg-wellness-bg hidden w-64 shrink-0 xl:block" />
 
           {/* メインコンテンツ */}
-          <div className="flex w-full max-w-4xl flex-col bg-gradient-to-b from-gray-50 to-white">
+          <div className="shadow-gentle mx-2 my-8 flex w-full max-w-4xl flex-col rounded-3xl bg-white/80 transition-all duration-300">
+            {/* イラスト用スペース（必要に応じて各ページで使う） */}
+            <div className="illustration-space" />
             {isLoggedIn && <Header />}
-            <main className="min-h-screen pb-[3.25rem]">{children}</main>
+            <main className="fade-in min-h-screen px-2 pb-[3.25rem]">
+              {children}
+            </main>
           </div>
 
           {/* 右サイドバー - PCのみ表示 */}
-          <div className="hidden w-64 shrink-0 bg-gray-900 xl:block" />
+          <div className="bg-wellness-bg hidden w-64 shrink-0 xl:block" />
         </div>
 
         {isLoggedIn && <BottomNav />}

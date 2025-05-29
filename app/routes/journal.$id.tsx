@@ -53,6 +53,13 @@ export default function JournalDetail() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-gray-50 to-white px-4 py-8">
+      <div className="illustration-space">
+        <img
+          src="/levitate.svg"
+          alt="浮遊するイラスト"
+          className="mx-auto h-auto w-full max-w-xs"
+        />
+      </div>
       <div className="w-full max-w-md rounded-lg bg-white p-6 shadow">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center space-x-2">

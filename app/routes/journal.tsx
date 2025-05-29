@@ -98,7 +98,14 @@ export default function Journal() {
       <h1 className="border-b border-gray-200 pb-4 text-center text-2xl font-medium text-gray-900">
         そっとノート
       </h1>
-
+      {/* イラスト */}
+      <div className="illustration-space">
+        <img
+          src="/laying.svg"
+          alt="リラックスしているイラスト"
+          className="mx-auto h-auto w-full max-w-xs"
+        />
+      </div>
       {/* 新規エントリーフォーム */}
       <div className="mb-8">
         <Form

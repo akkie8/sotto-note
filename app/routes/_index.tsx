@@ -119,35 +119,48 @@ export default function Index() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+    <div className="min-h-screen bg-transparent">
       <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
         {/* 挨拶セクション */}
-        <div className="mb-6 text-lg text-gray-800">
+        <div className="text-wellness-text fade-in mb-8 text-xl font-semibold">
           {greeting}、{userName}さん
+        </div>
+        {/* イラスト */}
+        <div className="illustration-space">
+          <img
+            src="/rolling.svg"
+            alt="リラックスするイラスト"
+            className="mx-auto h-auto w-full max-w-xs"
+          />
         </div>
         {/* 過去のエントリー一覧 */}
         <section className="mt-8">
-          <h2 className="mb-4 text-lg font-medium text-gray-900">
+          <h2 className="text-wellness-accent mb-4 text-lg font-bold">
             過去のジャーナル
           </h2>
           {loading ? (
-            <p className="text-xs text-gray-500">読み込み中...</p>
+            <p className="text-xs text-gray-400">読み込み中...</p>
           ) : journalEntries.length === 0 ? (
-            <p className="text-xs text-gray-500">まだ記録がありません。</p>
+            <div className="card-soft text-center text-gray-400">
+              まだ記録がありません。
+            </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-4">
               {journalEntries.map((entry) => (
-                <div key={entry.id} className="group relative">
+                <div
+                  key={entry.id}
+                  className="card-soft fade-in group relative"
+                >
                   <Link
                     to={`/journal/${entry.id}`}
-                    className="block rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition-colors hover:bg-gray-50"
+                    className="border-wellness-accent/30 shadow-gentle hover:bg-wellness-accent/10 block rounded-2xl border bg-white/80 p-4 transition-colors"
                   >
                     <div className="mb-1 flex items-center justify-between">
                       <div className="flex items-center space-x-2">
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-gray-400">
                           {entry.date}
                         </span>
-                        <span className="text-xs text-gray-400">
+                        <span className="text-xs text-gray-300">
                           {new Date(entry.timestamp).toLocaleTimeString(
                             "ja-JP",
                             { hour: "2-digit", minute: "2-digit" }
@@ -159,20 +172,20 @@ export default function Index() {
                       </div>
                       <div className="flex items-center gap-1">
                         <span
-                          className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${moodColors[entry.mood as keyof typeof moodColors]?.color || "bg-slate-100"} ${moodColors[entry.mood as keyof typeof moodColors]?.ringColor ? "ring-1 " + moodColors[entry.mood as keyof typeof moodColors].ringColor : ""} ${moodColors[entry.mood as keyof typeof moodColors]?.label ? "text-gray-700" : "text-gray-600"} `}
+                          className={`bg-wellness-accent/40 text-wellness-text inline-block rounded-full px-2 py-0.5 text-xs font-medium`}
                         >
                           {moodColors[entry.mood as keyof typeof moodColors]
                             ?.label || entry.mood}
                         </span>
                         <Link
                           to={`/counseling/${entry.id}`}
-                          className="flex items-center rounded border border-indigo-200 bg-indigo-100 p-1 text-indigo-700 hover:bg-indigo-200"
+                          className="border-wellness-accent bg-wellness-accent/30 text-wellness-accent hover:bg-wellness-accent/60 flex items-center rounded-full border p-1"
                         >
                           <Bot size={14} />
                         </Link>
                       </div>
                     </div>
-                    <p className="whitespace-pre-wrap text-xs text-gray-700">
+                    <p className="text-wellness-text mt-2 whitespace-pre-wrap text-sm">
                       {entry.content}
                     </p>
                   </Link>

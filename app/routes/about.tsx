@@ -1,36 +1,66 @@
+import { useCallback } from "react";
 import { Link } from "@remix-run/react";
 import { ArrowRight, BookHeart, Bot, Wind } from "lucide-react";
 
+import { supabase } from "../lib/supabase.client";
+
 export default function About() {
+  // Googleログイン処理
+  const handleLogin = useCallback(async () => {
+    await supabase.auth.signInWithOAuth({ provider: "google" });
+  }, []);
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+    <div className="flex min-h-screen flex-col bg-gradient-to-b from-gray-50 to-white">
+      {/* 上部ログインボタン */}
+      <div className="flex w-full justify-center pt-8">
+        <button
+          onClick={handleLogin}
+          className="inline-flex items-center gap-2 rounded bg-indigo-600 px-6 py-3 text-base font-semibold text-white shadow transition hover:bg-indigo-700"
+        >
+          はじめて見る → Googleでログイン
+          <ArrowRight className="ml-2 h-5 w-5" />
+        </button>
+      </div>
+
       {/* ヒーローセクション */}
-      <section className="relative overflow-hidden">
+      <section className="relative flex-1 overflow-hidden">
         {/* 装飾的な背景要素 */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute -left-10 top-20 h-72 w-72 rounded-full bg-purple-100/30 blur-3xl"></div>
           <div className="absolute bottom-10 right-0 h-96 w-96 rounded-full bg-blue-100/30 blur-3xl"></div>
         </div>
 
-        <div className="relative mx-auto max-w-7xl px-4 pb-28 pt-20 text-center sm:px-6 lg:px-8">
-          <h1 className="mb-6 text-4xl font-bold text-gray-900 md:text-6xl">
-            気持ちを、
-            <span className="text-indigo-600">そっと</span>
-            置いていく場所。
-          </h1>
-          <p className="mb-12 text-xl font-light text-gray-600 md:text-2xl">
-            日記 × 瞑想 × AIフィードバックの
-            <br className="sm:hidden" />
-            ウェルネスアプリ
-          </p>
-          <div className="flex flex-col justify-center gap-4 sm:flex-row">
-            <Link
-              to="/journal"
-              className="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-8 py-3 text-base font-medium text-white hover:bg-indigo-700 md:px-10 md:py-4 md:text-lg"
-            >
-              今日の気持ちを書いてみる
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Link>
+        <div className="relative mx-auto flex max-w-7xl flex-col items-center justify-center gap-8 px-4 pb-28 pt-20 text-center sm:px-6 md:flex-row lg:px-8">
+          {/* イラスト */}
+          <div className="mb-8 flex flex-1 justify-center md:mb-0 md:justify-end">
+            <img
+              src="/relax-illust.png"
+              alt="リラックスする女性のイラスト"
+              className="h-auto w-full max-w-xs rounded-3xl drop-shadow-md"
+            />
+          </div>
+          {/* テキスト */}
+          <div className="flex flex-1 flex-col items-center md:items-start">
+            <h1 className="mb-6 text-4xl font-bold text-gray-900 md:text-6xl">
+              気持ちを、
+              <span className="text-indigo-600">そっと</span>
+              置いていく場所。
+            </h1>
+            <p className="mb-12 text-xl font-light text-gray-600 md:text-2xl">
+              日記 × 瞑想 × AIフィードバックの
+              <br className="sm:hidden" />
+              ウェルネスアプリ
+            </p>
+            <div className="flex flex-col justify-center gap-4 sm:flex-row">
+              <Link
+                to="/journal"
+                className="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-8 py-3 text-base font-medium text-white hover:bg-indigo-700 md:px-10 md:py-4 md:text-lg"
+              >
+                今日の気持ちを書いてみる
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Link>
+            </div>
           </div>
         </div>
       </section>
@@ -138,21 +168,14 @@ export default function About() {
           <h2 className="mb-8 text-3xl font-bold text-gray-900">
             そっと、始めてみませんか？
           </h2>
-          <div className="flex flex-col justify-center gap-4 sm:flex-row">
-            <Link
-              to="/journal"
-              className="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-8 py-3 text-base font-medium text-white hover:bg-indigo-700 md:px-10 md:py-4 md:text-lg"
-            >
-              書いてみる
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Link>
-            <Link
-              to="/"
-              className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-8 py-3 text-base font-medium text-gray-700 hover:bg-gray-50 md:px-10 md:py-4 md:text-lg"
-            >
-              アプリのホームへ
-            </Link>
-          </div>
+        </div>
+        <div className="flex w-full justify-center pt-8">
+          <button
+            onClick={handleLogin}
+            className="inline-flex items-center gap-2 rounded bg-indigo-600 px-6 py-3 text-base font-semibold text-white shadow transition hover:bg-indigo-700"
+          >
+            Googleで始めて見る
+          </button>
         </div>
       </section>
     </div>
