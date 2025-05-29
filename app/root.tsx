@@ -11,6 +11,7 @@ import {
   useLocation,
 } from "@remix-run/react";
 import { BookOpen, Home, Settings, Wind } from "lucide-react";
+import { Toaster } from "sonner";
 
 import { Header } from "~/components/Header";
 import tailwindStyles from "~/tailwind.css?url";
@@ -99,6 +100,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <BottomNav />
         <ScrollRestoration />
         <Scripts />
+        <Toaster richColors position="top-center" />
         {/* <LiveReload /> */}
       </body>
     </html>

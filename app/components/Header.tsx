@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "@remix-run/react";
 import type { User } from "@supabase/supabase-js";
+import { toast } from "sonner";
 
 import { supabase } from "../lib/supabase.client";
 
@@ -25,6 +26,7 @@ export function Header() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setUser(null);
+    toast.success("ログアウトしました");
     window.location.href = "/login";
   };
 

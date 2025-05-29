@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { json, type ActionFunction } from "@remix-run/node";
 import { Form, useActionData, useNavigate } from "@remix-run/react";
+import { toast } from "sonner";
 
 import { supabase } from "../lib/supabase.client";
 import { moodColors } from "../moodColors";
@@ -31,6 +32,7 @@ export default function Journal() {
   const actionData = useActionData<typeof action>();
   const [selectedMood, setSelectedMood] = useState("neutral");
   const [entries, setEntries] = useState<JournalEntry[]>([]);
+  const [content, setContent] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -60,6 +62,7 @@ export default function Journal() {
       form.reset();
       setSelectedMood("neutral");
       // 保存後にトップページへ遷移
+      toast.success("保存しました");
       navigate("/");
     }
   }, [actionData]);
@@ -95,6 +98,7 @@ export default function Journal() {
     }
 
     // 投稿後の処理（例：トップページへ遷移）
+    toast.success("保存しました");
     navigate("/");
   };
 
@@ -152,6 +156,7 @@ export default function Journal() {
                 type="submit"
                 form="journal-form"
                 className="inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                disabled={!content.trim()}
               >
                 保存する
               </button>
@@ -161,6 +166,8 @@ export default function Journal() {
               name="content"
               className="h-[calc(100vh-16rem)] w-full resize-none rounded-lg border border-gray-200 bg-white px-4 py-3 text-base leading-relaxed text-gray-900 shadow-inner focus:border-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-300"
               placeholder="今日はどんな一日でしたか？&#13;&#10;思ったことや感じたことを自由に書いてみましょう。"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
             />
           </div>
 
