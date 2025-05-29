@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { json, type ActionFunction } from "@remix-run/node";
 import { Form, Link, useActionData } from "@remix-run/react";
 
+import { supabase } from "../lib/supabase.client";
+
 type ActionData = {
   success?: boolean;
   error?: string;
@@ -46,25 +48,36 @@ export default function Settings() {
   const [editingName, setEditingName] = useState("");
   const [showNameSaved, setShowNameSaved] = useState(false);
 
+  // ユーザー名をSupabaseから取得
   useEffect(() => {
-    const storedName = localStorage.getItem("userName") || "";
-    setEditingName(storedName);
+    (async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("name")
+        .eq("user_id", user.id)
+        .single();
+      if (!error && data?.name) {
+        setEditingName(data.name);
+      }
+    })();
   }, []);
 
-  // データ初期化後にローカルストレージのジャーナルデータも削除
   useEffect(() => {
     if (actionData?.action === "reset" && actionData?.success) {
-      // ジャーナルエントリー削除
-      localStorage.removeItem("journalEntries");
-      // dailyData_で始まるキーをすべて削除
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith("dailyData_")) {
-          localStorage.removeItem(key);
-          // localStorageの長さが変わるのでiを1つ戻す
-          i--;
-        }
-      }
+      (async () => {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) return;
+        // journalsテーブルのデータ削除
+        await supabase.from("journals").delete().eq("user_id", user.id);
+        // profilesテーブルのデータ削除（必要なら）
+        // await supabase.from("profiles").delete().eq("user_id", user.id);
+      })();
     }
   }, [actionData]);
 
@@ -72,10 +85,21 @@ export default function Settings() {
     setEditingName(e.target.value);
   };
 
-  const handleNameSave = () => {
-    localStorage.setItem("userName", editingName);
-    setShowNameSaved(true);
-    setTimeout(() => setShowNameSaved(false), 3000);
+  // 名前保存
+  const handleNameSave = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+    // upsertでprofilesテーブルに保存
+    const { error } = await supabase.from("profiles").upsert({
+      user_id: user.id,
+      name: editingName,
+    });
+    if (!error) {
+      setShowNameSaved(true);
+      setTimeout(() => setShowNameSaved(false), 3000);
+    }
   };
 
   return (

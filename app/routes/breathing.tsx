@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "@remix-run/react";
 import { Home, Pause, Play, RotateCcw, Settings } from "lucide-react";
 
+import { supabase } from "../lib/supabase.client";
+
 type BreathingPhase = "inhale" | "hold-in" | "exhale" | "hold-out" | "paused";
 
 interface BreathingSettings {
@@ -30,8 +32,20 @@ export default function Breathing() {
   });
 
   useEffect(() => {
-    const storedName = localStorage.getItem("userName") || "";
-    setUserName(storedName);
+    (async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("name")
+        .eq("user_id", user.id)
+        .single();
+      if (!error && data?.name) {
+        setUserName(data.name);
+      }
+    })();
   }, []);
 
   const getPhaseText = (currentPhase: BreathingPhase) => {

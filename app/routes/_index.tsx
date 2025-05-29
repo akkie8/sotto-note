@@ -38,8 +38,6 @@ function getTimeIcon(timestamp: number) {
 export default function Index() {
   const [greeting, setGreeting] = useState("");
   const [userName, setUserName] = useState("");
-  const [selectedMood, setSelectedMood] = useState<string | null>(null);
-  const [dailyNote, setDailyNote] = useState("");
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -64,32 +62,23 @@ export default function Index() {
     return () => clearInterval(interval);
   }, []);
 
-  // ローカルストレージからデータを読み込む
+  // ユーザー名をSupabaseから取得
   useEffect(() => {
-    const storedName = localStorage.getItem("userName") || "";
-    const today = new Date().toLocaleDateString();
-    const storedData = localStorage.getItem(`dailyData_${today}`);
-
-    if (storedData) {
-      const { mood, note } = JSON.parse(storedData);
-      setSelectedMood(mood);
-      setDailyNote(note);
-    }
-
-    setUserName(storedName);
+    (async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("name")
+        .eq("user_id", user.id)
+        .single();
+      if (!error && data?.name) {
+        setUserName(data.name);
+      }
+    })();
   }, []);
-
-  // 気分が変更されたときにローカルストレージに保存
-  useEffect(() => {
-    const today = new Date().toLocaleDateString();
-    localStorage.setItem(
-      `dailyData_${today}`,
-      JSON.stringify({
-        mood: selectedMood,
-        note: dailyNote,
-      })
-    );
-  }, [selectedMood, dailyNote]);
 
   // ジャーナルエントリー一覧をSupabaseから取得
   useEffect(() => {

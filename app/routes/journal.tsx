@@ -26,46 +26,21 @@ export const action: ActionFunction = async ({ request }) => {
   return json({ success: true, content, mood });
 };
 
-const MAX_ENTRIES = 30; // 最大保存数
-
 export default function Journal() {
   const actionData = useActionData<typeof action>();
   const [selectedMood, setSelectedMood] = useState("neutral");
-  const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [content, setContent] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
-    // ページ読み込み時にローカルストレージから既存のエントリーを読み込む
-    const storedEntries = localStorage.getItem("journalEntries");
-    if (storedEntries) {
-      setEntries(JSON.parse(storedEntries));
-    }
-  }, []);
-
-  useEffect(() => {
     if (actionData?.success) {
-      const today = new Date().toLocaleDateString("ja-JP");
-      const newEntry: JournalEntry = {
-        id: crypto.randomUUID(),
-        content: actionData.content as string,
-        mood: actionData.mood as string,
-        timestamp: Date.now(),
-        date: today,
-      };
-
-      const updatedEntries = [newEntry, ...entries].slice(0, MAX_ENTRIES);
-      setEntries(updatedEntries);
-      localStorage.setItem("journalEntries", JSON.stringify(updatedEntries));
-
       const form = document.getElementById("journal-form") as HTMLFormElement;
       form.reset();
       setSelectedMood("neutral");
-      // 保存後にトップページへ遷移
       toast.success("保存しました");
       navigate("/");
     }
-  }, [actionData]);
+  }, [actionData, navigate]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
