@@ -72,7 +72,7 @@ export default function Journal() {
   return (
     <div className="min-h-full px-4 py-8 sm:px-6 lg:px-8">
       <h1 className="border-b border-gray-200 pb-4 text-center text-2xl font-medium text-gray-900">
-        journal
+        そっとノート
       </h1>
 
       {/* 新規エントリーフォーム */}

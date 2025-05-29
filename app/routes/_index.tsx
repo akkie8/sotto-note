@@ -16,7 +16,7 @@ type JournalEntry = {
 
 export const meta: MetaFunction = () => {
   return [
-    { title: "Sotto Note" },
+    { title: "そっとノート" },
     {
       name: "description",
       content: "あなたの思考を整理するためのノートアプリ",

@@ -6,7 +6,7 @@ export function Header() {
       <div className="mx-auto max-w-4xl px-4 py-1">
         <div className="flex items-center">
           <Link to="/" className="text-base font-medium text-gray-900">
-            Sotto Note
+            そっとノート
           </Link>
         </div>
       </div>
