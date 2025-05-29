@@ -3,6 +3,7 @@ import { type MetaFunction } from "@remix-run/node";
 import { Link } from "@remix-run/react";
 import { Bot, Moon, Sun, Sunrise } from "lucide-react";
 
+import { supabase } from "../lib/supabase.client";
 import { moodColors } from "../moodColors";
 
 // ジャーナルエントリー型
@@ -40,6 +41,7 @@ export default function Index() {
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [dailyNote, setDailyNote] = useState("");
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
+  const [loading, setLoading] = useState(false);
 
   // 時間帯による挨拶の更新
   useEffect(() => {
@@ -89,12 +91,31 @@ export default function Index() {
     );
   }, [selectedMood, dailyNote]);
 
-  // ジャーナルエントリー一覧をローカルストレージから取得
+  // ジャーナルエントリー一覧をSupabaseから取得
   useEffect(() => {
-    const storedEntries = localStorage.getItem("journalEntries");
-    if (storedEntries) {
-      setJournalEntries(JSON.parse(storedEntries));
-    }
+    setLoading(true);
+    (async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        setJournalEntries([]);
+        setLoading(false);
+        return;
+      }
+      const { data, error } = await supabase
+        .from("journals")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("timestamp", { ascending: false });
+      if (error) {
+        setJournalEntries([]);
+        setLoading(false);
+        return;
+      }
+      setJournalEntries(data || []);
+      setLoading(false);
+    })();
   }, []);
 
   return (
@@ -109,7 +130,9 @@ export default function Index() {
           <h2 className="mb-4 text-lg font-medium text-gray-900">
             過去のジャーナル
           </h2>
-          {journalEntries.length === 0 ? (
+          {loading ? (
+            <p className="text-xs text-gray-500">読み込み中...</p>
+          ) : journalEntries.length === 0 ? (
             <p className="text-xs text-gray-500">まだ記録がありません。</p>
           ) : (
             <div className="space-y-2">

@@ -4,6 +4,7 @@ import { useParams } from "@remix-run/react";
 import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 
 import { openai } from "~/lib/openai.server";
+import { supabase } from "../lib/supabase.client";
 import { moodColors } from "../moodColors";
 import type { JournalEntry } from "./journal";
 
@@ -49,12 +50,28 @@ export default function CounselingRoom() {
   const [error, setError] = useState<string>("");
 
   useEffect(() => {
-    const storedEntries = localStorage.getItem("journalEntries");
-    if (storedEntries) {
-      const entries: JournalEntry[] = JSON.parse(storedEntries);
-      const found = entries.find((e) => e.id === id);
-      setEntry(found ?? null);
-    }
+    (async () => {
+      // ログインユーザー取得
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        setEntry(null);
+        return;
+      }
+      // Supabaseから該当IDのエントリーを取得
+      const { data, error } = await supabase
+        .from("journals")
+        .select("*")
+        .eq("id", id)
+        .eq("user_id", user.id)
+        .single();
+      if (error || !data) {
+        setEntry(null);
+        return;
+      }
+      setEntry(data);
+    })();
   }, [id]);
 
   const handleAskAI = async () => {
