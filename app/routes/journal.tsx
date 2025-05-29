@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { json, type ActionFunction } from "@remix-run/node";
-import { Form, useActionData, useNavigate, useSubmit } from "@remix-run/react";
+import { Form, useActionData, useNavigate } from "@remix-run/react";
 
+import { supabase } from "../lib/supabase.client";
 import { moodColors } from "../moodColors";
 
 export type JournalEntry = {
@@ -30,7 +31,6 @@ export default function Journal() {
   const actionData = useActionData<typeof action>();
   const [selectedMood, setSelectedMood] = useState("neutral");
   const [entries, setEntries] = useState<JournalEntry[]>([]);
-  const submit = useSubmit();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -64,9 +64,38 @@ export default function Journal() {
     }
   }, [actionData]);
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    submit(event.currentTarget);
+    const formData = new FormData(event.currentTarget);
+    const content = formData.get("content") as string;
+    const mood = formData.get("mood") as string;
+
+    // ログインユーザー取得
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      alert("ログインしてください");
+      return;
+    }
+
+    // SupabaseにINSERT
+    const { error } = await supabase.from("journals").insert([
+      {
+        user_id: user.id,
+        content,
+        mood,
+        timestamp: Date.now(),
+        date: new Date().toLocaleDateString("ja-JP"),
+      },
+    ]);
+    if (error) {
+      alert("投稿に失敗しました: " + error.message);
+      return;
+    }
+
+    // 投稿後の処理（例：トップページへ遷移）
+    navigate("/");
   };
 
   return (
