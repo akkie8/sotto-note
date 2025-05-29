@@ -35,9 +35,9 @@ export default function About() {
           {/* イラスト */}
           <div className="mb-8 flex flex-1 justify-center md:mb-0 md:justify-end">
             <img
-              src="/relax-illust.png"
+              src="/levitate.gif"
               alt="リラックスする女性のイラスト"
-              className="h-auto w-full max-w-xs rounded-3xl drop-shadow-md"
+              className="h-auto w-full max-w-xs"
             />
           </div>
           {/* テキスト */}
