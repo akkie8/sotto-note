@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { cssBundleHref } from "@remix-run/css-bundle";
 import type { LinksFunction } from "@remix-run/node";
 import {
@@ -70,6 +71,26 @@ function BottomNav() {
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    // クライアントサイドでSupabase認証状態を取得
+    import("~/lib/supabase.client").then(({ supabase }) => {
+      supabase.auth.getUser().then(({ data: { user } }) => {
+        setIsLoggedIn(!!user);
+      });
+      // セッション変化も監視
+      const { data: listener } = supabase.auth.onAuthStateChange(
+        (_event, session) => {
+          setIsLoggedIn(!!session?.user);
+        }
+      );
+      return () => {
+        listener?.subscription.unsubscribe();
+      };
+    });
+  }, []);
+
   return (
     <html lang="ja" className="light font-['Zen_Kaku_Gothic_New']">
       <head>
@@ -89,7 +110,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
           {/* メインコンテンツ */}
           <div className="flex w-full max-w-4xl flex-col bg-gradient-to-b from-gray-50 to-white">
-            <Header />
+            {isLoggedIn && <Header />}
             <main className="min-h-screen pb-[3.25rem]">{children}</main>
           </div>
 
@@ -97,7 +118,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <div className="hidden w-64 shrink-0 bg-gray-900 xl:block" />
         </div>
 
-        <BottomNav />
+        {isLoggedIn && <BottomNav />}
         <ScrollRestoration />
         <Scripts />
         <Toaster richColors position="top-center" />

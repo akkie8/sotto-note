@@ -1,8 +1,14 @@
 import { useEffect, useState } from "react";
-import { json, type ActionFunction } from "@remix-run/node";
+import {
+  json,
+  LoaderFunction,
+  redirect,
+  type ActionFunction,
+} from "@remix-run/node";
 import { Form, useActionData, useNavigate } from "@remix-run/react";
 import { toast } from "sonner";
 
+import { getSupabase } from "~/lib/supabase.server";
 import { supabase } from "../lib/supabase.client";
 import { moodColors } from "../moodColors";
 
@@ -24,6 +30,16 @@ export const action: ActionFunction = async ({ request }) => {
   }
 
   return json({ success: true, content, mood });
+};
+
+export const loader: LoaderFunction = async ({ request }) => {
+  const response = new Response();
+  const supabase = getSupabase(request, response);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return redirect("/about");
+  return null;
 };
 
 export default function Journal() {
