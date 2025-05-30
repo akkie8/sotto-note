@@ -9,17 +9,41 @@ export default function About() {
 
   // Googleログイン処理
   const handleLogin = useCallback(async () => {
-    await supabase.auth.signInWithOAuth({ provider: "google" });
+    try {
+      const result = await supabase.auth.signInWithOAuth({
+        provider: "google",
+      });
+      console.log("[About] handleLogin result:", result);
+    } catch (e) {
+      console.error("[About] handleLogin error:", e);
+    }
   }, []);
 
   const handleJournalClick = useCallback(async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (user) {
-      navigate("/journal");
-    } else {
-      await supabase.auth.signInWithOAuth({ provider: "google" });
+    try {
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
+      console.log(
+        "[About] handleJournalClick getUser user:",
+        user,
+        "error:",
+        error
+      );
+      if (user) {
+        navigate("/journal");
+      } else {
+        const result = await supabase.auth.signInWithOAuth({
+          provider: "google",
+        });
+        console.log(
+          "[About] handleJournalClick signInWithOAuth result:",
+          result
+        );
+      }
+    } catch (e) {
+      console.error("[About] handleJournalClick error:", e);
     }
   }, [navigate]);
 

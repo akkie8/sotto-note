@@ -10,11 +10,13 @@ export function Header() {
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
+      console.log("[Header] useEffect supabase.auth.getUser user:", user);
       setUser(user);
     });
     // セッション変化も監視
     const { data: listener } = supabase.auth.onAuthStateChange(
       (_event, session) => {
+        console.log("[Header] onAuthStateChange session:", session);
         setUser(session?.user ?? null);
       }
     );
@@ -24,10 +26,11 @@ export function Header() {
   }, []);
 
   const handleLogout = async () => {
+    console.log("[Header] handleLogout called");
     await supabase.auth.signOut();
     setUser(null);
     toast.success("ログアウトしました");
-    window.location.href = "/login";
+    window.location.href = "/about";
   };
 
   return (

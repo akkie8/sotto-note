@@ -32,6 +32,9 @@ export const loader: LoaderFunction = async ({ request }) => {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  console.log("[loader] user:", user);
+
   if (!user) return redirect("/about");
   return null;
 };
@@ -122,7 +125,7 @@ export default function Index() {
     <div className="min-h-screen bg-transparent">
       <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
         {/* 挨拶セクション */}
-        <div className="text-wellness-text fade-in mb-8 text-xl font-semibold">
+        <div className="fade-in mb-8 text-xl font-semibold text-wellness-text">
           {greeting}、{userName}さん
         </div>
         {/* イラスト */}
@@ -135,7 +138,7 @@ export default function Index() {
         </div>
         {/* 過去のエントリー一覧 */}
         <section className="mt-8">
-          <h2 className="text-wellness-accent mb-4 text-lg font-bold">
+          <h2 className="mb-4 text-lg font-bold text-wellness-accent">
             過去のジャーナル
           </h2>
           {loading ? (
@@ -153,7 +156,7 @@ export default function Index() {
                 >
                   <Link
                     to={`/journal/${entry.id}`}
-                    className="border-wellness-accent/30 shadow-gentle hover:bg-wellness-accent/10 block rounded-2xl border bg-white/80 p-4 transition-colors"
+                    className="block rounded-2xl border border-wellness-accent/30 bg-white/80 p-4 shadow-gentle transition-colors hover:bg-wellness-accent/10"
                   >
                     <div className="mb-1 flex items-center justify-between">
                       <div className="flex items-center space-x-2">
@@ -172,20 +175,20 @@ export default function Index() {
                       </div>
                       <div className="flex items-center gap-1">
                         <span
-                          className={`bg-wellness-accent/40 text-wellness-text inline-block rounded-full px-2 py-0.5 text-xs font-medium`}
+                          className={`inline-block rounded-full bg-wellness-accent/40 px-2 py-0.5 text-xs font-medium text-wellness-text`}
                         >
                           {moodColors[entry.mood as keyof typeof moodColors]
                             ?.label || entry.mood}
                         </span>
                         <Link
                           to={`/counseling/${entry.id}`}
-                          className="border-wellness-accent bg-wellness-accent/30 text-wellness-accent hover:bg-wellness-accent/60 flex items-center rounded-full border p-1"
+                          className="flex items-center rounded-full border border-wellness-accent bg-wellness-accent/30 p-1 text-wellness-accent hover:bg-wellness-accent/60"
                         >
                           <Bot size={14} />
                         </Link>
                       </div>
                     </div>
-                    <p className="text-wellness-text mt-2 whitespace-pre-wrap text-sm">
+                    <p className="mt-2 whitespace-pre-wrap text-sm text-wellness-text">
                       {entry.content}
                     </p>
                   </Link>
