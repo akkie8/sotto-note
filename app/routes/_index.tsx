@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
-import { LoaderFunction, redirect, type MetaFunction } from "@remix-run/node";
+import { type MetaFunction } from "@remix-run/node";
 import { Link } from "@remix-run/react";
 import { Bot, Moon, Sun, Sunrise } from "lucide-react";
 
-import { getSupabase } from "~/lib/supabase.server";
 import { supabase } from "../lib/supabase.client";
 import { moodColors } from "../moodColors";
 
@@ -24,19 +23,6 @@ export const meta: MetaFunction = () => {
       content: "あなたの思考を整理するためのノートアプリ",
     },
   ];
-};
-
-export const loader: LoaderFunction = async ({ request }) => {
-  const response = new Response();
-  const supabase = getSupabase(request, response);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  console.log("[loader] user:", user);
-
-  if (!user) return redirect("/about");
-  return null;
 };
 
 // 時間帯アイコンを返す関数を追加

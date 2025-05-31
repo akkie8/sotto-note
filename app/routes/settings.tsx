@@ -1,13 +1,7 @@
 import { useEffect, useState } from "react";
-import {
-  json,
-  LoaderFunction,
-  redirect,
-  type ActionFunction,
-} from "@remix-run/node";
+import type { ActionFunction } from "@remix-run/node";
 import { Form, Link, useActionData } from "@remix-run/react";
 
-import { getSupabase } from "~/lib/supabase.server";
 import { supabase } from "../lib/supabase.client";
 
 type ActionData = {
@@ -25,37 +19,27 @@ export const action: ActionFunction = async ({ request }) => {
     case "reset":
       try {
         // TODO: データベースのリセット処理を実装
-        return json<ActionData>({ success: true, action: "reset" });
+        return Response.json({ success: true, action: "reset" });
       } catch (error) {
-        return json<ActionData>({ error: "データの初期化に失敗しました" });
+        return Response.json({ error: "データの初期化に失敗しました" });
       }
 
     case "feedback":
       if (!feedback) {
-        return json<ActionData>({ error: "フィードバックを入力してください" });
+        return Response.json({ error: "フィードバックを入力してください" });
       }
       try {
         // TODO: フィードバック送信処理を実装
-        return json<ActionData>({ success: true, action: "feedback" });
+        return Response.json({ success: true, action: "feedback" });
       } catch (error) {
-        return json<ActionData>({
+        return Response.json({
           error: "フィードバックの送信に失敗しました",
         });
       }
 
     default:
-      return json<ActionData>({ error: "不正なアクションです" });
+      return Response.json({ error: "不正なアクションです" });
   }
-};
-
-export const loader: LoaderFunction = async ({ request }) => {
-  const response = new Response();
-  const supabase = getSupabase(request, response);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return redirect("/about");
-  return null;
 };
 
 export default function Settings() {

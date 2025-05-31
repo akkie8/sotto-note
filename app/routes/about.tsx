@@ -7,7 +7,6 @@ import { supabase } from "../lib/supabase.client";
 export default function About() {
   const navigate = useNavigate();
 
-  // Googleログイン処理
   const handleLogin = useCallback(async () => {
     try {
       const result = await supabase.auth.signInWithOAuth({
@@ -195,7 +194,7 @@ export default function About() {
             onClick={handleLogin}
             className="inline-flex items-center gap-2 rounded bg-indigo-600 px-6 py-3 text-base font-semibold text-white shadow transition hover:bg-indigo-700"
           >
-            Googleで始めて見る
+            Googleアカウントで始める
           </button>
         </div>
       </section>
