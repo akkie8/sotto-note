@@ -5,12 +5,13 @@
 @layer base {
   html {
     font-family:
-      'Zen Kaku Gothic New', 'Noto Sans JP', 'Inter', ui-sans-serif, system-ui, sans-serif;
-    background: theme('backgroundImage.wellness-gradient');
-    color: theme('colors.wellness.text');
+      "Zen Kaku Gothic New", "Noto Sans JP", "Inter", ui-sans-serif, system-ui,
+      sans-serif;
+    background: theme("backgroundImage.wellness-gradient");
+    color: theme("colors.wellness.text");
   }
   body {
-    background: theme('backgroundImage.wellness-gradient');
+    background: theme("backgroundImage.wellness-gradient");
     min-height: 100vh;
   }
 }
@@ -59,16 +60,16 @@
 
 /* やさしいカード・ボタン・フォーム用の共通クラス */
 .card-soft {
-  @apply rounded-3xl bg-white shadow-soft p-6;
+  @apply rounded-3xl bg-white p-6 shadow-soft;
 }
 .btn-wellness {
-  @apply rounded-full bg-wellness-accent text-wellness-text font-semibold px-6 py-3 shadow-soft transition hover:bg-wellness-accent2 hover:shadow-gentle;
+  @apply rounded-full bg-wellness-accent px-6 py-3 font-semibold text-wellness-text shadow-soft transition hover:bg-wellness-accent2 hover:shadow-gentle;
 }
 .input-wellness {
-  @apply rounded-xl border border-wellness-accent bg-white px-4 py-2 text-base shadow-inner focus:border-wellness-accent2 focus:ring-2 focus:ring-wellness-accent2 focus:outline-none transition;
+  @apply rounded-xl border border-wellness-accent bg-white px-4 py-2 text-base shadow-inner transition focus:border-wellness-accent2 focus:outline-none focus:ring-2 focus:ring-wellness-accent2;
 }
 .label-wellness {
-  @apply text-wellness-text text-sm font-medium mb-1;
+  @apply mb-1 text-sm font-medium text-wellness-text;
 }
 
 /* やさしいフェードイン */
@@ -88,7 +89,7 @@
 
 /* イラスト用スペース（後で差し替えやすいように） */
 .illustration-space {
-  @apply w-full flex justify-center items-center my-8;
+  @apply my-8 flex w-full items-center justify-center;
   min-height: 120px;
 }
 

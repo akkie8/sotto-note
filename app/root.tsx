@@ -44,7 +44,7 @@ function BottomNav() {
   ];
 
   return (
-    <div className="border-wellness-accent shadow-gentle fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl border-t bg-white/80 backdrop-blur-lg">
+    <div className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl border-t border-wellness-accent bg-white/80 shadow-gentle backdrop-blur-lg">
       <div className="mx-auto max-w-md">
         <div className="flex justify-around">
           {navItems.map((item) => {
@@ -55,8 +55,8 @@ function BottomNav() {
                 to={item.path}
                 className={`flex flex-col items-center rounded-full px-2 py-1.5 text-[10px] transition-all duration-200 ${
                   isActive(item.path)
-                    ? "text-wellness-accent bg-wellness-accent/20"
-                    : "hover:text-wellness-accent hover:bg-wellness-accent/10 text-gray-400"
+                    ? "bg-wellness-accent/20 text-wellness-accent"
+                    : "text-gray-400 hover:bg-wellness-accent/10 hover:text-wellness-accent"
                 }`}
               >
                 <Icon className="mb-0.5 h-5 w-5" />
@@ -103,13 +103,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
           rel="stylesheet"
         />
       </head>
-      <body className="bg-wellness-bg min-h-screen overscroll-none scroll-smooth">
+      <body className="min-h-screen overscroll-none scroll-smooth bg-wellness-bg">
         <div className="flex min-h-screen justify-center">
           {/* 左サイドバー - PCのみ表示 */}
-          <div className="bg-wellness-bg hidden w-64 shrink-0 xl:block" />
+          <div className="hidden w-64 shrink-0 bg-wellness-bg xl:block" />
 
           {/* メインコンテンツ */}
-          <div className="shadow-gentle flex w-full max-w-4xl flex-col rounded-3xl bg-white/80 transition-all duration-300">
+          <div className="flex w-full max-w-4xl flex-col rounded-3xl bg-white/80 shadow-gentle transition-all duration-300">
             {isLoggedIn && <Header />}
             <main className="fade-in min-h-screen px-2 pb-[3.25rem]">
               {children}
@@ -117,7 +117,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
 
           {/* 右サイドバー - PCのみ表示 */}
-          <div className="bg-wellness-bg hidden w-64 shrink-0 xl:block" />
+          <div className="hidden w-64 shrink-0 bg-wellness-bg xl:block" />
         </div>
 
         {isLoggedIn && <BottomNav />}
