@@ -1,106 +1,191 @@
 import { useEffect, useState } from "react";
-import type { ActionFunction } from "@remix-run/node";
-import { Form, Link, useActionData } from "@remix-run/react";
+import type { ActionFunction, LoaderFunctionArgs } from "@remix-run/node";
+import { json } from "@remix-run/node";
+import { Form, Link, useActionData, useLoaderData } from "@remix-run/react";
+import { toast } from "sonner";
 
+import { requireAuth, getOptionalUser } from "~/lib/auth.server";
 import { supabase } from "../lib/supabase.client";
+import { cache, CACHE_KEYS } from "~/lib/cache.client";
 
 type ActionData = {
   success?: boolean;
   error?: string;
-  action?: "reset" | "feedback";
+  action?: "reset" | "feedback" | "update-profile";
 };
 
+export async function loader({ request }: LoaderFunctionArgs) {
+  // Just try to get server-side user, but don't enforce it
+  const { user } = await getOptionalUser(request);
+  return json({ serverUser: user });
+}
+
 export const action: ActionFunction = async ({ request }) => {
+  const { user, headers, supabase } = await requireAuth(request);
   const formData = await request.formData();
   const action = formData.get("action");
   const feedback = formData.get("feedback");
+  const name = formData.get("name");
 
   switch (action) {
+    case "update-profile":
+      if (!name || typeof name !== "string" || !name.trim()) {
+        return json({ error: "名前を入力してください" }, { headers });
+      }
+      
+      try {
+        const { error } = await supabase
+          .from("profiles")
+          .upsert({ 
+            user_id: user.id, 
+            name: name.trim() 
+          });
+          
+        if (error) {
+          return json({ error: "プロフィールの更新に失敗しました: " + error.message }, { headers });
+        }
+        
+        return json({ success: true, action: "update-profile" }, { headers });
+      } catch (error) {
+        return json({ error: "プロフィールの更新に失敗しました" }, { headers });
+      }
+
     case "reset":
       try {
-        // TODO: データベースのリセット処理を実装
-        return Response.json({ success: true, action: "reset" });
+        const { error } = await supabase
+          .from("journals")
+          .delete()
+          .eq("user_id", user.id);
+          
+        if (error) {
+          return json({ error: "データの削除に失敗しました: " + error.message }, { headers });
+        }
+        
+        return json({ success: true, action: "reset" }, { headers });
       } catch (error) {
-        return Response.json({ error: "データの初期化に失敗しました" });
+        return json({ error: "データの初期化に失敗しました" }, { headers });
       }
 
     case "feedback":
-      if (!feedback) {
-        return Response.json({ error: "フィードバックを入力してください" });
+      if (!feedback || typeof feedback !== "string" || !feedback.trim()) {
+        return json({ error: "フィードバックを入力してください" }, { headers });
       }
       try {
         // TODO: フィードバック送信処理を実装
-        return Response.json({ success: true, action: "feedback" });
+        return json({ success: true, action: "feedback" }, { headers });
       } catch (error) {
-        return Response.json({
+        return json({
           error: "フィードバックの送信に失敗しました",
-        });
+        }, { headers });
       }
 
     default:
-      return Response.json({ error: "不正なアクションです" });
+      return json({ error: "不正なアクションです" }, { headers });
   }
 };
 
 export default function Settings() {
+  const { serverUser } = useLoaderData<typeof loader>();
   const actionData = useActionData<ActionData>();
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [editingName, setEditingName] = useState("");
-  const [showNameSaved, setShowNameSaved] = useState(false);
+  const [user, setUser] = useState<{id: string} | null>(serverUser);
+  const [loading, setLoading] = useState(true);
 
-  // ユーザー名をSupabaseから取得
+  // Check client-side authentication
   useEffect(() => {
-    (async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("name")
-        .eq("user_id", user.id)
-        .single();
-      if (!error && data?.name) {
-        setEditingName(data.name);
+    const checkAuth = async () => {
+      try {
+        const { data: { user: clientUser } } = await supabase.auth.getUser();
+        setUser(clientUser);
+        
+        if (clientUser) {
+          // Check cache first
+          const cachedProfile = cache.get(CACHE_KEYS.USER_PROFILE(clientUser.id));
+          
+          if (cachedProfile?.name) {
+            setEditingName(cachedProfile.name);
+          } else {
+            // Fetch user profile
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("name")
+              .eq("user_id", clientUser.id)
+              .single();
+            
+            if (profile?.name) {
+              setEditingName(profile.name);
+              // Cache the profile
+              cache.set(CACHE_KEYS.USER_PROFILE(clientUser.id), profile, 10 * 60 * 1000);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Auth check error:", error);
+      } finally {
+        setLoading(false);
       }
-    })();
+    };
+
+    checkAuth();
   }, []);
 
+  // Handle action results
   useEffect(() => {
-    if (actionData?.action === "reset" && actionData?.success) {
-      (async () => {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (!user) return;
-        // journalsテーブルのデータ削除
-        await supabase.from("journals").delete().eq("user_id", user.id);
-        // profilesテーブルのデータ削除（必要なら）
-        // await supabase.from("profiles").delete().eq("user_id", user.id);
-      })();
+    if (actionData?.success) {
+      if (actionData.action === "update-profile") {
+        toast.success("プロフィールを更新しました");
+        // Invalidate cache when profile is updated
+        if (user) {
+          cache.invalidate(CACHE_KEYS.USER_PROFILE(user.id));
+        }
+      } else if (actionData.action === "reset") {
+        toast.success("データを初期化しました");
+        // Invalidate journal cache when data is reset
+        if (user) {
+          cache.invalidatePattern("journal");
+        }
+      } else if (actionData.action === "feedback") {
+        toast.success("フィードバックを送信しました");
+      }
+    } else if (actionData?.error) {
+      toast.error(actionData.error);
     }
-  }, [actionData]);
+  }, [actionData, user]);
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEditingName(e.target.value);
   };
 
-  // 名前保存
-  const handleNameSave = async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return;
-    // upsertでprofilesテーブルに保存
-    const { error } = await supabase.from("profiles").upsert({
-      user_id: user.id,
-      name: editingName,
-    });
-    if (!error) {
-      setShowNameSaved(true);
-      setTimeout(() => setShowNameSaved(false), 3000);
-    }
-  };
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-md px-4 py-8">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-6">設定</h1>
+          <p className="text-gray-600">読み込み中...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show login prompt if no user
+  if (!user) {
+    return (
+      <div className="mx-auto max-w-md px-4 py-8">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-6">設定</h1>
+          <p className="text-gray-600 mb-6">ログインが必要です</p>
+          <Link 
+            to="/about" 
+            className="inline-block px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+          >
+            ログイン
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-md px-4 py-8">
@@ -117,9 +202,11 @@ export default function Settings() {
       {/* 名前設定セクション */}
       <section className="mb-8">
         <h2 className="mb-2 text-lg font-medium text-gray-900">表示名</h2>
-        <div className="flex gap-2">
+        <Form method="post" className="flex gap-2">
+          <input type="hidden" name="action" value="update-profile" />
           <input
             type="text"
+            name="name"
             id="userName"
             value={editingName}
             onChange={handleNameChange}
@@ -127,15 +214,12 @@ export default function Settings() {
             className="flex-1 rounded border border-gray-300 bg-white px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none"
           />
           <button
-            onClick={handleNameSave}
+            type="submit"
             className="rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 focus:outline-none"
           >
             保存
           </button>
-        </div>
-        {showNameSaved && (
-          <p className="mt-2 text-xs text-emerald-600">✓ 保存しました</p>
-        )}
+        </Form>
       </section>
 
       {/* データ初期化セクション */}
@@ -172,89 +256,66 @@ export default function Settings() {
             </div>
           </div>
         )}
-        {actionData?.action === "reset" && actionData?.success && (
-          <p className="mt-2 text-xs text-emerald-600">
-            データを初期化しました
-          </p>
-        )}
       </section>
 
-      {/* 開発者を支援セクション（目立つボタン） */}
-      <section className="mb-10 text-center">
-        <div className="flex flex-col gap-2">
-          <a
-            href="https://buy.stripe.com/dummy_link"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block w-full rounded border border-emerald-400 bg-white px-3 py-1.5 text-sm font-normal text-emerald-700 transition hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-200 focus:ring-offset-2"
-          >
-            ☕️ コーヒー
+      {/* 開発者サポートセクション */}
+      <section className="mb-8">
+        <h2 className="mb-2 text-lg font-medium text-gray-900">
+          開発者サポート
+        </h2>
+        <p className="mb-4 text-sm text-gray-600">
+          このアプリを気に入っていただけましたら、開発者をサポートしてください！
+        </p>
+        <div className="grid grid-cols-3 gap-2">
+          <button className="rounded bg-yellow-100 px-3 py-2 text-xs font-medium text-yellow-800 hover:bg-yellow-200">
+            ☕ コーヒー
             <br />
-            <span className="text-xs">¥500</span>
-          </a>
-          <a
-            href="https://buy.stripe.com/dummy_link"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block w-full rounded border border-amber-400 bg-white px-3 py-1.5 text-sm font-normal text-amber-700 transition hover:bg-amber-50 focus:outline-none focus:ring-2 focus:ring-amber-200 focus:ring-offset-2"
-          >
+            ¥500
+          </button>
+          <button className="rounded bg-green-100 px-3 py-2 text-xs font-medium text-green-800 hover:bg-green-200">
             🍱 ランチ
             <br />
-            <span className="text-xs">¥1,500</span>
-          </a>
-          <a
-            href="https://buy.stripe.com/dummy_link"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block w-full rounded border border-pink-400 bg-white px-3 py-1.5 text-sm font-normal text-pink-700 transition hover:bg-pink-50 focus:outline-none focus:ring-2 focus:ring-pink-200 focus:ring-offset-2"
-          >
+            ¥1,500
+          </button>
+          <button className="rounded bg-purple-100 px-3 py-2 text-xs font-medium text-purple-800 hover:bg-purple-200">
             🍽️ ディナー
             <br />
-            <span className="text-xs">¥3,000</span>
-          </a>
-        </div>
-        <div className="mt-2 text-xs text-gray-500">
-          アプリの開発・維持をサポートしていただける方はこちらからご支援いただけます。
+            ¥3,000
+          </button>
         </div>
       </section>
 
-      {/* 投げ銭・アバウト・フィードバックは小さくまとめて下部に */}
-      <div className="mt-12 space-y-4 text-center text-xs text-gray-500">
-        <div>
-          <Form method="post" className="inline">
-            <input type="hidden" name="action" value="feedback" />
-            <textarea
-              id="feedback"
-              name="feedback"
-              rows={2}
-              className="mt-2 w-full rounded border border-gray-300 bg-white px-2 py-1 text-xs focus:border-indigo-400 focus:outline-none"
-              placeholder="ご意見・ご要望"
-            />
-            <button
-              type="submit"
-              className="mt-1 rounded bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-600 focus:outline-none"
-            >
-              フィードバック送信
-            </button>
-          </Form>
-          {actionData?.action === "feedback" && actionData?.success && (
-            <p className="mt-1 text-emerald-600">送信しました。ありがとう！</p>
-          )}
-        </div>
-        {/* アバウトは下部に小さく */}
-        <div className="mt-8">
-          <Link to="/about" className="underline hover:text-indigo-600">
-            そっとノートについて
-          </Link>
-        </div>
-      </div>
+      {/* フィードバックセクション */}
+      <section className="mb-8">
+        <h2 className="mb-2 text-lg font-medium text-gray-900">
+          フィードバック
+        </h2>
+        <Form method="post" className="space-y-2">
+          <input type="hidden" name="action" value="feedback" />
+          <textarea
+            name="feedback"
+            rows={3}
+            className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none"
+            placeholder="ご意見・ご要望をお聞かせください"
+          />
+          <button
+            type="submit"
+            className="w-full rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 focus:outline-none"
+          >
+            送信
+          </button>
+        </Form>
+      </section>
 
-      {/* エラーメッセージ */}
-      {actionData?.error && (
-        <div className="mt-4 text-center text-xs text-red-600">
-          {actionData.error}
-        </div>
-      )}
+      {/* Aboutページへのリンク */}
+      <div className="text-center">
+        <Link
+          to="/about"
+          className="text-sm text-emerald-600 hover:text-emerald-700"
+        >
+          ← Aboutページに戻る
+        </Link>
+      </div>
     </div>
   );
 }

@@ -1,10 +1,13 @@
-import { useEffect, useState } from "react";
-import { type MetaFunction } from "@remix-run/node";
-import { Link } from "@remix-run/react";
-import { Bot, Moon, Sun, Sunrise } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
+import { type MetaFunction, type LoaderFunctionArgs } from "@remix-run/node";
+import { json } from "@remix-run/node";
+import { Link, useLoaderData } from "@remix-run/react";
+import { Bot, Moon, Sun, Sunrise, RefreshCw } from "lucide-react";
 
 import { supabase } from "../lib/supabase.client";
 import { moodColors } from "../moodColors";
+import { getOptionalUser } from "~/lib/auth.server";
+import { cache, CACHE_KEYS } from "~/lib/cache.client";
 
 // ジャーナルエントリー型
 type JournalEntry = {
@@ -14,6 +17,15 @@ type JournalEntry = {
   timestamp: number;
   date: string;
 };
+
+export async function loader({ request }: LoaderFunctionArgs) {
+  // Just try to get server-side user, but don't enforce it
+  const { user } = await getOptionalUser(request);
+  
+  return json({
+    serverUser: user,
+  });
+}
 
 export const meta: MetaFunction = () => {
   return [
@@ -36,10 +48,80 @@ function getTimeIcon(timestamp: number) {
 }
 
 export default function Index() {
+  const { serverUser } = useLoaderData<typeof loader>();
   const [greeting, setGreeting] = useState("");
-  const [userName, setUserName] = useState("");
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState<{id: string} | null>(serverUser);
+  const [userName, setUserName] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [startY, setStartY] = useState(0);
+  const [pullDistance, setPullDistance] = useState(0);
+  const [isPulling, setIsPulling] = useState(false);
+
+  // Fetch user data with caching
+  const fetchUserData = useCallback(async (userId: string, forceRefresh = false) => {
+    try {
+      // Check cache first
+      if (!forceRefresh) {
+        const cachedProfile = cache.get(CACHE_KEYS.USER_PROFILE(userId));
+        const cachedJournals = cache.get<JournalEntry[]>(CACHE_KEYS.JOURNAL_ENTRIES(userId));
+        
+        if (cachedProfile && cachedJournals) {
+          setUserName(cachedProfile.name || "");
+          setJournalEntries(cachedJournals);
+          return;
+        }
+      }
+
+      // Fetch user profile
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("name")
+        .eq("user_id", userId)
+        .single();
+      
+      if (profile) {
+        cache.set(CACHE_KEYS.USER_PROFILE(userId), profile, 10 * 60 * 1000); // 10 minutes
+        setUserName(profile.name || "");
+      }
+      
+      // Fetch journals
+      const { data: journals } = await supabase
+        .from("journals")
+        .select("*")
+        .eq("user_id", userId)
+        .order("timestamp", { ascending: false });
+        
+      if (journals) {
+        cache.set(CACHE_KEYS.JOURNAL_ENTRIES(userId), journals, 5 * 60 * 1000); // 5 minutes
+        setJournalEntries(journals);
+      }
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+    }
+  }, []);
+
+  // Check client-side authentication
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const { data: { user: clientUser } } = await supabase.auth.getUser();
+        setUser(clientUser);
+        
+        if (clientUser) {
+          await fetchUserData(clientUser.id);
+        }
+        
+      } catch (error) {
+        console.error("Auth check error:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, [fetchUserData]);
 
   // 時間帯による挨拶の更新
   useEffect(() => {
@@ -62,127 +144,238 @@ export default function Index() {
     return () => clearInterval(interval);
   }, []);
 
-  // ユーザー名をSupabaseから取得
-  useEffect(() => {
-    (async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("name")
-        .eq("user_id", user.id)
-        .single();
-      if (!error && data?.name) {
-        setUserName(data.name);
-      }
-    })();
+  // Pull-to-refresh functionality
+  const handleRefresh = useCallback(async () => {
+    if (!user || refreshing) return;
+    
+    setRefreshing(true);
+    try {
+      await fetchUserData(user.id, true); // Force refresh
+      // Invalidate cache for this user
+      cache.invalidate(CACHE_KEYS.USER_PROFILE(user.id));
+      cache.invalidate(CACHE_KEYS.JOURNAL_ENTRIES(user.id));
+    } finally {
+      setRefreshing(false);
+    }
+  }, [user, refreshing, fetchUserData]);
+
+  // Touch event handlers for pull-to-refresh
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (window.scrollY === 0) {
+      setStartY(e.touches[0].clientY);
+      setIsPulling(true);
+    }
   }, []);
 
-  // ジャーナルエントリー一覧をSupabaseから取得
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!isPulling || window.scrollY > 0) {
+      setIsPulling(false);
+      setPullDistance(0);
+      return;
+    }
+
+    const currentY = e.touches[0].clientY;
+    const distance = Math.max(0, currentY - startY);
+    setPullDistance(Math.min(distance, 100)); // Max 100px
+  }, [isPulling, startY]);
+
+  const handleTouchEnd = useCallback(() => {
+    if (isPulling && pullDistance > 60) {
+      handleRefresh();
+    }
+    setIsPulling(false);
+    setPullDistance(0);
+  }, [isPulling, pullDistance, handleRefresh]);
+
+  // リアルタイム更新のサブスクリプション
   useEffect(() => {
-    setLoading(true);
-    (async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        setJournalEntries([]);
-        setLoading(false);
-        return;
-      }
-      const { data, error } = await supabase
-        .from("journals")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("timestamp", { ascending: false });
-      if (error) {
-        setJournalEntries([]);
-        setLoading(false);
-        return;
-      }
-      setJournalEntries(data || []);
-      setLoading(false);
-    })();
-  }, []);
+    if (!user) return;
+    
+    const channel = supabase
+      .channel('realtime:journals')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'journals'
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            const newEntry = payload.new as JournalEntry;
+            setJournalEntries(prev => [newEntry, ...prev]);
+            // Update cache
+            cache.invalidate(CACHE_KEYS.JOURNAL_ENTRIES(user.id));
+          } else if (payload.eventType === 'DELETE') {
+            const deletedId = (payload.old as { id: string }).id;
+            setJournalEntries(prev => prev.filter(j => j.id !== deletedId));
+            // Update cache
+            cache.invalidate(CACHE_KEYS.JOURNAL_ENTRIES(user.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-transparent">
+        <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-900 mb-6">そっとノート</h1>
+            <p className="text-gray-600">読み込み中...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show login prompt if no user
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-transparent">
+        <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-900 mb-6">そっとノート</h1>
+            <div className="mb-8">
+              <img
+                src="/levitate.gif"
+                alt="浮遊するアニメーション"
+                className="mx-auto h-auto w-full max-w-xs"
+              />
+            </div>
+            <p className="text-gray-600 mb-6">ログインして始めましょう</p>
+            <Link 
+              to="/about" 
+              className="inline-block px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+            >
+              ログイン
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-transparent">
-      <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
-        {/* 挨拶セクション */}
-        <div className="fade-in mb-8 text-xl font-semibold text-wellness-text">
-          {greeting}、{userName}さん
-        </div>
-        {/* イラスト */}
-        <div className="illustration-space">
-          <img
-            src="/rolling.svg"
-            alt="リラックスするイラスト"
-            className="mx-auto h-auto w-full max-w-xs"
+    <div 
+      className="min-h-screen bg-transparent"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* Pull-to-refresh indicator */}
+      {isPulling && (
+        <div 
+          className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center bg-indigo-500 text-white transition-all duration-200"
+          style={{ 
+            height: `${pullDistance}px`,
+            opacity: pullDistance / 100 
+          }}
+        >
+          <RefreshCw 
+            size={16} 
+            className={pullDistance > 60 ? "animate-spin" : ""} 
           />
+          <span className="ml-2 text-sm">
+            {pullDistance > 60 ? "離して更新" : "下に引いて更新"}
+          </span>
         </div>
-        {/* 過去のエントリー一覧 */}
-        <section className="mt-8">
-          <h2 className="mb-4 text-lg font-bold text-wellness-accent">
-            過去のジャーナル
-          </h2>
-          {loading ? (
-            <p className="text-xs text-gray-400">読み込み中...</p>
-          ) : journalEntries.length === 0 ? (
-            <div className="card-soft text-center text-gray-400">
-              まだ記録がありません。
+      )}
+      
+      {/* Refresh overlay */}
+      {refreshing && (
+        <div className="fixed top-0 left-0 right-0 z-40 flex items-center justify-center bg-indigo-500 text-white py-2">
+          <RefreshCw size={16} className="animate-spin" />
+          <span className="ml-2 text-sm">更新中...</span>
+        </div>
+      )}
+
+      <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mb-8 text-center">
+          <h1 className="mb-2 text-2xl font-bold text-gray-900">
+            {greeting}
+            {userName && <span className="ml-2">{userName}さん</span>}
+          </h1>
+          
+          {/* Manual refresh button */}
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="mt-2 text-sm text-indigo-600 hover:text-indigo-700 disabled:opacity-50"
+          >
+            <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
+            <span className="ml-1">更新</span>
+          </button>
+        </div>
+
+        {/* 新規エントリーボタン */}
+        <div className="mb-8">
+          <Link
+            to="/journal"
+            className="block w-full rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 px-6 py-4 text-center text-white shadow-md transition-transform hover:scale-105"
+          >
+            <span className="text-lg font-medium">新しいジャーナルを書く</span>
+          </Link>
+        </div>
+
+        {/* ジャーナルエントリー一覧 */}
+        <div className="space-y-4">
+          {journalEntries.length === 0 ? (
+            <div className="text-center text-gray-500">
+              <p>まだジャーナルエントリーがありません</p>
+              <p className="text-sm">上のボタンから最初のエントリーを作成してみましょう</p>
             </div>
           ) : (
-            <div className="space-y-4">
-              {journalEntries.map((entry) => (
-                <div
-                  key={entry.id}
-                  className="card-soft fade-in group relative"
-                >
-                  <Link
-                    to={`/journal/${entry.id}`}
-                    className="block rounded-2xl border border-wellness-accent/30 bg-white/80 p-4 shadow-gentle transition-colors hover:bg-wellness-accent/10"
-                  >
-                    <div className="mb-1 flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-xs text-gray-400">
-                          {entry.date}
-                        </span>
-                        <span className="text-xs text-gray-300">
-                          {new Date(entry.timestamp).toLocaleTimeString(
-                            "ja-JP",
-                            { hour: "2-digit", minute: "2-digit" }
-                          )}
-                        </span>
-                        <span className="text-xs">
-                          {getTimeIcon(entry.timestamp)}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <span
-                          className={`inline-block rounded-full bg-wellness-accent/40 px-2 py-0.5 text-xs font-medium text-wellness-text`}
-                        >
-                          {moodColors[entry.mood as keyof typeof moodColors]
-                            ?.label || entry.mood}
-                        </span>
-                        <Link
-                          to={`/counseling/${entry.id}`}
-                          className="flex items-center rounded-full border border-wellness-accent bg-wellness-accent/30 p-1 text-wellness-accent hover:bg-wellness-accent/60"
-                        >
-                          <Bot size={14} />
-                        </Link>
-                      </div>
-                    </div>
-                    <p className="mt-2 whitespace-pre-wrap text-sm text-wellness-text">
-                      {entry.content}
-                    </p>
-                  </Link>
+            journalEntries.map((entry) => (
+              <div
+                key={entry.id}
+                className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
+              >
+                <div className="mb-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <span>{entry.date}</span>
+                    {getTimeIcon(entry.timestamp)}
+                    <span>
+                      {new Date(entry.timestamp).toLocaleTimeString("ja-JP", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`rounded-full px-2 py-1 text-xs font-medium ${
+                        moodColors[entry.mood as keyof typeof moodColors]?.color ||
+                        "bg-gray-100 text-gray-600"
+                      }`}
+                    >
+                      {moodColors[entry.mood as keyof typeof moodColors]?.label ||
+                        entry.mood}
+                    </span>
+                    <Link
+                      to={`/counseling/${entry.id}`}
+                      className="rounded-full p-1 text-blue-600 transition-colors hover:bg-blue-50"
+                      title="AIに相談"
+                    >
+                      <Bot size={16} />
+                    </Link>
+                  </div>
                 </div>
-              ))}
-            </div>
+                <Link to={`/journal/${entry.id}`} className="block">
+                  <p className="line-clamp-3 text-gray-800">
+                    {entry.content}
+                  </p>
+                </Link>
+              </div>
+            ))
           )}
-        </section>
+        </div>
       </div>
     </div>
   );

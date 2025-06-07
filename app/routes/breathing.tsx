@@ -1,10 +1,9 @@
-"use client";
-
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "@remix-run/react";
 import { Home, Pause, Play, RotateCcw, Settings } from "lucide-react";
 
 import { supabase } from "../lib/supabase.client";
+import { cache, CACHE_KEYS } from "~/lib/cache.client";
 
 type BreathingPhase = "inhale" | "hold-in" | "exhale" | "hold-out" | "paused";
 
@@ -23,6 +22,8 @@ export default function Breathing() {
   const [currentCycle, setCurrentCycle] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
   const [userName, setUserName] = useState("");
+  const [user, setUser] = useState<{id: string} | null>(null);
+  const [loading, setLoading] = useState(true);
   const [settings, setSettings] = useState<BreathingSettings>({
     inhaleTime: 4,
     holdInTime: 2,
@@ -32,20 +33,38 @@ export default function Breathing() {
   });
 
   useEffect(() => {
-    (async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("name")
-        .eq("user_id", user.id)
-        .single();
-      if (!error && data?.name) {
-        setUserName(data.name);
+    const checkAuth = async () => {
+      try {
+        const { data: { user: clientUser } } = await supabase.auth.getUser();
+        setUser(clientUser);
+        
+        if (clientUser) {
+          // Check cache first
+          const cachedProfile = cache.get(CACHE_KEYS.USER_PROFILE(clientUser.id));
+          
+          if (cachedProfile?.name) {
+            setUserName(cachedProfile.name);
+          } else {
+            const { data, error } = await supabase
+              .from("profiles")
+              .select("name")
+              .eq("user_id", clientUser.id)
+              .single();
+            if (!error && data?.name) {
+              setUserName(data.name);
+              // Cache the profile
+              cache.set(CACHE_KEYS.USER_PROFILE(clientUser.id), data, 10 * 60 * 1000);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Auth check error:", error);
+      } finally {
+        setLoading(false);
       }
-    })();
+    };
+
+    checkAuth();
   }, []);
 
   const getPhaseText = (currentPhase: BreathingPhase) => {
@@ -155,6 +174,36 @@ export default function Breathing() {
     if (phase === "exhale") return "breathe-out";
     return "";
   };
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 p-4">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-emerald-800 mb-6">深呼吸</h1>
+          <p className="text-emerald-600">読み込み中...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show login prompt if no user
+  if (!user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 p-4">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-emerald-800 mb-6">深呼吸</h1>
+          <p className="text-emerald-600 mb-6">ログインが必要です</p>
+          <Link 
+            to="/about" 
+            className="inline-block px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+          >
+            ログイン
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 p-4">

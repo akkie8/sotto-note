@@ -10,12 +10,14 @@ import {
   Scripts,
   ScrollRestoration,
   useLocation,
+  useNavigate,
 } from "@remix-run/react";
 import { BookOpen, Home, Settings, Wind } from "lucide-react";
 import { Toaster } from "sonner";
 
 import { Header } from "~/components/Header";
 import tailwindStyles from "~/tailwind.css?url";
+import { supabase } from "~/lib/supabase.client";
 
 export const links: LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },

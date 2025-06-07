@@ -1,14 +1,27 @@
-import { useEffect, useState } from "react";
-import { json, type ActionFunctionArgs } from "@remix-run/node";
-import { useParams } from "@remix-run/react";
+import { useState, useEffect } from "react";
+import { json, type ActionFunctionArgs, type LoaderFunctionArgs } from "@remix-run/node";
+import { useLoaderData, useNavigate } from "@remix-run/react";
 import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 
 import { openai } from "~/lib/openai.server";
-import { supabase } from "../lib/supabase.client";
 import { moodColors } from "../moodColors";
-import type { JournalEntry } from "./journal";
+import { requireAuth, getOptionalUser } from "~/lib/auth.server";
+import { supabase } from "../lib/supabase.client";
+import { cache, CACHE_KEYS } from "~/lib/cache.client";
+
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  const { user } = await getOptionalUser(request);
+  const { id } = params;
+  
+  return json({ 
+    serverUser: user,
+    journalId: id 
+  });
+}
 
 export const action = async ({ request }: ActionFunctionArgs) => {
+  await requireAuth(request);
+  
   try {
     const body = await request.json();
     const { content } = body;
@@ -34,7 +47,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       completion.choices[0].message?.content ?? "うまく返答できませんでした。";
     return json({ reply });
   } catch (err: unknown) {
-    // ここで必ずJSONで返す
     return json(
       { error: err instanceof Error ? err.message : "サーバーエラー" },
       { status: 500 }
@@ -43,40 +55,59 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function CounselingRoom() {
-  const { id } = useParams();
-  const [entry, setEntry] = useState<JournalEntry | null>(null);
+  const { serverUser, journalId } = useLoaderData<typeof loader>();
+  const navigate = useNavigate();
+  const [entry, setEntry] = useState<any>(null);
   const [aiReply, setAiReply] = useState<string>("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [aiLoading, setAiLoading] = useState(false);
   const [error, setError] = useState<string>("");
+  const [user, setUser] = useState<{id: string} | null>(serverUser);
 
   useEffect(() => {
-    (async () => {
-      // ログインユーザー取得
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        setEntry(null);
-        return;
+    const checkAuthAndFetchEntry = async () => {
+      try {
+        const { data: { user: clientUser } } = await supabase.auth.getUser();
+        setUser(clientUser);
+        
+        if (clientUser && journalId) {
+          // Check cache first
+          const cacheKey = CACHE_KEYS.JOURNAL_ENTRY(journalId);
+          const cachedEntry = cache.get(cacheKey);
+          
+          if (cachedEntry) {
+            setEntry(cachedEntry);
+            setLoading(false);
+            return;
+          }
+
+          // Fetch from database if not cached
+          const { data, error } = await supabase
+            .from("journals")
+            .select("*")
+            .eq("id", journalId)
+            .eq("user_id", clientUser.id)
+            .single();
+            
+          if (!error && data) {
+            setEntry(data);
+            // Cache the entry for 15 minutes
+            cache.set(cacheKey, data, 15 * 60 * 1000);
+          }
+        }
+      } catch (error) {
+        console.error("Error:", error);
+      } finally {
+        setLoading(false);
       }
-      // Supabaseから該当IDのエントリーを取得
-      const { data, error } = await supabase
-        .from("journals")
-        .select("*")
-        .eq("id", id)
-        .eq("user_id", user.id)
-        .single();
-      if (error || !data) {
-        setEntry(null);
-        return;
-      }
-      setEntry(data);
-    })();
-  }, [id]);
+    };
+
+    checkAuthAndFetchEntry();
+  }, [journalId]);
 
   const handleAskAI = async () => {
     if (!entry) return;
-    setLoading(true);
+    setAiLoading(true);
     setError("");
     setAiReply("");
     try {
@@ -97,14 +128,53 @@ export default function CounselingRoom() {
           (e instanceof Error ? `\n${e.message}` : "")
       );
     } finally {
-      setLoading(false);
+      setAiLoading(false);
     }
   };
 
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="flex min-h-screen flex-col items-center bg-gradient-to-b from-gray-50 to-white px-4 py-8">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-6">AI カウンセリング</h1>
+          <p className="text-gray-600">読み込み中...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show login prompt if no user
+  if (!user) {
+    return (
+      <div className="flex min-h-screen flex-col items-center bg-gradient-to-b from-gray-50 to-white px-4 py-8">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-6">AI カウンセリング</h1>
+          <p className="text-gray-600 mb-6">ログインが必要です</p>
+          <button 
+            onClick={() => navigate("/about")}
+            className="inline-block px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+          >
+            ログイン
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (!entry) {
     return (
-      <div className="p-8 text-center text-gray-500">
-        エントリーが見つかりません
+      <div className="flex min-h-screen flex-col items-center bg-gradient-to-b from-gray-50 to-white px-4 py-8">
+        <div className="text-center text-gray-500">
+          <h1 className="text-2xl font-bold text-gray-900 mb-6">AI カウンセリング</h1>
+          <p>エントリーが見つかりません</p>
+          <button 
+            onClick={() => navigate("/")}
+            className="mt-4 inline-block px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+          >
+            ホームに戻る
+          </button>
+        </div>
       </div>
     );
   }
@@ -135,9 +205,9 @@ export default function CounselingRoom() {
         <button
           className="w-full rounded bg-indigo-600 px-4 py-2 text-sm text-white hover:bg-indigo-700 disabled:opacity-50"
           onClick={handleAskAI}
-          disabled={loading}
+          disabled={aiLoading}
         >
-          {loading ? "AIが考え中..." : "AIに聞いてもらう"}
+          {aiLoading ? "AIが考え中..." : "AIに聞いてもらう"}
         </button>
         {aiReply && (
           <div className="mt-6 whitespace-pre-wrap rounded border bg-gray-100 p-4 text-gray-800">
@@ -148,6 +218,15 @@ export default function CounselingRoom() {
           </div>
         )}
         {error && <div className="mt-4 text-xs text-red-600">{error}</div>}
+        
+        <div className="mt-4">
+          <button
+            onClick={() => navigate("/")}
+            className="w-full rounded bg-gray-600 px-4 py-2 text-sm text-white hover:bg-gray-700"
+          >
+            ホームに戻る
+          </button>
+        </div>
       </div>
     </div>
   );
