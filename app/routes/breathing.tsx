@@ -2,8 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "@remix-run/react";
 import { Home, Pause, Play, RotateCcw, Settings } from "lucide-react";
 
-import { supabase } from "../lib/supabase.client";
 import { cache, CACHE_KEYS } from "~/lib/cache.client";
+import { supabase } from "../lib/supabase.client";
 
 type BreathingPhase = "inhale" | "hold-in" | "exhale" | "hold-out" | "paused";
 
@@ -22,7 +22,7 @@ export default function Breathing() {
   const [currentCycle, setCurrentCycle] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
   const [userName, setUserName] = useState("");
-  const [user, setUser] = useState<{id: string} | null>(null);
+  const [user, setUser] = useState<{ id: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [settings, setSettings] = useState<BreathingSettings>({
     inhaleTime: 4,
@@ -35,13 +35,17 @@ export default function Breathing() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const { data: { user: clientUser } } = await supabase.auth.getUser();
+        const {
+          data: { user: clientUser },
+        } = await supabase.auth.getUser();
         setUser(clientUser);
-        
+
         if (clientUser) {
           // Check cache first
-          const cachedProfile = cache.get(CACHE_KEYS.USER_PROFILE(clientUser.id));
-          
+          const cachedProfile = cache.get(
+            CACHE_KEYS.USER_PROFILE(clientUser.id)
+          );
+
           if (cachedProfile?.name) {
             setUserName(cachedProfile.name);
           } else {
@@ -53,7 +57,11 @@ export default function Breathing() {
             if (!error && data?.name) {
               setUserName(data.name);
               // Cache the profile
-              cache.set(CACHE_KEYS.USER_PROFILE(clientUser.id), data, 10 * 60 * 1000);
+              cache.set(
+                CACHE_KEYS.USER_PROFILE(clientUser.id),
+                data,
+                10 * 60 * 1000
+              );
             }
           }
         }
@@ -178,9 +186,9 @@ export default function Breathing() {
   // Show loading state
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 p-4">
+      <div className="flex min-h-full items-center justify-center bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 p-4">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-emerald-800 mb-6">深呼吸</h1>
+          <h1 className="mb-6 text-2xl font-bold text-emerald-800">深呼吸</h1>
           <p className="text-emerald-600">読み込み中...</p>
         </div>
       </div>
@@ -190,13 +198,13 @@ export default function Breathing() {
   // Show login prompt if no user
   if (!user) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 p-4">
+      <div className="flex min-h-full items-center justify-center bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 p-4">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-emerald-800 mb-6">深呼吸</h1>
-          <p className="text-emerald-600 mb-6">ログインが必要です</p>
-          <Link 
-            to="/about" 
-            className="inline-block px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+          <h1 className="mb-6 text-2xl font-bold text-emerald-800">深呼吸</h1>
+          <p className="mb-6 text-emerald-600">ログインが必要です</p>
+          <Link
+            to="/about"
+            className="inline-block rounded-lg bg-emerald-600 px-6 py-3 text-white transition-colors hover:bg-emerald-700"
           >
             ログイン
           </Link>
@@ -206,7 +214,7 @@ export default function Breathing() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 p-4">
+    <div className="flex min-h-full items-center justify-center bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 p-4">
       {/* Header */}
       <div className="fixed left-0 right-0 top-0 z-20 p-4">
         <Link

@@ -16,8 +16,8 @@ import { BookOpen, Home, Settings, Wind } from "lucide-react";
 import { Toaster } from "sonner";
 
 import { Header } from "~/components/Header";
-import tailwindStyles from "~/tailwind.css?url";
 import { supabase } from "~/lib/supabase.client";
+import tailwindStyles from "~/tailwind.css?url";
 
 export const links: LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -46,9 +46,9 @@ function BottomNav() {
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl border-t border-wellness-accent bg-white/80 shadow-gentle backdrop-blur-lg">
-      <div className="mx-auto max-w-md">
-        <div className="flex justify-around">
+    <div className="fixed bottom-0 left-0 right-0 z-50 h-16 rounded-t-3xl border-t border-wellness-accent bg-white/80 shadow-gentle backdrop-blur-lg">
+      <div className="mx-auto h-full max-w-md">
+        <div className="flex h-full items-center justify-around">
           {navItems.map((item) => {
             const Icon = item.icon;
             return (
@@ -111,9 +111,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <div className="hidden w-64 shrink-0 bg-wellness-bg xl:block" />
 
           {/* メインコンテンツ */}
-          <div className="flex w-full max-w-4xl flex-col rounded-3xl bg-white/80 shadow-gentle transition-all duration-300">
+          <div className="flex min-h-screen w-full max-w-4xl flex-col rounded-3xl bg-white/80 shadow-gentle transition-all duration-300">
             {isLoggedIn && <Header />}
-            <main className="fade-in min-h-screen px-2 pb-[3.25rem]">
+            <main
+              className={`fade-in overflow-y-auto px-2 ${isLoggedIn ? "mt-14 h-[calc(100vh-7.5rem)]" : "h-full"}`}
+            >
               {children}
             </main>
           </div>

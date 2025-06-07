@@ -1,20 +1,19 @@
 import { useCallback, useEffect } from "react";
-import { useNavigate, useLoaderData } from "@remix-run/react";
-import { json, type LoaderFunctionArgs } from "@remix-run/node";
+import { json, redirect, type LoaderFunctionArgs } from "@remix-run/node";
+import { useLoaderData, useNavigate } from "@remix-run/react";
 import { ArrowRight, BookHeart, Bot, Wind } from "lucide-react";
 
-import { supabase } from "../lib/supabase.client";
 import { getOptionalUser } from "~/lib/auth.server";
-import { redirect } from "@remix-run/node";
+import { supabase } from "../lib/supabase.client";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { user, headers } = await getOptionalUser(request);
-  
+
   // If user is already logged in, redirect to home
   if (user) {
     throw redirect("/", { headers });
   }
-  
+
   return json({ user: null }, { headers });
 }
 
@@ -27,10 +26,10 @@ export default function About() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/`
-        }
+          redirectTo: `${window.location.origin}/`,
+        },
       });
-      
+
       if (error) {
         console.error("[About] handleLogin error:", error);
       }

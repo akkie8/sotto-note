@@ -1,12 +1,19 @@
 import { useEffect, useState } from "react";
 import type { ActionFunction, LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Form, useActionData, useNavigate, useLoaderData, Link } from "@remix-run/react";
+import {
+  Form,
+  Link,
+  useActionData,
+  useLoaderData,
+  useNavigate,
+} from "@remix-run/react";
 import { toast } from "sonner";
 
-import { moodColors } from "../moodColors";
-import { requireAuth, getOptionalUser } from "~/lib/auth.server";
+import { getOptionalUser, requireAuth } from "~/lib/auth.server";
+import { cache, CACHE_KEYS } from "~/lib/cache.client";
 import { supabase } from "../lib/supabase.client";
+import { moodColors } from "../moodColors";
 
 export type JournalEntry = {
   id: string;
@@ -23,16 +30,39 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export const action: ActionFunction = async ({ request }) => {
-  const { user, headers, supabase } = await requireAuth(request);
+  console.log("[journal.action] Starting journal action");
+
+  // Use getOptionalUser instead of requireAuth to handle auth consistently
+  const { user, headers, supabase } = await getOptionalUser(request);
+
+  if (!user) {
+    console.log("[journal.action] No user found, returning error");
+    return json(
+      { error: "ログインが必要です。ページを再読み込みしてください。" },
+      { headers }
+    );
+  }
+
+  console.log("[journal.action] Auth successful, user:", user.id);
+
   const formData = await request.formData();
   const content = formData.get("content");
   const mood = formData.get("mood");
 
+  console.log("[journal.action] Form data:", {
+    contentLength: typeof content === "string" ? content.length : "not string",
+    mood,
+    contentPreview:
+      typeof content === "string" ? content.substring(0, 50) + "..." : content,
+  });
+
   if (!content || typeof content !== "string" || !content.trim()) {
+    console.log("[journal.action] Content validation failed");
     return json({ error: "内容を入力してください" }, { headers });
   }
 
   if (!mood || typeof mood !== "string") {
+    console.log("[journal.action] Mood validation failed");
     return json({ error: "気分を選択してください" }, { headers });
   }
 
@@ -43,6 +73,7 @@ export const action: ActionFunction = async ({ request }) => {
     day: "2-digit",
   });
 
+  console.log("[journal.action] Attempting to insert journal entry");
   const { error } = await supabase.from("journals").insert([
     {
       user_id: user.id,
@@ -54,9 +85,11 @@ export const action: ActionFunction = async ({ request }) => {
   ]);
 
   if (error) {
+    console.error("[journal.action] Database insert error:", error);
     return json({ error: "投稿に失敗しました: " + error.message }, { headers });
   }
 
+  console.log("[journal.action] Journal entry created successfully");
   return json({ success: true, content, mood }, { headers });
 };
 
@@ -65,7 +98,7 @@ export default function Journal() {
   const actionData = useActionData<typeof action>();
   const [selectedMood, setSelectedMood] = useState("neutral");
   const [content, setContent] = useState("");
-  const [user, setUser] = useState<{id: string} | null>(serverUser);
+  const [user, setUser] = useState<{ id: string } | null>(serverUser);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -73,7 +106,9 @@ export default function Journal() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const { data: { user: clientUser } } = await supabase.auth.getUser();
+        const {
+          data: { user: clientUser },
+        } = await supabase.auth.getUser();
         setUser(clientUser);
       } catch (error) {
         console.error("Auth check error:", error);
@@ -85,6 +120,59 @@ export default function Journal() {
     checkAuth();
   }, []);
 
+  // Handle client-side form submission
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!user) {
+      toast.error("ログインが必要です");
+      return;
+    }
+
+    if (!content.trim()) {
+      toast.error("内容を入力してください");
+      return;
+    }
+
+    try {
+      const now = Date.now();
+      const date = new Date(now).toLocaleDateString("ja-JP", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      });
+
+      const { error } = await supabase.from("journals").insert([
+        {
+          user_id: user.id,
+          content: content.trim(),
+          mood: selectedMood,
+          timestamp: now,
+          date,
+        },
+      ]);
+
+      if (error) {
+        console.error("Database insert error:", error);
+        toast.error("投稿に失敗しました: " + error.message);
+        return;
+      }
+
+      // Success
+      setSelectedMood("neutral");
+      setContent("");
+      toast.success("保存しました");
+
+      // Clear cache to ensure fresh data on home page
+      cache.invalidate(CACHE_KEYS.JOURNAL_ENTRIES(user.id));
+
+      navigate("/");
+    } catch (error) {
+      console.error("Submission error:", error);
+      toast.error("投稿に失敗しました");
+    }
+  };
+
   useEffect(() => {
     if (actionData?.success) {
       const form = document.getElementById("journal-form") as HTMLFormElement;
@@ -92,9 +180,15 @@ export default function Journal() {
       setSelectedMood("neutral");
       setContent("");
       toast.success("保存しました");
+
+      // Clear cache to ensure fresh data on home page
+      if (user) {
+        cache.invalidate(CACHE_KEYS.JOURNAL_ENTRIES(user.id));
+      }
+
       navigate("/");
     }
-  }, [actionData, navigate]);
+  }, [actionData, navigate, user]);
 
   useEffect(() => {
     if (actionData?.error) {
@@ -107,7 +201,7 @@ export default function Journal() {
     return (
       <div className="min-h-full px-4 py-8 sm:px-6 lg:px-8">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">ジャーナル</h1>
+          <h1 className="mb-6 text-2xl font-bold text-gray-900">ジャーナル</h1>
           <p className="text-gray-600">読み込み中...</p>
         </div>
       </div>
@@ -119,11 +213,11 @@ export default function Journal() {
     return (
       <div className="min-h-full px-4 py-8 sm:px-6 lg:px-8">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">ジャーナル</h1>
-          <p className="text-gray-600 mb-6">ログインが必要です</p>
-          <Link 
-            to="/about" 
-            className="inline-block px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+          <h1 className="mb-6 text-2xl font-bold text-gray-900">ジャーナル</h1>
+          <p className="mb-6 text-gray-600">ログインが必要です</p>
+          <Link
+            to="/about"
+            className="inline-block rounded-lg bg-indigo-600 px-6 py-3 text-white transition-colors hover:bg-indigo-700"
           >
             ログイン
           </Link>
@@ -133,81 +227,115 @@ export default function Journal() {
   }
 
   return (
-    <div className="min-h-full px-4 py-8 sm:px-6 lg:px-8">
-      <h1 className="border-b border-gray-200 pb-4 text-center text-2xl font-medium text-gray-900">
-        そっとノート
-      </h1>
-      {/* イラスト */}
-      <div className="illustration-space">
-        <img
-          src="/laying.svg"
-          alt="リラックスしているイラスト"
-          className="mx-auto h-auto w-full max-w-xs"
-        />
-      </div>
-      {/* 新規エントリーフォーム */}
-      <div className="mb-8">
-        <Form
-          method="post"
-          id="journal-form"
-          className="flex h-full flex-col"
-        >
-          <div className="mb-6">
-            <label
-              htmlFor="mood-selector"
-              className="mb-2 block text-sm font-medium text-gray-700"
-            >
-              今の気分
-            </label>
-            <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-              {Object.entries(moodColors).map(
-                ([mood, { color, hoverColor, ringColor, label }]) => (
-                  <button
-                    key={mood}
-                    type="button"
-                    className={`flex flex-col items-center rounded-md px-2 py-1.5 transition-colors ${color} ${
-                      selectedMood === mood
-                        ? `ring-1 ${ringColor} text-gray-700`
-                        : `${hoverColor} text-gray-600`
-                    }`}
-                    onClick={() => setSelectedMood(mood)}
-                  >
-                    <span className="text-xs font-medium">{label}</span>
-                  </button>
-                )
-              )}
-            </div>
-            <input type="hidden" name="mood" value={selectedMood} />
-          </div>
-
-          <div className="flex-1">
-            <div className="mb-2 flex items-center justify-between">
-              <label
-                htmlFor="content"
-                className="text-sm font-medium text-gray-700"
-              >
-                今日の記録
-              </label>
+    <div className="flex min-h-full flex-col bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      {/* Header - Fixed at top */}
+      <div className="sticky top-0 z-10 border-b border-gray-200/50 bg-white/80 backdrop-blur-sm">
+        <div className="px-4 py-3 sm:px-6">
+          <div className="flex items-center justify-between">
+            <h1 className="text-lg font-medium text-gray-900">そっとノート</h1>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500">
+                {content.length} 文字
+              </span>
               <button
                 type="submit"
                 form="journal-form"
-                className="rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                disabled={!content.trim()}
+                className="rounded-full bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 保存
               </button>
             </div>
-            <textarea
-              id="content"
-              name="content"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              rows={12}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              placeholder="今日はどんな一日でしたか？思ったことや感じたことを自由に書いてみてください..."
-            />
           </div>
-        </Form>
+        </div>
       </div>
+
+      {/* Main Content */}
+      <div className="flex flex-1 flex-col px-4 sm:px-6">
+        <form
+          onSubmit={handleSubmit}
+          id="journal-form"
+          className="flex flex-1 flex-col"
+        >
+          {/* Mood Selector - Compact */}
+          <div className="py-4">
+            <div className="mb-3 flex items-center gap-3">
+              <span className="whitespace-nowrap text-sm font-medium text-gray-700">
+                今の気分
+              </span>
+              <div className="flex gap-1 overflow-x-auto">
+                {Object.entries(moodColors).map(
+                  ([mood, { color, hoverColor, ringColor, label }]) => (
+                    <button
+                      key={mood}
+                      type="button"
+                      className={`flex-shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-all ${color} ${
+                        selectedMood === mood
+                          ? `ring-2 ${ringColor} scale-105 text-gray-700`
+                          : `${hoverColor} text-gray-600 hover:scale-105`
+                      }`}
+                      onClick={() => setSelectedMood(mood)}
+                    >
+                      {label}
+                    </button>
+                  )
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Writing Area - Main Focus */}
+          <div className="flex flex-1 flex-col pb-6">
+            <div className="relative flex-1">
+              <textarea
+                id="content"
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                className="h-full min-h-[60vh] w-full resize-none border-none bg-transparent p-4 text-base leading-relaxed text-gray-800 placeholder-gray-400 focus:outline-none"
+                placeholder="今日はどんな一日でしたか？&#10;&#10;思ったことや感じたことを、ここに自由に書いてみてください...&#10;&#10;あなたの心の声に耳を傾けて、素直な気持ちを記録しましょう。"
+                autoFocus
+                spellCheck="false"
+                style={{
+                  fontFamily:
+                    '"Hiragino Sans", "ヒラギノ角ゴシック", "Yu Gothic", "游ゴシック", sans-serif',
+                  lineHeight: 1.8,
+                }}
+              />
+
+              {/* Writing Guidelines */}
+              {!content && (
+                <div className="absolute bottom-4 left-4 right-4 space-y-1 text-xs text-gray-400">
+                  <p>💡 書き方のヒント:</p>
+                  <p>• 今日あった出来事や感じたこと</p>
+                  <p>• 心に残った瞬間や気づき</p>
+                  <p>• 感謝したいことや嬉しかったこと</p>
+                  <p>• 悩みや不安、モヤモヤした気持ち</p>
+                </div>
+              )}
+            </div>
+
+            {/* Writing Stats & Tips */}
+            <div className="flex items-center justify-between border-t border-gray-100 pt-3">
+              <div className="flex items-center gap-4 text-xs text-gray-500">
+                <span>{content.split("\n").length} 行</span>
+                <span>
+                  {content.replace(/\s/g, "").length} 文字（空白除く）
+                </span>
+              </div>
+              <div className="text-xs text-gray-400">
+                気持ちを込めて書いてみましょう ✨
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      {/* Floating Action Hints */}
+      {content.length > 50 && (
+        <div className="fixed bottom-6 right-6 animate-pulse rounded-full bg-indigo-600 px-3 py-2 text-xs text-white shadow-lg">
+          いい感じです！✨
+        </div>
+      )}
     </div>
   );
 }

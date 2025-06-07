@@ -1,21 +1,24 @@
 import { redirect } from "@remix-run/node";
+
 import { getSupabase } from "./supabase.server";
 
 export async function requireAuth(request: Request) {
   const response = new Response();
   const supabase = getSupabase(request, response);
-  
+
   try {
     const {
       data: { user },
       error,
     } = await supabase.auth.getUser();
 
-    console.log("[requireAuth] getUser result:", { 
-      userId: user?.id, 
+    console.log("[requireAuth] getUser result:", {
+      userId: user?.id,
       error: error?.message,
-      hasAuthHeader: request.headers.get('authorization') ? 'yes' : 'no',
-      cookies: request.headers.get('cookie')?.includes('sb-') ? 'has supabase cookies' : 'no supabase cookies'
+      hasAuthHeader: request.headers.get("authorization") ? "yes" : "no",
+      cookies: request.headers.get("cookie")?.includes("sb-")
+        ? "has supabase cookies"
+        : "no supabase cookies",
     });
 
     if (error) {
@@ -47,16 +50,16 @@ export async function requireAuth(request: Request) {
 export async function getOptionalUser(request: Request) {
   const response = new Response();
   const supabase = getSupabase(request, response);
-  
+
   try {
     const {
       data: { user },
       error,
     } = await supabase.auth.getUser();
 
-    console.log("[getOptionalUser] getUser result:", { 
-      userId: user?.id, 
-      error: error?.message 
+    console.log("[getOptionalUser] getUser result:", {
+      userId: user?.id,
+      error: error?.message,
     });
 
     return { user, headers: response.headers, supabase };

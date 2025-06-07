@@ -34,7 +34,7 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/80 py-2 backdrop-blur-lg">
+    <header className="fixed left-0 right-0 top-0 z-50 h-14 border-b border-gray-200 bg-white/80 py-2 backdrop-blur-lg">
       <div className="mx-auto flex max-w-4xl items-center justify-between px-4">
         <Link to="/" className="text-base font-medium text-gray-900">
           そっとノート

@@ -1,27 +1,31 @@
-import { useState, useEffect } from "react";
-import { json, type ActionFunctionArgs, type LoaderFunctionArgs } from "@remix-run/node";
+import { useEffect, useState } from "react";
+import {
+  json,
+  type ActionFunctionArgs,
+  type LoaderFunctionArgs,
+} from "@remix-run/node";
 import { useLoaderData, useNavigate } from "@remix-run/react";
 import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 
-import { openai } from "~/lib/openai.server";
-import { moodColors } from "../moodColors";
-import { requireAuth, getOptionalUser } from "~/lib/auth.server";
-import { supabase } from "../lib/supabase.client";
+import { getOptionalUser, requireAuth } from "~/lib/auth.server";
 import { cache, CACHE_KEYS } from "~/lib/cache.client";
+import { openai } from "~/lib/openai.server";
+import { supabase } from "../lib/supabase.client";
+import { moodColors } from "../moodColors";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { user } = await getOptionalUser(request);
   const { id } = params;
-  
-  return json({ 
+
+  return json({
     serverUser: user,
-    journalId: id 
+    journalId: id,
   });
 }
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   await requireAuth(request);
-  
+
   try {
     const body = await request.json();
     const { content } = body;
@@ -62,19 +66,21 @@ export default function CounselingRoom() {
   const [loading, setLoading] = useState(true);
   const [aiLoading, setAiLoading] = useState(false);
   const [error, setError] = useState<string>("");
-  const [user, setUser] = useState<{id: string} | null>(serverUser);
+  const [user, setUser] = useState<{ id: string } | null>(serverUser);
 
   useEffect(() => {
     const checkAuthAndFetchEntry = async () => {
       try {
-        const { data: { user: clientUser } } = await supabase.auth.getUser();
+        const {
+          data: { user: clientUser },
+        } = await supabase.auth.getUser();
         setUser(clientUser);
-        
+
         if (clientUser && journalId) {
           // Check cache first
           const cacheKey = CACHE_KEYS.JOURNAL_ENTRY(journalId);
           const cachedEntry = cache.get(cacheKey);
-          
+
           if (cachedEntry) {
             setEntry(cachedEntry);
             setLoading(false);
@@ -88,7 +94,7 @@ export default function CounselingRoom() {
             .eq("id", journalId)
             .eq("user_id", clientUser.id)
             .single();
-            
+
           if (!error && data) {
             setEntry(data);
             // Cache the entry for 15 minutes
@@ -137,7 +143,9 @@ export default function CounselingRoom() {
     return (
       <div className="flex min-h-screen flex-col items-center bg-gradient-to-b from-gray-50 to-white px-4 py-8">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">AI カウンセリング</h1>
+          <h1 className="mb-6 text-2xl font-bold text-gray-900">
+            AI カウンセリング
+          </h1>
           <p className="text-gray-600">読み込み中...</p>
         </div>
       </div>
@@ -149,11 +157,13 @@ export default function CounselingRoom() {
     return (
       <div className="flex min-h-screen flex-col items-center bg-gradient-to-b from-gray-50 to-white px-4 py-8">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">AI カウンセリング</h1>
-          <p className="text-gray-600 mb-6">ログインが必要です</p>
-          <button 
+          <h1 className="mb-6 text-2xl font-bold text-gray-900">
+            AI カウンセリング
+          </h1>
+          <p className="mb-6 text-gray-600">ログインが必要です</p>
+          <button
             onClick={() => navigate("/about")}
-            className="inline-block px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+            className="inline-block rounded-lg bg-indigo-600 px-6 py-3 text-white transition-colors hover:bg-indigo-700"
           >
             ログイン
           </button>
@@ -166,11 +176,13 @@ export default function CounselingRoom() {
     return (
       <div className="flex min-h-screen flex-col items-center bg-gradient-to-b from-gray-50 to-white px-4 py-8">
         <div className="text-center text-gray-500">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">AI カウンセリング</h1>
+          <h1 className="mb-6 text-2xl font-bold text-gray-900">
+            AI カウンセリング
+          </h1>
           <p>エントリーが見つかりません</p>
-          <button 
+          <button
             onClick={() => navigate("/")}
-            className="mt-4 inline-block px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+            className="mt-4 inline-block rounded-lg bg-indigo-600 px-6 py-3 text-white transition-colors hover:bg-indigo-700"
           >
             ホームに戻る
           </button>
@@ -218,7 +230,7 @@ export default function CounselingRoom() {
           </div>
         )}
         {error && <div className="mt-4 text-xs text-red-600">{error}</div>}
-        
+
         <div className="mt-4">
           <button
             onClick={() => navigate("/")}

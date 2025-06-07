@@ -4,9 +4,9 @@ import { json } from "@remix-run/node";
 import { Form, Link, useActionData, useLoaderData } from "@remix-run/react";
 import { toast } from "sonner";
 
-import { requireAuth, getOptionalUser } from "~/lib/auth.server";
-import { supabase } from "../lib/supabase.client";
+import { getOptionalUser, requireAuth } from "~/lib/auth.server";
 import { cache, CACHE_KEYS } from "~/lib/cache.client";
+import { supabase } from "../lib/supabase.client";
 
 type ActionData = {
   success?: boolean;
@@ -32,19 +32,20 @@ export const action: ActionFunction = async ({ request }) => {
       if (!name || typeof name !== "string" || !name.trim()) {
         return json({ error: "名前を入力してください" }, { headers });
       }
-      
+
       try {
-        const { error } = await supabase
-          .from("profiles")
-          .upsert({ 
-            user_id: user.id, 
-            name: name.trim() 
-          });
-          
+        const { error } = await supabase.from("profiles").upsert({
+          user_id: user.id,
+          name: name.trim(),
+        });
+
         if (error) {
-          return json({ error: "プロフィールの更新に失敗しました: " + error.message }, { headers });
+          return json(
+            { error: "プロフィールの更新に失敗しました: " + error.message },
+            { headers }
+          );
         }
-        
+
         return json({ success: true, action: "update-profile" }, { headers });
       } catch (error) {
         return json({ error: "プロフィールの更新に失敗しました" }, { headers });
@@ -56,11 +57,14 @@ export const action: ActionFunction = async ({ request }) => {
           .from("journals")
           .delete()
           .eq("user_id", user.id);
-          
+
         if (error) {
-          return json({ error: "データの削除に失敗しました: " + error.message }, { headers });
+          return json(
+            { error: "データの削除に失敗しました: " + error.message },
+            { headers }
+          );
         }
-        
+
         return json({ success: true, action: "reset" }, { headers });
       } catch (error) {
         return json({ error: "データの初期化に失敗しました" }, { headers });
@@ -74,9 +78,12 @@ export const action: ActionFunction = async ({ request }) => {
         // TODO: フィードバック送信処理を実装
         return json({ success: true, action: "feedback" }, { headers });
       } catch (error) {
-        return json({
-          error: "フィードバックの送信に失敗しました",
-        }, { headers });
+        return json(
+          {
+            error: "フィードバックの送信に失敗しました",
+          },
+          { headers }
+        );
       }
 
     default:
@@ -89,20 +96,24 @@ export default function Settings() {
   const actionData = useActionData<ActionData>();
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [editingName, setEditingName] = useState("");
-  const [user, setUser] = useState<{id: string} | null>(serverUser);
+  const [user, setUser] = useState<{ id: string } | null>(serverUser);
   const [loading, setLoading] = useState(true);
 
   // Check client-side authentication
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const { data: { user: clientUser } } = await supabase.auth.getUser();
+        const {
+          data: { user: clientUser },
+        } = await supabase.auth.getUser();
         setUser(clientUser);
-        
+
         if (clientUser) {
           // Check cache first
-          const cachedProfile = cache.get(CACHE_KEYS.USER_PROFILE(clientUser.id));
-          
+          const cachedProfile = cache.get(
+            CACHE_KEYS.USER_PROFILE(clientUser.id)
+          );
+
           if (cachedProfile?.name) {
             setEditingName(cachedProfile.name);
           } else {
@@ -112,11 +123,15 @@ export default function Settings() {
               .select("name")
               .eq("user_id", clientUser.id)
               .single();
-            
+
             if (profile?.name) {
               setEditingName(profile.name);
               // Cache the profile
-              cache.set(CACHE_KEYS.USER_PROFILE(clientUser.id), profile, 10 * 60 * 1000);
+              cache.set(
+                CACHE_KEYS.USER_PROFILE(clientUser.id),
+                profile,
+                10 * 60 * 1000
+              );
             }
           }
         }
@@ -160,9 +175,9 @@ export default function Settings() {
   // Show loading state
   if (loading) {
     return (
-      <div className="mx-auto max-w-md px-4 py-8">
+      <div className="mx-auto min-h-full max-w-md px-4 py-8">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">設定</h1>
+          <h1 className="mb-6 text-2xl font-bold text-gray-900">設定</h1>
           <p className="text-gray-600">読み込み中...</p>
         </div>
       </div>
@@ -172,13 +187,13 @@ export default function Settings() {
   // Show login prompt if no user
   if (!user) {
     return (
-      <div className="mx-auto max-w-md px-4 py-8">
+      <div className="mx-auto min-h-full max-w-md px-4 py-8">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">設定</h1>
-          <p className="text-gray-600 mb-6">ログインが必要です</p>
-          <Link 
-            to="/about" 
-            className="inline-block px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+          <h1 className="mb-6 text-2xl font-bold text-gray-900">設定</h1>
+          <p className="mb-6 text-gray-600">ログインが必要です</p>
+          <Link
+            to="/about"
+            className="inline-block rounded-lg bg-indigo-600 px-6 py-3 text-white transition-colors hover:bg-indigo-700"
           >
             ログイン
           </Link>
@@ -188,7 +203,7 @@ export default function Settings() {
   }
 
   return (
-    <div className="mx-auto max-w-md px-4 py-8">
+    <div className="mx-auto min-h-full max-w-md px-4 py-8">
       <h1 className="mb-8 text-2xl font-semibold text-gray-900">設定</h1>
       {/* イラスト */}
       <div className="illustration-space">
