@@ -318,20 +318,10 @@ export default function Index() {
 
       <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-8 text-center">
-          <h1 className="mb-2 text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-gray-900">
             {greeting}
             {userName && <span className="ml-2">{userName}さん</span>}
           </h1>
-
-          {/* Manual refresh button */}
-          <button
-            onClick={handleRefresh}
-            disabled={refreshing}
-            className="mt-2 text-sm text-indigo-600 hover:text-indigo-700 disabled:opacity-50"
-          >
-            <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
-            <span className="ml-1">更新</span>
-          </button>
         </div>
 
         {/* 新規エントリーボタン */}

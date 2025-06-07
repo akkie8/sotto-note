@@ -203,21 +203,13 @@ export default function Settings() {
   }
 
   return (
-    <div className="mx-auto min-h-full max-w-md px-4 py-8">
-      <h1 className="mb-8 text-2xl font-semibold text-gray-900">設定</h1>
-      {/* イラスト */}
-      <div className="illustration-space">
-        <img
-          src="/meditating.svg"
-          alt="瞑想するイラスト"
-          className="mx-auto h-auto w-full max-w-xs"
-        />
-      </div>
-
+    <div className="mx-auto min-h-full max-w-md space-y-8 px-6 py-8">
       {/* 名前設定セクション */}
-      <section className="mb-8">
-        <h2 className="mb-2 text-lg font-medium text-gray-900">表示名</h2>
-        <Form method="post" className="flex gap-2">
+      <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+        <h2 className="mb-4 text-sm font-medium uppercase tracking-wide text-gray-500">
+          表示名
+        </h2>
+        <Form method="post" className="flex gap-3">
           <input type="hidden" name="action" value="update-profile" />
           <input
             type="text"
@@ -226,110 +218,105 @@ export default function Settings() {
             value={editingName}
             onChange={handleNameChange}
             placeholder="あなたの名前"
-            className="flex-1 rounded border border-gray-300 bg-white px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none"
+            className="flex-1 rounded-lg border-0 bg-gray-50 px-4 py-3 text-sm text-gray-900 transition-all focus:bg-white focus:ring-2 focus:ring-indigo-500"
           />
           <button
             type="submit"
-            className="rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 focus:outline-none"
+            className="rounded-lg bg-indigo-600 px-6 py-3 text-sm font-medium text-white transition-all hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
           >
             保存
           </button>
         </Form>
-      </section>
+      </div>
 
       {/* データ初期化セクション */}
-      <section className="mb-8">
-        <h2 className="mb-2 text-lg font-medium text-gray-900">データ初期化</h2>
+      <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+        <h2 className="mb-4 text-sm font-medium uppercase tracking-wide text-gray-500">
+          データ管理
+        </h2>
         {!showResetConfirm ? (
           <button
             onClick={() => setShowResetConfirm(true)}
-            className="rounded bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600 focus:outline-none"
+            className="rounded-lg bg-red-50 px-4 py-3 text-sm font-medium text-red-600 transition-colors hover:bg-red-100 focus:outline-none"
           >
-            ジャーナルを全て削除
+            全てのジャーナルを削除
           </button>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-4">
             <p className="text-sm text-red-600">
-              本当に全てのデータを削除しますか？
+              本当に全てのデータを削除しますか？この操作は取り消せません。
             </p>
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <Form method="post" className="inline">
                 <input type="hidden" name="action" value="reset" />
                 <button
                   type="submit"
-                  className="rounded bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600 focus:outline-none"
+                  className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 focus:outline-none"
                 >
-                  はい、削除
+                  削除する
                 </button>
               </Form>
               <button
                 onClick={() => setShowResetConfirm(false)}
-                className="rounded bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300 focus:outline-none"
+                className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 focus:outline-none"
               >
                 キャンセル
               </button>
             </div>
           </div>
         )}
-      </section>
+      </div>
 
       {/* 開発者サポートセクション */}
-      <section className="mb-8">
-        <h2 className="mb-2 text-lg font-medium text-gray-900">
-          開発者サポート
+      <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+        <h2 className="mb-4 text-sm font-medium uppercase tracking-wide text-gray-500">
+          サポート
         </h2>
-        <p className="mb-4 text-sm text-gray-600">
-          このアプリを気に入っていただけましたら、開発者をサポートしてください！
+        <p className="mb-6 text-sm leading-relaxed text-gray-600">
+          このアプリを気に入っていただけましたら、ぜひ開発者をサポートしてください
         </p>
-        <div className="grid grid-cols-3 gap-2">
-          <button className="rounded bg-yellow-100 px-3 py-2 text-xs font-medium text-yellow-800 hover:bg-yellow-200">
-            ☕ コーヒー
-            <br />
-            ¥500
+        <div className="grid grid-cols-3 gap-3">
+          <button className="group rounded-lg bg-amber-50 p-4 text-center transition-colors hover:bg-amber-100">
+            <div className="mb-2 text-2xl transition-transform group-hover:scale-110">
+              ☕
+            </div>
+            <div className="text-xs font-medium text-amber-800">¥500</div>
           </button>
-          <button className="rounded bg-green-100 px-3 py-2 text-xs font-medium text-green-800 hover:bg-green-200">
-            🍱 ランチ
-            <br />
-            ¥1,500
+          <button className="group rounded-lg bg-green-50 p-4 text-center transition-colors hover:bg-green-100">
+            <div className="mb-2 text-2xl transition-transform group-hover:scale-110">
+              🍱
+            </div>
+            <div className="text-xs font-medium text-green-800">¥1,500</div>
           </button>
-          <button className="rounded bg-purple-100 px-3 py-2 text-xs font-medium text-purple-800 hover:bg-purple-200">
-            🍽️ ディナー
-            <br />
-            ¥3,000
+          <button className="group rounded-lg bg-purple-50 p-4 text-center transition-colors hover:bg-purple-100">
+            <div className="mb-2 text-2xl transition-transform group-hover:scale-110">
+              🍽️
+            </div>
+            <div className="text-xs font-medium text-purple-800">¥3,000</div>
           </button>
         </div>
-      </section>
+      </div>
 
       {/* フィードバックセクション */}
-      <section className="mb-8">
-        <h2 className="mb-2 text-lg font-medium text-gray-900">
+      <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+        <h2 className="mb-4 text-sm font-medium uppercase tracking-wide text-gray-500">
           フィードバック
         </h2>
-        <Form method="post" className="space-y-2">
+        <Form method="post" className="space-y-4">
           <input type="hidden" name="action" value="feedback" />
           <textarea
             name="feedback"
-            rows={3}
-            className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none"
-            placeholder="ご意見・ご要望をお聞かせください"
+            rows={4}
+            className="w-full resize-none rounded-lg border-0 bg-gray-50 px-4 py-3 text-sm text-gray-900 transition-all focus:bg-white focus:ring-2 focus:ring-indigo-500"
+            placeholder="ご意見・ご要望をお聞かせください..."
           />
           <button
             type="submit"
-            className="w-full rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 focus:outline-none"
+            className="w-full rounded-lg bg-indigo-600 px-4 py-3 text-sm font-medium text-white transition-all hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
           >
-            送信
+            送信する
           </button>
         </Form>
-      </section>
-
-      {/* Aboutページへのリンク */}
-      <div className="text-center">
-        <Link
-          to="/about"
-          className="text-sm text-emerald-600 hover:text-emerald-700"
-        >
-          ← Aboutページに戻る
-        </Link>
       </div>
     </div>
   );

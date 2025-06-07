@@ -215,30 +215,6 @@ export default function Breathing() {
 
   return (
     <div className="flex min-h-full items-center justify-center bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 p-4">
-      {/* Header */}
-      <div className="fixed left-0 right-0 top-0 z-20 p-4">
-        <Link
-          to="/"
-          className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 text-emerald-700 shadow-sm backdrop-blur-sm transition-colors duration-200 hover:bg-white/90"
-        >
-          <Home size={18} />
-          <span>ホームに戻る</span>
-        </Link>
-      </div>
-
-      {/* Background organic shapes */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="organic-blob absolute left-20 top-20 h-64 w-64 bg-emerald-200/20"></div>
-        <div
-          className="organic-blob absolute bottom-20 right-20 h-80 w-80 bg-teal-200/20"
-          style={{ animationDelay: "2s" }}
-        ></div>
-        <div
-          className="organic-blob absolute left-1/4 top-1/2 h-48 w-48 bg-cyan-200/20"
-          style={{ animationDelay: "4s" }}
-        ></div>
-      </div>
-
       <div className="relative z-10 mx-auto max-w-2xl text-center">
         {/* Header */}
         <div className="fade-in mb-12">
@@ -254,7 +230,7 @@ export default function Breathing() {
         {/* Main breathing circle */}
         <div className="relative mb-12">
           <div
-            className={`breathing-circle mx-auto flex h-80 w-80 items-center justify-center rounded-full transition-all duration-1000 ease-in-out ${getCircleScale()} ${getCircleAnimation()} border-4 border-emerald-300/30`}
+            className={`breathing-circle mx-auto flex h-80 w-80 items-center justify-center rounded-full transition-all duration-1000 ease-in-out ${getCircleScale()} ${getCircleAnimation()}`}
           >
             <div className="text-center">
               <div className="mb-2 text-3xl font-light text-emerald-800 md:text-4xl">
