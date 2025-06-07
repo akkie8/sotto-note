@@ -60,13 +60,13 @@
 
 /* やさしいカード・ボタン・フォーム用の共通クラス */
 .card-soft {
-  @apply rounded-3xl bg-white p-6 shadow-soft;
+  @apply rounded-3xl bg-wellness-surface p-6 shadow-soft;
 }
 .btn-wellness {
-  @apply rounded-full bg-wellness-accent px-6 py-3 font-semibold text-wellness-text shadow-soft transition hover:bg-wellness-accent2 hover:shadow-gentle;
+  @apply rounded-full bg-wellness-primary px-6 py-3 font-semibold text-white shadow-soft transition hover:bg-wellness-secondary hover:shadow-gentle;
 }
 .input-wellness {
-  @apply rounded-xl border border-wellness-accent bg-white px-4 py-2 text-base shadow-inner transition focus:border-wellness-accent2 focus:outline-none focus:ring-2 focus:ring-wellness-accent2;
+  @apply rounded-xl border border-wellness-primary bg-white px-4 py-2 text-base shadow-inner transition focus:border-wellness-secondary focus:outline-none focus:ring-2 focus:ring-wellness-primary/20;
 }
 .label-wellness {
   @apply mb-1 text-sm font-medium text-wellness-text;
@@ -95,9 +95,5 @@
 
 html,
 body {
-  @apply bg-white dark:bg-gray-950;
-
-  @media (prefers-color-scheme: dark) {
-    color-scheme: dark;
-  }
+  @apply bg-wellness-bg;
 }

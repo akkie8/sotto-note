@@ -61,6 +61,7 @@ export default function Index() {
   const [startY, setStartY] = useState(0);
   const [pullDistance, setPullDistance] = useState(0);
   const [isPulling, setIsPulling] = useState(false);
+  const [activeTab, setActiveTab] = useState<"list" | "activity">("list");
 
   // Fetch user data with caching
   const fetchUserData = useCallback(
@@ -156,6 +157,77 @@ export default function Index() {
 
     return () => clearInterval(interval);
   }, []);
+
+  // Calculate activity data for the past 4 weeks
+  const getActivityData = useCallback(() => {
+    const today = new Date();
+    const activityMap = new Map<string, number>();
+
+    // Count entries by date
+    journalEntries.forEach((entry) => {
+      // Normalize the date format to match the generated format
+      let normalizedDate = entry.date;
+
+      // If entry.date is in format like "2025/5/29", convert to "2025-05-29" with zero padding
+      if (entry.date.includes("/")) {
+        const parts = entry.date.split("/");
+        if (parts.length === 3) {
+          const year = parts[0];
+          const month = parts[1].padStart(2, "0");
+          const day = parts[2].padStart(2, "0");
+          normalizedDate = `${year}-${month}-${day}`;
+        }
+      }
+
+      // If entry.date is in format like "2024年5月29日", convert to "2024-05-29"
+      if (entry.date.includes("年")) {
+        const match = entry.date.match(/(\d{4})年(\d{1,2})月(\d{1,2})日/);
+        if (match) {
+          const year = match[1];
+          const month = match[2].padStart(2, "0");
+          const day = match[3].padStart(2, "0");
+          normalizedDate = `${year}-${month}-${day}`;
+        }
+      }
+
+      activityMap.set(
+        normalizedDate,
+        (activityMap.get(normalizedDate) || 0) + 1
+      );
+    });
+
+    // Generate 4 weeks of data
+    const weeks: { date: Date; count: number }[][] = [];
+
+    // Start from 4 weeks ago Monday to ensure we capture more data
+    const startDate = new Date(today);
+    startDate.setDate(today.getDate() - today.getDay() - 28 + 1); // Monday 4 weeks ago
+    startDate.setHours(0, 0, 0, 0);
+
+    for (let week = 0; week < 4; week++) {
+      const weekData: { date: Date; count: number }[] = [];
+      for (let day = 0; day < 7; day++) {
+        const currentDate = new Date(startDate);
+        currentDate.setDate(startDate.getDate() + week * 7 + day);
+
+        const dateString = currentDate
+          .toLocaleDateString("ja-JP", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+          })
+          .replace(/\//g, "-");
+
+        weekData.push({
+          date: currentDate,
+          count: activityMap.get(dateString) || 0,
+        });
+      }
+      weeks.push(weekData);
+    }
+
+    return weeks;
+  }, [journalEntries]);
 
   // Pull-to-refresh functionality
   const handleRefresh = useCallback(async () => {
@@ -318,76 +390,182 @@ export default function Index() {
 
       <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-6 text-center">
-          <h1 className="text-lg font-medium text-gray-800">
+          <h1 className="text-lg font-medium text-wellness-primary">
             {greeting}
             {userName && <span className="ml-1">{userName}さん</span>}
           </h1>
         </div>
 
         {/* 新規エントリーボタン */}
-        <div className="mb-6">
+        <div className="mb-4">
           <Link
             to="/journal"
-            className="block w-full rounded-md bg-gray-800 px-4 py-3 text-center text-white transition-all hover:bg-gray-700"
+            className="block w-full rounded-md bg-wellness-primary px-3 py-2 text-center text-white transition-all hover:bg-wellness-secondary"
           >
-            <span className="text-sm font-medium">新しいジャーナルを書く</span>
+            <span className="text-xs">新しいジャーナルを書く</span>
           </Link>
         </div>
 
-        {/* ジャーナルエントリー一覧 */}
-        <div className="space-y-4">
-          {journalEntries.length === 0 ? (
-            <div className="text-center text-gray-400">
-              <p className="text-sm">まだジャーナルエントリーがありません</p>
-              <p className="text-xs">
-                上のボタンから最初のエントリーを作成してみましょう
-              </p>
-            </div>
-          ) : (
-            journalEntries.map((entry) => (
-              <div
-                key={entry.id}
-                className="rounded-md bg-white p-3 transition-colors hover:bg-gray-50"
-              >
-                <div className="mb-2 flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-xs text-gray-400">
-                    <span>{entry.date}</span>
-                    {getTimeIcon(entry.timestamp)}
-                    <span>
-                      {new Date(entry.timestamp).toLocaleTimeString("ja-JP", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`rounded px-1.5 py-0.5 text-xs ${
-                        moodColors[entry.mood as keyof typeof moodColors]
-                          ?.color || "bg-gray-100 text-gray-600"
-                      }`}
-                    >
-                      {moodColors[entry.mood as keyof typeof moodColors]
-                        ?.label || entry.mood}
-                    </span>
-                    <Link
-                      to={`/counseling/${entry.id}`}
-                      className="rounded p-1 text-gray-500 transition-colors hover:bg-gray-100"
-                      title="AIに相談"
-                    >
-                      <Bot size={12} />
-                    </Link>
-                  </div>
-                </div>
-                <Link to={`/journal/${entry.id}`} className="block">
-                  <p className="line-clamp-3 text-xs leading-relaxed text-gray-600">
-                    {entry.content}
-                  </p>
-                </Link>
-              </div>
-            ))
-          )}
+        {/* タブ切り替え */}
+        <div className="mb-6 flex gap-2 rounded-lg bg-wellness-primary/10 p-1">
+          <button
+            onClick={() => setActiveTab("list")}
+            className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+              activeTab === "list"
+                ? "bg-wellness-surface text-wellness-primary shadow-sm"
+                : "text-wellness-textLight hover:text-wellness-primary"
+            }`}
+          >
+            記事一覧
+          </button>
+          <button
+            onClick={() => setActiveTab("activity")}
+            className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+              activeTab === "activity"
+                ? "bg-wellness-surface text-wellness-primary shadow-sm"
+                : "text-wellness-textLight hover:text-wellness-primary"
+            }`}
+          >
+            アクティビティ
+          </button>
         </div>
+
+        {/* コンテンツエリア */}
+        {activeTab === "list" ? (
+          /* ジャーナルエントリー一覧 */
+          <div className="space-y-4">
+            {journalEntries.length === 0 ? (
+              <div className="text-center text-wellness-textLight">
+                <p className="text-sm">まだジャーナルエントリーがありません</p>
+                <p className="text-xs">
+                  上のボタンから最初のエントリーを作成してみましょう
+                </p>
+              </div>
+            ) : (
+              journalEntries.map((entry) => (
+                <div
+                  key={entry.id}
+                  className="rounded-lg border border-wellness-primary/10 bg-wellness-surface p-3 transition-all hover:border-wellness-primary/20 hover:shadow-sm"
+                >
+                  <div className="mb-2 flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs text-wellness-textLight">
+                      <span>{entry.date}</span>
+                      {getTimeIcon(entry.timestamp)}
+                      <span>
+                        {new Date(entry.timestamp).toLocaleTimeString("ja-JP", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`rounded px-1.5 py-0.5 text-xs ${
+                          moodColors[entry.mood as keyof typeof moodColors]
+                            ?.color ||
+                          "bg-wellness-primary/10 text-wellness-primary"
+                        }`}
+                      >
+                        {moodColors[entry.mood as keyof typeof moodColors]
+                          ?.label || entry.mood}
+                      </span>
+                      <Link
+                        to={`/counseling/${entry.id}`}
+                        className="rounded p-1 text-wellness-textLight transition-colors hover:bg-wellness-primary/10 hover:text-wellness-primary"
+                        title="AIに相談"
+                      >
+                        <Bot size={12} />
+                      </Link>
+                    </div>
+                  </div>
+                  <Link to={`/journal/view/${entry.id}`} className="block">
+                    <p className="line-clamp-3 text-xs leading-relaxed text-wellness-text">
+                      {entry.content}
+                    </p>
+                  </Link>
+                </div>
+              ))
+            )}
+          </div>
+        ) : (
+          /* アクティビティサマリー */
+          <div className="space-y-4">
+            <div className="rounded-lg border border-wellness-primary/10 bg-wellness-surface p-4 shadow-sm">
+              <div className="mb-4 text-center text-sm text-wellness-textLight">
+                <p>過去4週間のアクティビティ</p>
+              </div>
+
+              {/* 曜日ヘッダー */}
+              <div className="mb-2 grid grid-cols-7 gap-1 text-center text-xs text-wellness-textLight">
+                <div>月</div>
+                <div>火</div>
+                <div>水</div>
+                <div>木</div>
+                <div>金</div>
+                <div>土</div>
+                <div>日</div>
+              </div>
+
+              {/* アクティビティグリッド */}
+              <div className="space-y-2">
+                {getActivityData().map((week, weekIndex) => (
+                  <div key={weekIndex} className="grid grid-cols-7 gap-1">
+                    {week.map((day, dayIndex) => {
+                      const isToday =
+                        day.date.toDateString() === new Date().toDateString();
+                      // 0段階のサイズ: 0投稿=0, 1投稿=20%, 2投稿=40%, 3投稿=60%, 4投稿=80%, 5投稿以上=100%
+                      const sizePercent = Math.min(day.count * 20, 100);
+                      const circleSize =
+                        sizePercent > 0
+                          ? Math.max(8, Math.floor(48 * (sizePercent / 100)))
+                          : 0; // 最小8px、最大48px
+
+                      return (
+                        <div
+                          key={dayIndex}
+                          className="relative flex h-12 items-center justify-center rounded bg-wellness-primary/10"
+                          title={`${day.date.toLocaleDateString("ja-JP")} - ${day.count}件`}
+                        >
+                          {day.count > 0 && (
+                            <div
+                              className="rounded-full bg-wellness-accent"
+                              style={{
+                                width: `${circleSize}px`,
+                                height: `${circleSize}px`,
+                              }}
+                            />
+                          )}
+                          {isToday && (
+                            <div className="absolute bottom-0.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-wellness-primary" />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+
+              {/* 統計情報 */}
+              <div className="mt-4 grid grid-cols-2 gap-4 border-t border-wellness-primary/10 pt-4 text-sm">
+                <div>
+                  <p className="text-wellness-textLight">合計エントリー数</p>
+                  <p className="text-xl font-semibold text-wellness-primary">
+                    {journalEntries.length}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-wellness-textLight">今週のエントリー数</p>
+                  <p className="text-xl font-semibold text-wellness-primary">
+                    {getActivityData()[3].reduce(
+                      (sum, day) => sum + day.count,
+                      0
+                    )}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -72,8 +72,11 @@ function BottomNav() {
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+  const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
+    setIsHydrated(true);
+
     // クライアントサイドでSupabase認証状態を取得
     import("~/lib/supabase.client").then(({ supabase }) => {
       supabase.auth.getUser().then(({ data: { user } }) => {
@@ -103,29 +106,40 @@ export function Layout({ children }: { children: React.ReactNode }) {
           rel="stylesheet"
         />
       </head>
-      <body className="min-h-screen overscroll-none scroll-smooth bg-wellness-bg">
+      <body className="min-h-screen overscroll-none scroll-smooth bg-wellness-gradient">
         <div className="flex min-h-screen justify-center">
           {/* 左サイドバー - PCのみ表示 */}
-          <div className="hidden w-64 shrink-0 bg-wellness-bg xl:block" />
+          <div className="hidden w-64 shrink-0 bg-wellness-gradient xl:block" />
 
           {/* メインコンテンツ */}
-          <div className="flex min-h-screen w-full max-w-4xl flex-col rounded-3xl bg-white/80 shadow-gentle transition-all duration-300">
-            {isLoggedIn && <Header />}
+          <div className="flex min-h-screen w-full max-w-4xl flex-col rounded-3xl bg-wellness-surface/95 shadow-lg backdrop-blur-sm transition-all duration-300">
+            {isHydrated && isLoggedIn && <Header />}
             <main
-              className={`fade-in overflow-y-auto px-2 ${isLoggedIn ? "mt-10 h-[calc(100vh-5rem)]" : "h-full"}`}
+              className={`fade-in overflow-y-auto px-2 ${isHydrated && isLoggedIn ? "mt-10 h-[calc(100vh-5rem)]" : "h-full"}`}
             >
               {children}
             </main>
+            {isHydrated && (
+              <Toaster
+                richColors
+                position="top-center"
+                toastOptions={{
+                  style: {
+                    top: isLoggedIn ? "40px" : "16px",
+                    margin: 0,
+                  },
+                }}
+              />
+            )}
           </div>
 
           {/* 右サイドバー - PCのみ表示 */}
           <div className="hidden w-64 shrink-0 bg-wellness-bg xl:block" />
         </div>
 
-        {isLoggedIn && <BottomNav />}
+        {isHydrated && isLoggedIn && <BottomNav />}
         <ScrollRestoration />
         <Scripts />
-        <Toaster richColors position="top-center" />
         {/* <LiveReload /> */}
       </body>
     </html>

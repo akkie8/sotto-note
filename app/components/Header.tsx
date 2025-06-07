@@ -110,9 +110,9 @@ export function Header() {
   }, [isMenuOpen]);
 
   return (
-    <header className="fixed left-0 right-0 top-0 z-50 h-10 bg-white/90 backdrop-blur-sm">
+    <header className="fixed left-0 right-0 top-0 z-50 h-10 border-b border-wellness-primary/10 bg-wellness-surface/90 backdrop-blur-sm">
       <div className="mx-auto flex h-full max-w-4xl items-center justify-between px-6">
-        <Link to="/" className="text-sm font-medium text-gray-800">
+        <Link to="/" className="text-sm font-medium text-wellness-primary">
           そっとノート
         </Link>
         <div>
@@ -120,7 +120,7 @@ export function Header() {
             <div className="user-menu relative">
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="flex items-center gap-2 rounded-full p-1 transition-colors hover:bg-gray-100"
+                className="flex items-center gap-2 rounded-full p-1 transition-colors hover:bg-wellness-primary/10"
               >
                 {user.user_metadata?.avatar_url ? (
                   <img
@@ -129,7 +129,7 @@ export function Header() {
                     className="h-6 w-6 rounded-full"
                   />
                 ) : (
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-700 text-white">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-wellness-primary text-white">
                     <svg
                       className="h-3 w-3"
                       fill="none"

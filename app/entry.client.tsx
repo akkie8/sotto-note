@@ -4,15 +4,20 @@
  * For more information, see https://remix.run/file-conventions/entry.client
  */
 
-import { startTransition, StrictMode } from "react";
+import { startTransition } from "react";
 import { RemixBrowser } from "@remix-run/react";
 import { hydrateRoot } from "react-dom/client";
 
-startTransition(() => {
-  hydrateRoot(
-    document,
-    <StrictMode>
-      <RemixBrowser />
-    </StrictMode>
-  );
-});
+function hydrate() {
+  startTransition(() => {
+    hydrateRoot(document, <RemixBrowser />);
+  });
+}
+
+if (typeof requestIdleCallback === "function") {
+  requestIdleCallback(hydrate);
+} else {
+  // Safari doesn't support requestIdleCallback
+  // https://caniuse.com/requestidlecallback
+  setTimeout(hydrate, 1);
+}
