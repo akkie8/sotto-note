@@ -85,7 +85,7 @@ export default function Index() {
           );
 
           if (cachedProfile && cachedJournals) {
-            setUserName(cachedProfile.name || "");
+            setUserName((cachedProfile as { name?: string }).name || "");
             setJournalEntries(cachedJournals);
             return;
           }
@@ -100,7 +100,7 @@ export default function Index() {
 
         if (profile) {
           cache.set(CACHE_KEYS.USER_PROFILE(userId), profile, 10 * 60 * 1000); // 10 minutes
-          setUserName(profile.name || "");
+          setUserName((profile as { name?: string }).name || "");
         }
 
         // Fetch journals
@@ -358,7 +358,6 @@ export default function Index() {
       try {
         const {
           data: { user },
-          error,
         } = await supabase.auth.getUser();
         if (user) {
           navigate("/journal");
@@ -679,7 +678,7 @@ export default function Index() {
         {/* コンテンツエリア */}
         {activeTab === "list" ? (
           /* ジャーナルエントリー一覧 */
-          <div className="space-y-4">
+          <div className="space-y-2">
             {journalEntries.length === 0 ? (
               <div className="text-center text-wellness-textLight">
                 <p className="text-sm">まだジャーナルエントリーがありません</p>
@@ -691,9 +690,9 @@ export default function Index() {
               journalEntries.map((entry) => (
                 <div
                   key={entry.id}
-                  className="rounded-lg border border-wellness-primary/10 bg-wellness-surface p-3 transition-all hover:border-wellness-primary/20 hover:shadow-sm"
+                  className="border-b border-wellness-primary/10 pb-2 pt-1 transition-all hover:bg-wellness-surface/50"
                 >
-                  <div className="mb-2 flex items-center justify-between">
+                  <div className="mb-1 flex items-center justify-between">
                     <div className="flex items-center gap-2 text-xs text-wellness-textLight">
                       <span>{entry.date}</span>
                       {getTimeIcon(entry.timestamp)}
@@ -718,7 +717,7 @@ export default function Index() {
                     </div>
                   </div>
                   <Link to={`/journal/view/${entry.id}`} className="block">
-                    <p className="line-clamp-3 text-xs leading-relaxed text-wellness-text">
+                    <p className="line-clamp-2 text-sm leading-relaxed text-wellness-text">
                       {entry.content}
                     </p>
                   </Link>

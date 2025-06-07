@@ -1,10 +1,16 @@
 import { useEffect, useState } from "react";
-import { json, type LoaderFunctionArgs } from "@remix-run/node";
+import {
+  json,
+  type ActionFunctionArgs,
+  type LoaderFunctionArgs,
+} from "@remix-run/node";
 import { Link, useLoaderData, useNavigate, useParams } from "@remix-run/react";
 import { ArrowLeft, Bot, Calendar, Clock, Edit } from "lucide-react";
+import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 
-import { getOptionalUser } from "~/lib/auth.server";
+import { getOptionalUser, requireAuth } from "~/lib/auth.server";
 import { cache, CACHE_KEYS } from "~/lib/cache.client";
+import { openai } from "~/lib/openai.server";
 import { supabase } from "~/lib/supabase.client";
 import { moodColors } from "../moodColors";
 
@@ -26,6 +32,41 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
 }
 
+export const action = async ({ request }: ActionFunctionArgs) => {
+  await requireAuth(request);
+
+  try {
+    const body = await request.json();
+    const { content } = body;
+    if (!content || typeof content !== "string") {
+      return json({ error: "内容がありません" }, { status: 400 });
+    }
+    const openaiMessages: ChatCompletionMessageParam[] = [
+      {
+        role: "system",
+        content:
+          "あなたは共感的なセラピストです。ユーザーの気持ちをやさしく受け止めてください。",
+      },
+      {
+        role: "user",
+        content,
+      },
+    ];
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4",
+      messages: openaiMessages,
+    });
+    const reply =
+      completion.choices[0].message?.content ?? "うまく返答できませんでした。";
+    return json({ reply });
+  } catch (err: unknown) {
+    return json(
+      { error: err instanceof Error ? err.message : "サーバーエラー" },
+      { status: 500 }
+    );
+  }
+};
+
 // 時間帯に応じた背景グラデーション
 function getTimeGradient(timestamp: number) {
   const hour = new Date(timestamp).getHours();
@@ -45,6 +86,9 @@ export default function JournalView() {
   const [entry, setEntry] = useState<JournalEntry | null>(null);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<{ id: string } | null>(serverUser);
+  const [aiReply, setAiReply] = useState<string>("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [error, setError] = useState<string>("");
 
   useEffect(() => {
     const fetchEntry = async () => {
@@ -105,6 +149,33 @@ export default function JournalView() {
     fetchEntry();
   }, [params.id, navigate, serverUser]);
 
+  const handleAskAI = async () => {
+    if (!entry) return;
+    setAiLoading(true);
+    setError("");
+    setAiReply("");
+    try {
+      const res = await fetch(window.location.pathname, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: entry.content }),
+      });
+      const data = await res.json();
+      if (data.reply) {
+        setAiReply(data.reply);
+      } else {
+        setError("AIからの返答がありませんでした。");
+      }
+    } catch (e) {
+      setError(
+        "AIとの通信に失敗しました。" +
+          (e instanceof Error ? `\n${e.message}` : "")
+      );
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -140,13 +211,14 @@ export default function JournalView() {
             >
               <Edit size={18} />
             </Link>
-            <Link
-              to={`/counseling/${entry.id}`}
-              className="rounded-full p-2 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-800"
+            <button
+              onClick={handleAskAI}
+              disabled={aiLoading}
+              className="rounded-full p-2 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-800 disabled:opacity-50"
               title="AIに相談"
             >
               <Bot size={18} />
-            </Link>
+            </button>
           </div>
         </div>
       </div>
@@ -194,13 +266,14 @@ export default function JournalView() {
 
         {/* アクションエリア */}
         <div className="mt-8 space-y-3">
-          <Link
-            to={`/counseling/${entry.id}`}
-            className="flex items-center justify-center gap-2 rounded-lg bg-gray-800 px-4 py-3 text-white transition-colors hover:bg-gray-700"
+          <button
+            onClick={handleAskAI}
+            disabled={aiLoading}
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-gray-800 px-4 py-3 text-white transition-colors hover:bg-gray-700 disabled:opacity-50"
           >
             <Bot size={18} />
-            <span>AIに相談する</span>
-          </Link>
+            <span>{aiLoading ? "AIが考え中..." : "AIに相談する"}</span>
+          </button>
           <Link
             to={`/journal/${entry.id}`}
             className="flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-700 transition-colors hover:bg-gray-50"
@@ -209,6 +282,25 @@ export default function JournalView() {
             <span>編集する</span>
           </Link>
         </div>
+
+        {/* AI返答エリア */}
+        {aiReply && (
+          <div className="mt-8 rounded-2xl bg-white p-6 shadow-sm">
+            <h3 className="mb-4 text-lg font-semibold text-gray-800">
+              AIからの返答
+            </h3>
+            <div className="whitespace-pre-wrap rounded bg-gray-100 p-4 text-gray-800">
+              {aiReply}
+            </div>
+          </div>
+        )}
+
+        {/* エラー表示 */}
+        {error && (
+          <div className="mt-4 rounded-lg bg-red-50 p-4 text-red-600">
+            {error}
+          </div>
+        )}
       </div>
     </div>
   );
