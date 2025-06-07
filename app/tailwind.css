@@ -11,7 +11,7 @@
     color: theme("colors.wellness.text");
   }
   body {
-    background: theme("backgroundImage.wellness-gradient");
+    background: white;
     min-height: 100vh;
   }
 }
@@ -95,5 +95,5 @@
 
 html,
 body {
-  @apply bg-wellness-bg;
+  @apply bg-white;
 }

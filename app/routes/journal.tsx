@@ -220,7 +220,7 @@ export default function Journal() {
           </h1>
           <p className="mb-6 text-wellness-textLight">ログインが必要です</p>
           <Link
-            to="/about"
+            to="/"
             className="inline-block rounded-lg bg-wellness-primary px-6 py-3 text-white transition-colors hover:bg-wellness-secondary"
           >
             ログイン

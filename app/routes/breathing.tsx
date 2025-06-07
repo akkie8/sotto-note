@@ -116,14 +116,35 @@ export default function Breathing() {
     setPhase((currentPhase) => {
       switch (currentPhase) {
         case "inhale":
-          setTimeLeft(settings.holdInTime);
-          return "hold-in";
+          const holdInTime = settings.holdInTime || 0;
+          if (holdInTime > 0) {
+            setTimeLeft(holdInTime);
+            return "hold-in";
+          } else {
+            setTimeLeft(settings.exhaleTime);
+            return "exhale";
+          }
         case "hold-in":
           setTimeLeft(settings.exhaleTime);
           return "exhale";
         case "exhale":
-          setTimeLeft(settings.holdOutTime);
-          return "hold-out";
+          const holdOutTime = settings.holdOutTime || 0;
+          if (holdOutTime > 0) {
+            setTimeLeft(holdOutTime);
+            return "hold-out";
+          } else {
+            setCurrentCycle((prev) => {
+              const newCycle = prev + 1;
+              if (newCycle >= settings.cycles) {
+                setIsActive(false);
+                setTimeLeft(0);
+                return 0;
+              }
+              setTimeLeft(settings.inhaleTime);
+              return newCycle;
+            });
+            return "inhale";
+          }
         case "hold-out":
           setCurrentCycle((prev) => {
             const newCycle = prev + 1;
@@ -165,6 +186,19 @@ export default function Breathing() {
     setPhase("inhale");
     setTimeLeft(settings.inhaleTime);
     setCurrentCycle(0);
+  };
+
+  const getTimeBasedMessage = () => {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) {
+      return "素敵な1日になりますように！";
+    } else if (hour >= 12 && hour < 17) {
+      return "午後も心穏やかにお過ごしください。";
+    } else if (hour >= 17 && hour < 21) {
+      return "夕方のひと息、お疲れさまでした。";
+    } else {
+      return "今夜はゆっくりとお休みください。";
+    }
   };
 
   const pauseBreathing = () => {
@@ -228,7 +262,7 @@ export default function Breathing() {
           </h1>
           <p className="mb-6 text-wellness-textLight">ログインが必要です</p>
           <Link
-            to="/about"
+            to="/"
             className="inline-block rounded-lg bg-wellness-primary px-6 py-3 text-white transition-colors hover:bg-wellness-secondary"
           >
             ログイン
@@ -459,13 +493,16 @@ export default function Breathing() {
         {/* Completion message */}
         {!isActive && currentCycle > 0 && phase !== "paused" && (
           <div className="fade-in rounded-2xl bg-wellness-surface/80 p-6 backdrop-blur-sm">
-            <h3 className="mb-2 text-xl font-medium text-wellness-primary">
-              お疲れさまでした
+            <h3 className="mb-3 text-xl font-medium text-wellness-primary">
+              おつかれさまでした！
             </h3>
-            <p className="text-wellness-text">
+            <p className="mb-3 text-wellness-text">
               {userName ? `${userName}さん、` : ""}
               {settings.cycles}
               サイクルの深呼吸が完了しました。心は落ち着きましたか？
+            </p>
+            <p className="font-medium text-wellness-secondary">
+              {getTimeBasedMessage()}
             </p>
           </div>
         )}

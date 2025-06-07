@@ -162,7 +162,7 @@ export default function CounselingRoom() {
           </h1>
           <p className="mb-6 text-gray-600">ログインが必要です</p>
           <button
-            onClick={() => navigate("/about")}
+            onClick={() => navigate("/")}
             className="inline-block rounded-lg bg-indigo-600 px-6 py-3 text-white transition-colors hover:bg-indigo-700"
           >
             ログイン

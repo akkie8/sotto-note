@@ -4,8 +4,17 @@ import {
   type LoaderFunctionArgs,
   type MetaFunction,
 } from "@remix-run/node";
-import { Link, useLoaderData } from "@remix-run/react";
-import { Bot, Moon, RefreshCw, Sun, Sunrise } from "lucide-react";
+import { Link, useLoaderData, useNavigate } from "@remix-run/react";
+import {
+  ArrowRight,
+  BookHeart,
+  Bot,
+  Moon,
+  RefreshCw,
+  Sun,
+  Sunrise,
+  Wind,
+} from "lucide-react";
 
 import { getOptionalUser } from "~/lib/auth.server";
 import { cache, CACHE_KEYS } from "~/lib/cache.client";
@@ -52,6 +61,7 @@ function getTimeIcon(timestamp: number) {
 
 export default function Index() {
   const { serverUser } = useLoaderData<typeof loader>();
+  const navigate = useNavigate();
   const [greeting, setGreeting] = useState("");
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
   const [user, setUser] = useState<{ id: string } | null>(serverUser);
@@ -325,31 +335,255 @@ export default function Index() {
     );
   }
 
-  // Show login prompt if no user
+  // Show login prompt if no user - full landing page
   if (!user) {
+    const handleLogin = async () => {
+      try {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: {
+            redirectTo: `${window.location.origin}/`,
+          },
+        });
+
+        if (error) {
+          console.error("[Index] handleLogin error:", error);
+        }
+      } catch (e) {
+        console.error("[Index] handleLogin error:", e);
+      }
+    };
+
+    const handleJournalClick = async () => {
+      try {
+        const {
+          data: { user },
+          error,
+        } = await supabase.auth.getUser();
+        if (user) {
+          navigate("/journal");
+        } else {
+          await supabase.auth.signInWithOAuth({
+            provider: "google",
+          });
+        }
+      } catch (e) {
+        console.error("[Index] handleJournalClick error:", e);
+      }
+    };
+
     return (
-      <div className="min-h-full bg-transparent">
-        <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h1 className="mb-6 text-2xl font-bold text-gray-900">
-              そっとノート
-            </h1>
-            <div className="mb-8">
-              <img
-                src="/levitate.gif"
-                alt="浮遊するアニメーション"
-                className="mx-auto h-auto w-full max-w-xs"
-              />
+      <div className="min-h-screen bg-white">
+        {/* ヒーローセクション */}
+        <section className="relative py-12 sm:py-16 lg:py-20">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+            <div className="text-center">
+              <h1 className="mb-4 text-3xl font-bold tracking-tight text-wellness-text sm:mb-6 sm:text-4xl lg:text-5xl xl:text-6xl">
+                気持ちを、
+                <span className="block text-wellness-secondary">そっと</span>
+                置いていく場所。
+              </h1>
+              {/* イラスト */}
+              <div className="mb-6 flex justify-center sm:mb-8">
+                <img
+                  src="/laying.svg"
+                  alt="リラックスしている人のイラスト"
+                  className="h-auto w-full max-w-[200px] sm:max-w-[250px] lg:max-w-[300px]"
+                />
+              </div>
+              <p className="mb-6 text-base leading-relaxed text-wellness-textLight sm:mb-8 sm:text-lg lg:text-xl">
+                日記 × 瞑想 × AIフィードバックの
+                <br />
+                心を整えるウェルネスアプリ
+              </p>
+              <div className="flex flex-col gap-3 sm:flex-row sm:justify-center sm:gap-4">
+                <button
+                  onClick={handleJournalClick}
+                  className="inline-flex items-center justify-center rounded-2xl bg-wellness-primary px-6 py-3 text-base font-semibold text-white shadow-soft transition-all hover:scale-105 hover:bg-wellness-secondary hover:shadow-gentle"
+                >
+                  今日の気持ちを書いてみる
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </button>
+              </div>
             </div>
-            <p className="mb-6 text-gray-600">ログインして始めましょう</p>
-            <Link
-              to="/about"
-              className="inline-block rounded-lg bg-indigo-600 px-6 py-3 text-white transition-colors hover:bg-indigo-700"
-            >
-              ログイン
-            </Link>
           </div>
-        </div>
+        </section>
+
+        {/* コンセプト紹介セクション */}
+        <section className="bg-wellness-surface/30 py-12 sm:py-16 lg:py-20">
+          <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
+            <h2 className="mb-4 text-2xl font-bold text-wellness-text sm:mb-6 sm:text-3xl lg:text-4xl">
+              そっとノートとは？
+            </h2>
+            <p className="mx-auto max-w-2xl text-base leading-relaxed text-wellness-textLight sm:text-lg lg:text-xl">
+              忙しい毎日、誰かに話す前に「まず自分で整理したい」こと、ありませんか？
+              <br />
+              そっとノートは、そんなあなたの心を整えるための&ldquo;内なる空間&rdquo;です。
+            </p>
+          </div>
+        </section>
+
+        {/* 機能紹介セクション */}
+        <section className="bg-white py-12 sm:py-16 lg:py-20">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+            <div className="mb-12 text-center sm:mb-16">
+              <h2 className="mb-4 text-2xl font-bold text-wellness-text sm:text-3xl lg:text-4xl">
+                あなたの心に寄り添う3つの機能
+              </h2>
+              <p className="text-base text-wellness-textLight sm:text-lg lg:text-xl">
+                書く、呼吸する、対話する。心を整えるための優しいツールたち。
+              </p>
+            </div>
+            <div className="grid gap-6 sm:gap-8 md:grid-cols-3">
+              {/* ジャーナル */}
+              <div className="card-soft group transition-all duration-300 hover:scale-105">
+                <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-wellness-primary/10 text-wellness-primary transition-all group-hover:bg-wellness-primary group-hover:text-white">
+                  <BookHeart className="h-8 w-8" />
+                </div>
+                <h3 className="mb-4 text-lg font-semibold text-wellness-text sm:text-xl lg:text-2xl">
+                  ジャーナル
+                </h3>
+                <p className="text-sm leading-relaxed text-wellness-textLight sm:text-base">
+                  書くことで、心が整う。日々の思いを言葉にすることで、自分自身をより深く理解できます。
+                </p>
+              </div>
+
+              {/* 瞑想ガイド */}
+              <div className="card-soft group transition-all duration-300 hover:scale-105">
+                <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-wellness-secondary/10 text-wellness-secondary transition-all group-hover:bg-wellness-secondary group-hover:text-white">
+                  <Wind className="h-8 w-8" />
+                </div>
+                <h3 className="mb-4 text-lg font-semibold text-wellness-text sm:text-xl lg:text-2xl">
+                  瞑想ガイド
+                </h3>
+                <p className="text-sm leading-relaxed text-wellness-textLight sm:text-base">
+                  呼吸で今に戻る。ガイド付きの呼吸法で、心を落ち着かせ、現在の瞬間に集中します。
+                </p>
+              </div>
+
+              {/* AIフィードバック */}
+              <div className="card-soft group transition-all duration-300 hover:scale-105">
+                <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-wellness-tertiary/10 text-wellness-tertiary transition-all group-hover:bg-wellness-tertiary group-hover:text-white">
+                  <Bot className="h-8 w-8" />
+                </div>
+                <h3 className="mb-4 text-lg font-semibold text-wellness-text sm:text-xl lg:text-2xl">
+                  AIフィードバック
+                </h3>
+                <p className="text-sm leading-relaxed text-wellness-textLight sm:text-base">
+                  あなたの気持ちに、そっと反応。AIがあなたの言葉に寄り添い、新しい視点を提供します。
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ユーザーの声セクション */}
+        <section className="bg-wellness-surface/50 py-12 sm:py-16 lg:py-20">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+            <div className="mb-12 text-center sm:mb-16">
+              <h2 className="mb-4 text-2xl font-bold text-wellness-text sm:text-3xl lg:text-4xl">
+                ユーザーの声
+              </h2>
+              <p className="text-base text-wellness-textLight sm:text-lg lg:text-xl">
+                そっとノートを使って、心の変化を感じた方々の声
+              </p>
+            </div>
+            <div className="grid gap-6 sm:gap-8 md:grid-cols-2">
+              <div className="card-soft border-l-4 border-wellness-primary">
+                <p className="mb-6 text-sm italic leading-relaxed text-wellness-textLight sm:text-base lg:text-lg">
+                  「書く習慣ができて、夜が静かになった。考えが整理されて、心にゆとりができました。」
+                </p>
+                <div className="flex items-center">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-wellness-primary/20">
+                    <span className="font-semibold text-wellness-primary">
+                      A
+                    </span>
+                  </div>
+                  <p className="ml-3 text-wellness-textLight/70">
+                    30代・会社員
+                  </p>
+                </div>
+              </div>
+              <div className="card-soft border-l-4 border-wellness-secondary">
+                <p className="mb-6 text-sm italic leading-relaxed text-wellness-textLight sm:text-base lg:text-lg">
+                  「AIの返答が思ったより優しくて、続けたくなった。自分の気持ちと向き合うきっかけになっています。」
+                </p>
+                <div className="flex items-center">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-wellness-secondary/20">
+                    <span className="font-semibold text-wellness-secondary">
+                      B
+                    </span>
+                  </div>
+                  <p className="ml-3 text-wellness-textLight/70">20代・学生</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* プライバシーセクション */}
+        <section className="bg-white py-12 sm:py-16 lg:py-20">
+          <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+            <div className="text-center">
+              <h2 className="mb-4 text-2xl font-bold text-wellness-text sm:mb-6 sm:text-3xl lg:text-4xl">
+                プライバシーと安心設計
+              </h2>
+              <p className="mb-8 text-base text-wellness-textLight sm:mb-12 sm:text-lg lg:text-xl">
+                あなたの大切な思いを、安全に守ります
+              </p>
+              <div className="grid gap-4 sm:gap-6 md:grid-cols-3">
+                <div className="rounded-2xl bg-wellness-surface p-6 shadow-soft">
+                  <div className="mb-4 text-3xl">🔒</div>
+                  <h3 className="mb-2 text-base font-semibold text-wellness-text sm:text-lg">
+                    セキュア保存
+                  </h3>
+                  <p className="text-sm text-wellness-textLight sm:text-base">
+                    書いた内容は本人だけが見られる安全な設計
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-wellness-surface p-6 shadow-soft">
+                  <div className="mb-4 text-3xl">🚫</div>
+                  <h3 className="mb-2 text-base font-semibold text-wellness-text sm:text-lg">
+                    広告なし
+                  </h3>
+                  <p className="text-sm text-wellness-textLight sm:text-base">
+                    集中を妨げない静かな設計を継続
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-wellness-surface p-6 shadow-soft">
+                  <div className="mb-4 text-3xl">💝</div>
+                  <h3 className="mb-2 text-base font-semibold text-wellness-text sm:text-lg">
+                    思いやり設計
+                  </h3>
+                  <p className="text-sm text-wellness-textLight sm:text-base">
+                    心に寄り添う優しいユーザー体験
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 最後のCTAセクション */}
+        <section className="bg-wellness-surface/30 py-16 sm:py-20 lg:py-24">
+          <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
+            <h2 className="mb-4 text-3xl font-bold text-wellness-text sm:mb-6 sm:text-4xl lg:text-5xl">
+              そっと、始めてみませんか？
+            </h2>
+            <p className="mb-8 text-base text-wellness-textLight sm:mb-12 sm:text-lg lg:text-xl">
+              あなたの心の声に耳を傾ける時間を作りましょう
+            </p>
+            <button
+              onClick={handleLogin}
+              className="btn-wellness rounded-2xl px-8 py-3 text-base sm:px-12 sm:py-4 sm:text-lg"
+            >
+              Googleアカウントで始める
+            </button>
+            <p className="mt-6 text-sm text-wellness-textLight/70">
+              無料でご利用いただけます
+            </p>
+          </div>
+        </section>
       </div>
     );
   }
@@ -390,9 +624,21 @@ export default function Index() {
 
       <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-6 text-center">
-          <h1 className="text-lg font-medium text-wellness-primary">
-            {greeting}
-            {userName && <span className="ml-1">{userName}さん</span>}
+          <h1 className="flex items-center justify-center gap-2 text-lg font-medium text-wellness-primary">
+            <span>
+              {greeting}
+              {userName && <span className="ml-1">{userName}さん</span>}
+            </span>
+            {(() => {
+              const hour = new Date().getHours();
+              if (hour >= 5 && hour < 12) {
+                return <Sunrise size={20} className="text-wellness-primary" />;
+              } else if (hour >= 12 && hour < 17) {
+                return <Sun size={20} className="text-wellness-primary" />;
+              } else {
+                return <Moon size={20} className="text-wellness-primary" />;
+              }
+            })()}
           </h1>
         </div>
 
@@ -402,7 +648,7 @@ export default function Index() {
             to="/journal"
             className="block w-full rounded-md bg-wellness-primary px-3 py-2 text-center text-white transition-all hover:bg-wellness-secondary"
           >
-            <span className="text-xs">新しいジャーナルを書く</span>
+            <span className="text-xs">今日の気持ちを記録する</span>
           </Link>
         </div>
 
@@ -469,13 +715,6 @@ export default function Index() {
                         {moodColors[entry.mood as keyof typeof moodColors]
                           ?.label || entry.mood}
                       </span>
-                      <Link
-                        to={`/counseling/${entry.id}`}
-                        className="rounded p-1 text-wellness-textLight transition-colors hover:bg-wellness-primary/10 hover:text-wellness-primary"
-                        title="AIに相談"
-                      >
-                        <Bot size={12} />
-                      </Link>
                     </div>
                   </div>
                   <Link to={`/journal/view/${entry.id}`} className="block">

@@ -56,7 +56,7 @@ export default function JournalView() {
         setUser(clientUser);
 
         if (!clientUser) {
-          navigate("/about");
+          navigate("/");
           return;
         }
 

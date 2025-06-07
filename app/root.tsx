@@ -45,7 +45,7 @@ function BottomNav() {
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 h-10 bg-white/90 backdrop-blur-sm">
+    <div className="fixed bottom-0 left-0 right-0 z-50 h-14 bg-white/90 backdrop-blur-sm">
       <div className="mx-auto h-full max-w-md">
         <div className="flex h-full items-center justify-around">
           {navItems.map((item) => {
@@ -54,13 +54,13 @@ function BottomNav() {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex h-full items-center justify-center px-3 transition-colors duration-200 ${
+                className={`flex h-full items-center justify-center px-4 transition-colors duration-200 ${
                   isActive(item.path)
                     ? "text-gray-800"
                     : "text-gray-400 hover:text-gray-600"
                 }`}
               >
-                <Icon className="h-3.5 w-3.5" />
+                <Icon className="h-5 w-5" />
               </Link>
             );
           })}
@@ -106,16 +106,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
           rel="stylesheet"
         />
       </head>
-      <body className="min-h-screen overscroll-none scroll-smooth bg-wellness-gradient">
+      <body className="min-h-screen overscroll-none scroll-smooth bg-white">
         <div className="flex min-h-screen justify-center">
           {/* 左サイドバー - PCのみ表示 */}
-          <div className="hidden w-64 shrink-0 bg-wellness-gradient xl:block" />
+          <div className="hidden w-64 shrink-0 bg-white xl:block" />
 
           {/* メインコンテンツ */}
-          <div className="flex min-h-screen w-full max-w-4xl flex-col rounded-3xl bg-wellness-surface/95 shadow-lg backdrop-blur-sm transition-all duration-300">
+          <div className="flex min-h-screen w-full max-w-4xl flex-col rounded-3xl bg-white shadow-lg transition-all duration-300">
             {isHydrated && isLoggedIn && <Header />}
             <main
-              className={`fade-in overflow-y-auto px-2 ${isHydrated && isLoggedIn ? "mt-10 h-[calc(100vh-5rem)]" : "h-full"}`}
+              className={`fade-in overflow-y-auto px-2 ${isHydrated && isLoggedIn ? "mt-14 h-[calc(100vh-7rem)]" : "h-full"}`}
             >
               {children}
             </main>
@@ -125,7 +125,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 position="top-center"
                 toastOptions={{
                   style: {
-                    top: isLoggedIn ? "40px" : "16px",
+                    top: isLoggedIn ? "56px" : "16px",
                     margin: 0,
                   },
                 }}
@@ -134,7 +134,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
 
           {/* 右サイドバー - PCのみ表示 */}
-          <div className="hidden w-64 shrink-0 bg-wellness-bg xl:block" />
+          <div className="hidden w-64 shrink-0 bg-white xl:block" />
         </div>
 
         {isHydrated && isLoggedIn && <BottomNav />}

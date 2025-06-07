@@ -88,7 +88,7 @@ export function Header() {
     setUser(null);
     setIsMenuOpen(false);
     toast.success("ログアウトしました");
-    window.location.href = "/about";
+    window.location.href = "/";
   };
 
   // メニューの外側をクリックしたら閉じる
@@ -110,9 +110,9 @@ export function Header() {
   }, [isMenuOpen]);
 
   return (
-    <header className="fixed left-0 right-0 top-0 z-50 h-10 border-b border-wellness-primary/10 bg-wellness-surface/90 backdrop-blur-sm">
+    <header className="fixed left-0 right-0 top-0 z-50 h-14 border-b border-wellness-primary/10 bg-wellness-surface/90 backdrop-blur-sm">
       <div className="mx-auto flex h-full max-w-4xl items-center justify-between px-6">
-        <Link to="/" className="text-sm font-medium text-wellness-primary">
+        <Link to="/" className="text-base font-medium text-wellness-primary">
           そっとノート
         </Link>
         <div>
@@ -120,18 +120,18 @@ export function Header() {
             <div className="user-menu relative">
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="flex items-center gap-2 rounded-full p-1 transition-colors hover:bg-wellness-primary/10"
+                className="flex items-center gap-2 rounded-full p-1.5 transition-colors hover:bg-wellness-primary/10"
               >
                 {user.user_metadata?.avatar_url ? (
                   <img
                     src={user.user_metadata.avatar_url}
                     alt="ユーザーアバター"
-                    className="h-6 w-6 rounded-full"
+                    className="h-8 w-8 rounded-full"
                   />
                 ) : (
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-wellness-primary text-white">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-wellness-primary text-white">
                     <svg
-                      className="h-3 w-3"
+                      className="h-4 w-4"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -148,7 +148,7 @@ export function Header() {
               </button>
 
               {isMenuOpen && (
-                <div className="absolute right-0 top-8 w-36 rounded-md bg-white py-1 shadow-sm">
+                <div className="absolute right-0 top-10 w-36 rounded-md bg-white py-1 shadow-sm">
                   <div className="px-3 py-1.5 text-xs font-medium text-gray-800">
                     {userName || "ユーザー"}
                   </div>
