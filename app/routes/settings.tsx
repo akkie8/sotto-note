@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import type { ActionFunction, LoaderFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
 import { Form, Link, useActionData, useLoaderData } from "@remix-run/react";
 import { toast } from "sonner";
 
@@ -17,7 +16,7 @@ type ActionData = {
 export async function loader({ request }: LoaderFunctionArgs) {
   // Just try to get server-side user, but don't enforce it
   const { user } = await getOptionalUser(request);
-  return json({ serverUser: user });
+  return Response.json({ serverUser: user });
 }
 
 export const action: ActionFunction = async ({ request }) => {
@@ -30,7 +29,7 @@ export const action: ActionFunction = async ({ request }) => {
   switch (action) {
     case "update-profile":
       if (!name || typeof name !== "string" || !name.trim()) {
-        return json({ error: "名前を入力してください" }, { headers });
+        return Response.json({ error: "名前を入力してください" }, { headers });
       }
 
       try {
@@ -40,15 +39,15 @@ export const action: ActionFunction = async ({ request }) => {
         });
 
         if (error) {
-          return json(
+          return Response.json(
             { error: "プロフィールの更新に失敗しました: " + error.message },
             { headers }
           );
         }
 
-        return json({ success: true, action: "update-profile" }, { headers });
+        return Response.json({ success: true, action: "update-profile" }, { headers });
       } catch (error) {
-        return json({ error: "プロフィールの更新に失敗しました" }, { headers });
+        return Response.json({ error: "プロフィールの更新に失敗しました" }, { headers });
       }
 
     case "reset":
@@ -59,26 +58,26 @@ export const action: ActionFunction = async ({ request }) => {
           .eq("user_id", user.id);
 
         if (error) {
-          return json(
+          return Response.json(
             { error: "データの削除に失敗しました: " + error.message },
             { headers }
           );
         }
 
-        return json({ success: true, action: "reset" }, { headers });
+        return Response.json({ success: true, action: "reset" }, { headers });
       } catch (error) {
-        return json({ error: "データの初期化に失敗しました" }, { headers });
+        return Response.json({ error: "データの初期化に失敗しました" }, { headers });
       }
 
     case "feedback":
       if (!feedback || typeof feedback !== "string" || !feedback.trim()) {
-        return json({ error: "フィードバックを入力してください" }, { headers });
+        return Response.json({ error: "フィードバックを入力してください" }, { headers });
       }
       try {
         // TODO: フィードバック送信処理を実装
-        return json({ success: true, action: "feedback" }, { headers });
+        return Response.json({ success: true, action: "feedback" }, { headers });
       } catch (error) {
-        return json(
+        return Response.json(
           {
             error: "フィードバックの送信に失敗しました",
           },
@@ -87,7 +86,7 @@ export const action: ActionFunction = async ({ request }) => {
       }
 
     default:
-      return json({ error: "不正なアクションです" }, { headers });
+      return Response.json({ error: "不正なアクションです" }, { headers });
   }
 };
 
@@ -110,7 +109,7 @@ export default function Settings() {
 
         if (clientUser) {
           // Check cache first
-          const cachedProfile = cache.get(
+          const cachedProfile = cache.get<{ name: string }>(
             CACHE_KEYS.USER_PROFILE(clientUser.id)
           );
 
