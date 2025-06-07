@@ -296,7 +296,7 @@ export default function Breathing() {
 
         {/* Settings panel */}
         {showSettings && (
-          <div className="fade-in rounded-2xl border border-emerald-200/50 bg-white/80 p-6 backdrop-blur-sm">
+          <div className="fade-in rounded-2xl bg-white/80 p-6 backdrop-blur-sm">
             <h3 className="mb-4 text-xl font-medium text-emerald-800">
               呼吸設定
             </h3>
@@ -320,7 +320,7 @@ export default function Breathing() {
                       inhaleTime: Number.parseInt(e.target.value),
                     }))
                   }
-                  className="w-full rounded-lg border border-emerald-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-300"
+                  className="w-full rounded-lg bg-emerald-50 px-3 py-2"
                 />
               </div>
               <div>
@@ -342,7 +342,7 @@ export default function Breathing() {
                       holdInTime: Number.parseInt(e.target.value),
                     }))
                   }
-                  className="w-full rounded-lg border border-emerald-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-300"
+                  className="w-full rounded-lg bg-emerald-50 px-3 py-2"
                 />
               </div>
               <div>
@@ -364,7 +364,7 @@ export default function Breathing() {
                       exhaleTime: Number.parseInt(e.target.value),
                     }))
                   }
-                  className="w-full rounded-lg border border-emerald-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-300"
+                  className="w-full rounded-lg bg-emerald-50 px-3 py-2"
                 />
               </div>
               <div>
@@ -386,7 +386,7 @@ export default function Breathing() {
                       holdOutTime: Number.parseInt(e.target.value),
                     }))
                   }
-                  className="w-full rounded-lg border border-emerald-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-300"
+                  className="w-full rounded-lg bg-emerald-50 px-3 py-2"
                 />
               </div>
             </div>
@@ -417,7 +417,7 @@ export default function Breathing() {
 
         {/* Completion message */}
         {!isActive && currentCycle > 0 && phase !== "paused" && (
-          <div className="fade-in rounded-2xl border border-emerald-200/50 bg-emerald-100/80 p-6 backdrop-blur-sm">
+          <div className="fade-in rounded-2xl bg-emerald-100/80 p-6 backdrop-blur-sm">
             <h3 className="mb-2 text-xl font-medium text-emerald-800">
               お疲れさまでした
             </h3>

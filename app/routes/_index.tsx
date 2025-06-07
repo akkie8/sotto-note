@@ -317,29 +317,29 @@ export default function Index() {
       )}
 
       <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-8 text-center">
-          <h1 className="text-2xl font-bold text-gray-900">
+        <div className="mb-6 text-center">
+          <h1 className="text-lg font-medium text-gray-800">
             {greeting}
-            {userName && <span className="ml-2">{userName}さん</span>}
+            {userName && <span className="ml-1">{userName}さん</span>}
           </h1>
         </div>
 
         {/* 新規エントリーボタン */}
-        <div className="mb-8">
+        <div className="mb-6">
           <Link
             to="/journal"
-            className="block w-full rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 px-6 py-4 text-center text-white shadow-md transition-transform hover:scale-105"
+            className="block w-full rounded-md bg-gray-800 px-4 py-3 text-center text-white transition-all hover:bg-gray-700"
           >
-            <span className="text-lg font-medium">新しいジャーナルを書く</span>
+            <span className="text-sm font-medium">新しいジャーナルを書く</span>
           </Link>
         </div>
 
         {/* ジャーナルエントリー一覧 */}
         <div className="space-y-4">
           {journalEntries.length === 0 ? (
-            <div className="text-center text-gray-500">
-              <p>まだジャーナルエントリーがありません</p>
-              <p className="text-sm">
+            <div className="text-center text-gray-400">
+              <p className="text-sm">まだジャーナルエントリーがありません</p>
+              <p className="text-xs">
                 上のボタンから最初のエントリーを作成してみましょう
               </p>
             </div>
@@ -347,10 +347,10 @@ export default function Index() {
             journalEntries.map((entry) => (
               <div
                 key={entry.id}
-                className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
+                className="rounded-md bg-white p-3 transition-colors hover:bg-gray-50"
               >
-                <div className="mb-3 flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                <div className="mb-2 flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs text-gray-400">
                     <span>{entry.date}</span>
                     {getTimeIcon(entry.timestamp)}
                     <span>
@@ -362,7 +362,7 @@ export default function Index() {
                   </div>
                   <div className="flex items-center gap-2">
                     <span
-                      className={`rounded-full px-2 py-1 text-xs font-medium ${
+                      className={`rounded px-1.5 py-0.5 text-xs ${
                         moodColors[entry.mood as keyof typeof moodColors]
                           ?.color || "bg-gray-100 text-gray-600"
                       }`}
@@ -372,15 +372,17 @@ export default function Index() {
                     </span>
                     <Link
                       to={`/counseling/${entry.id}`}
-                      className="rounded-full p-1 text-blue-600 transition-colors hover:bg-blue-50"
+                      className="rounded p-1 text-gray-500 transition-colors hover:bg-gray-100"
                       title="AIに相談"
                     >
-                      <Bot size={16} />
+                      <Bot size={12} />
                     </Link>
                   </div>
                 </div>
                 <Link to={`/journal/${entry.id}`} className="block">
-                  <p className="line-clamp-3 text-gray-800">{entry.content}</p>
+                  <p className="line-clamp-3 text-xs leading-relaxed text-gray-600">
+                    {entry.content}
+                  </p>
                 </Link>
               </div>
             ))

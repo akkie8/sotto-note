@@ -12,7 +12,7 @@ import {
   useLocation,
   useNavigate,
 } from "@remix-run/react";
-import { BookOpen, Home, Settings, Wind } from "lucide-react";
+import { BookOpen, Home, Wind } from "lucide-react";
 import { Toaster } from "sonner";
 
 import { Header } from "~/components/Header";
@@ -42,11 +42,10 @@ function BottomNav() {
     { path: "/", icon: Home, label: "ホーム" },
     { path: "/journal", icon: BookOpen, label: "ジャーナル" },
     { path: "/breathing", icon: Wind, label: "呼吸" },
-    { path: "/settings", icon: Settings, label: "設定" },
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 h-12 border-t border-gray-200 bg-white">
+    <div className="fixed bottom-0 left-0 right-0 z-50 h-10 bg-white/90 backdrop-blur-sm">
       <div className="mx-auto h-full max-w-md">
         <div className="flex h-full items-center justify-around">
           {navItems.map((item) => {
@@ -55,13 +54,13 @@ function BottomNav() {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex h-full items-center justify-center px-4 transition-colors duration-200 ${
+                className={`flex h-full items-center justify-center px-3 transition-colors duration-200 ${
                   isActive(item.path)
-                    ? "text-indigo-600"
+                    ? "text-gray-800"
                     : "text-gray-400 hover:text-gray-600"
                 }`}
               >
-                <Icon className="h-4 w-4" />
+                <Icon className="h-3.5 w-3.5" />
               </Link>
             );
           })}
@@ -113,7 +112,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <div className="flex min-h-screen w-full max-w-4xl flex-col rounded-3xl bg-white/80 shadow-gentle transition-all duration-300">
             {isLoggedIn && <Header />}
             <main
-              className={`fade-in overflow-y-auto px-2 ${isLoggedIn ? "mt-12 h-[calc(100vh-6rem)]" : "h-full"}`}
+              className={`fade-in overflow-y-auto px-2 ${isLoggedIn ? "mt-10 h-[calc(100vh-5rem)]" : "h-full"}`}
             >
               {children}
             </main>
