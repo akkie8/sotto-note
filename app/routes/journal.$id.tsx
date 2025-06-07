@@ -4,8 +4,8 @@ import {
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
 } from "@remix-run/node";
-import { useLoaderData, useNavigate } from "@remix-run/react";
-import { Moon, Save, Sun, Sunrise } from "lucide-react";
+import { Link, useLoaderData, useNavigate } from "@remix-run/react";
+import { ArrowLeft, Bot, Calendar, Clock, Edit, Save } from "lucide-react";
 import { toast } from "sonner";
 
 import { getOptionalUser, requireAuth } from "~/lib/auth.server";
@@ -65,13 +65,16 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
   }
 };
 
-function getTimeIcon(timestamp: number) {
+// 時間帯に応じた背景グラデーション
+function getTimeGradient(timestamp: number) {
   const hour = new Date(timestamp).getHours();
-  if (hour >= 5 && hour < 12)
-    return <Sunrise size={20} className="text-yellow-400" />;
-  if (hour >= 12 && hour < 17)
-    return <Sun size={20} className="text-yellow-500" />;
-  return <Moon size={20} className="text-indigo-400" />;
+  if (hour >= 5 && hour < 12) {
+    return "from-yellow-50 to-orange-50"; // 朝
+  } else if (hour >= 12 && hour < 17) {
+    return "from-blue-50 to-cyan-50"; // 昼
+  } else {
+    return "from-purple-50 to-pink-50"; // 夜
+  }
 }
 
 export default function JournalDetail() {
@@ -183,101 +186,95 @@ export default function JournalDetail() {
   // Show loading state
   if (loading) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-gray-50 to-white px-4 py-8">
-        <div className="text-center">
-          <h1 className="mb-6 text-2xl font-bold text-gray-900">
-            ジャーナル詳細
-          </h1>
-          <p className="text-gray-600">読み込み中...</p>
-        </div>
+      <div className="flex min-h-screen items-center justify-center">
+        <p className="text-gray-600">読み込み中...</p>
       </div>
     );
   }
 
   // Show login prompt if no user
   if (!user) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-gray-50 to-white px-4 py-8">
-        <div className="text-center">
-          <h1 className="mb-6 text-2xl font-bold text-gray-900">
-            ジャーナル詳細
-          </h1>
-          <p className="mb-6 text-gray-600">ログインが必要です</p>
-          <button
-            onClick={() => navigate("/")}
-            className="inline-block rounded-lg bg-indigo-600 px-6 py-3 text-white transition-colors hover:bg-indigo-700"
-          >
-            ログイン
-          </button>
-        </div>
-      </div>
-    );
+    navigate("/");
+    return null;
   }
 
   if (!entry) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-gray-50 to-white px-4 py-8">
-        <div className="text-center text-gray-500">
-          <h1 className="mb-6 text-2xl font-bold text-gray-900">
-            ジャーナル詳細
-          </h1>
-          <p>エントリーが見つかりません</p>
-          <button
-            onClick={() => navigate("/")}
-            className="mt-4 inline-block rounded-lg bg-indigo-600 px-6 py-3 text-white transition-colors hover:bg-indigo-700"
-          >
-            ホームに戻る
-          </button>
-        </div>
-      </div>
-    );
+    return null;
   }
 
+  const timeGradient = getTimeGradient(entry.timestamp);
+  const mood = moodColors[entry.mood as keyof typeof moodColors];
+
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-gray-50 to-white px-4 py-8">
-      <div className="w-full max-w-md rounded-lg bg-white p-6 shadow">
-        <div className="mb-4">
-          <div className="mb-4 flex items-center gap-2">
-            <span className="text-xs text-gray-500">{entry.date}</span>
-            {getTimeIcon(entry.timestamp)}
-            <span className="text-xs text-gray-400">
-              {new Date(entry.timestamp).toLocaleTimeString("ja-JP", {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </span>
+    <div className="min-h-screen bg-transparent">
+      {/* ヘッダー */}
+      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm">
+        <div className="flex items-center justify-between px-4 py-3">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2 text-gray-600 transition-colors hover:text-gray-800"
+          >
+            <ArrowLeft size={20} />
+            <span className="text-sm">戻る</span>
+          </button>
+          {!isEditing && (
+            <div className="flex items-center gap-2">
+              <Link
+                to={`/journal/view/${entry.id}`}
+                className="rounded-full p-2 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-800"
+                title="閲覧モード"
+              >
+                <Bot size={18} />
+              </Link>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* メインコンテンツ */}
+      <div className="mx-auto max-w-3xl px-4 py-6">
+        <div
+          className={`rounded-2xl bg-gradient-to-br ${timeGradient} p-6 shadow-sm`}
+        >
+          {/* 日付と時間 */}
+          <div className="mb-4 flex items-center gap-3 text-sm text-gray-600">
+            <div className="flex items-center gap-1">
+              <Calendar size={14} />
+              <span>{entry.date}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Clock size={14} />
+              <span>
+                {new Date(entry.timestamp).toLocaleTimeString("ja-JP", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </span>
+            </div>
+          </div>
+
+          {/* 気分 */}
+          <div className="mb-6">
             {!isEditing ? (
               <span
-                className={`text-xs font-medium ${
-                  moodColors[entry.mood as keyof typeof moodColors]?.color ||
-                  "bg-slate-100"
-                } ${
-                  moodColors[entry.mood as keyof typeof moodColors]?.ringColor
-                    ? "ring-1 " +
-                      moodColors[entry.mood as keyof typeof moodColors]
-                        .ringColor
-                    : ""
-                } ${
-                  moodColors[entry.mood as keyof typeof moodColors]?.label
-                    ? "text-gray-700"
-                    : "text-gray-600"
+                className={`inline-flex items-center rounded-full px-3 py-1 text-sm ${
+                  mood?.color || "bg-gray-100 text-gray-600"
                 }`}
               >
-                {moodColors[entry.mood as keyof typeof moodColors]?.label ||
-                  entry.mood}
+                {mood?.label || entry.mood}
               </span>
             ) : (
-              <div className="flex gap-1">
-                {Object.entries(moodColors).map(([mood, { color, label }]) => (
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(moodColors).map(([moodKey, { color, label }]) => (
                   <button
-                    key={mood}
+                    key={moodKey}
                     type="button"
-                    className={`rounded px-1.5 py-0.5 text-xs transition-all ${color} ${
-                      editMood === mood
-                        ? "ring-2 ring-wellness-primary"
-                        : "opacity-70 hover:opacity-100"
+                    className={`rounded-full px-3 py-1 text-sm transition-all ${color} ${
+                      editMood === moodKey
+                        ? "ring-2 ring-offset-2 ring-wellness-primary"
+                        : "opacity-60 hover:opacity-100"
                     }`}
-                    onClick={() => setEditMood(mood)}
+                    onClick={() => setEditMood(moodKey)}
                   >
                     {label}
                   </button>
@@ -285,63 +282,62 @@ export default function JournalDetail() {
               </div>
             )}
           </div>
-          {!isEditing ? (
-            <div className="whitespace-pre-wrap text-sm text-gray-800">
-              {entry.content}
-            </div>
-          ) : (
-            <textarea
-              value={editContent}
-              onChange={(e) => setEditContent(e.target.value)}
-              className="min-h-[200px] w-full resize-none rounded-md border border-gray-300 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-wellness-primary"
-              placeholder="内容を編集してください..."
-            />
-          )}
+
+          {/* 内容 */}
+          <div className="prose prose-gray max-w-none">
+            {!isEditing ? (
+              <p className="whitespace-pre-wrap leading-relaxed text-gray-800">
+                {entry.content}
+              </p>
+            ) : (
+              <textarea
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                className="min-h-[300px] w-full resize-none rounded-lg border border-gray-200 bg-white/80 p-4 text-gray-800 focus:outline-none focus:ring-2 focus:ring-wellness-primary"
+                placeholder="内容を編集してください..."
+              />
+            )}
+          </div>
         </div>
-        <div className="flex gap-2">
+
+        {/* アクションエリア */}
+        <div className="mt-8 space-y-3">
           {!isEditing ? (
             <>
               <button
-                onClick={() => navigate("/")}
-                className="flex-1 rounded bg-gray-600 px-4 py-2 text-sm text-white hover:bg-gray-700"
-              >
-                戻る
-              </button>
-              <button
                 onClick={handleEdit}
-                className="rounded bg-wellness-primary px-4 py-2 text-sm text-white hover:bg-wellness-secondary"
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-gray-800 px-4 py-3 text-white transition-colors hover:bg-gray-700"
               >
-                編集
+                <Edit size={18} />
+                <span>編集する</span>
               </button>
+              <Link
+                to={`/journal/view/${entry.id}`}
+                className="flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-700 transition-colors hover:bg-gray-50"
+              >
+                <Bot size={18} />
+                <span>AIに相談する</span>
+              </Link>
             </>
           ) : (
             <>
-              <button
-                onClick={handleCancel}
-                className="flex-1 rounded bg-gray-600 px-4 py-2 text-sm text-white hover:bg-gray-700"
-              >
-                キャンセル
-              </button>
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex items-center gap-1 rounded bg-wellness-primary px-4 py-2 text-sm text-white hover:bg-wellness-secondary disabled:opacity-50"
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-gray-800 px-4 py-3 text-white transition-colors hover:bg-gray-700 disabled:opacity-50"
               >
-                <Save size={14} />
-                {saving ? "保存中..." : "保存"}
+                <Save size={18} />
+                <span>{saving ? "保存中..." : "保存する"}</span>
+              </button>
+              <button
+                onClick={handleCancel}
+                className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-700 transition-colors hover:bg-gray-50"
+              >
+                <span>キャンセル</span>
               </button>
             </>
           )}
         </div>
-      </div>
-
-      {/* イラスト */}
-      <div className="illustration-space mt-8">
-        <img
-          src="/levitate.gif"
-          alt="浮遊するアニメーション"
-          className="mx-auto h-auto w-full max-w-xs"
-        />
       </div>
     </div>
   );
