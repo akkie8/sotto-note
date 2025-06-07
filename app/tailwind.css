@@ -47,10 +47,10 @@
 .breathing-circle {
   background: linear-gradient(
     135deg,
-    rgba(167, 243, 208, 0.2),
-    rgba(153, 246, 228, 0.2)
+    rgba(142, 96, 116, 0.2),
+    rgba(125, 88, 134, 0.2)
   );
-  box-shadow: 0 8px 32px rgba(31, 41, 55, 0.1);
+  box-shadow: 0 8px 32px rgba(95, 101, 152, 0.1);
 }
 
 .organic-blob {

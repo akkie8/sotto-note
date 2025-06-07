@@ -201,8 +201,10 @@ export default function Journal() {
     return (
       <div className="min-h-full px-4 py-8 sm:px-6 lg:px-8">
         <div className="text-center">
-          <h1 className="mb-6 text-2xl font-bold text-gray-900">ジャーナル</h1>
-          <p className="text-gray-600">読み込み中...</p>
+          <h1 className="mb-6 text-2xl font-bold text-wellness-text">
+            ジャーナル
+          </h1>
+          <p className="text-wellness-textLight">読み込み中...</p>
         </div>
       </div>
     );
@@ -213,11 +215,13 @@ export default function Journal() {
     return (
       <div className="min-h-full px-4 py-8 sm:px-6 lg:px-8">
         <div className="text-center">
-          <h1 className="mb-6 text-2xl font-bold text-gray-900">ジャーナル</h1>
-          <p className="mb-6 text-gray-600">ログインが必要です</p>
+          <h1 className="mb-6 text-2xl font-bold text-wellness-text">
+            ジャーナル
+          </h1>
+          <p className="mb-6 text-wellness-textLight">ログインが必要です</p>
           <Link
             to="/about"
-            className="inline-block rounded-lg bg-indigo-600 px-6 py-3 text-white transition-colors hover:bg-indigo-700"
+            className="inline-block rounded-lg bg-wellness-primary px-6 py-3 text-white transition-colors hover:bg-wellness-secondary"
           >
             ログイン
           </Link>
@@ -227,20 +231,20 @@ export default function Journal() {
   }
 
   return (
-    <div className="flex min-h-full flex-col bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="flex min-h-full flex-col bg-wellness-bg">
       {/* Header - Fixed at top */}
-      <div className="sticky top-0 z-10 bg-white/90 backdrop-blur-sm">
+      <div className="sticky top-0 z-10 bg-wellness-surface/90 backdrop-blur-sm">
         <div className="px-6 py-2">
           <div className="flex items-center justify-end">
             <div className="flex items-center gap-3">
-              <span className="text-xs text-gray-400">
+              <span className="text-xs text-wellness-textLight">
                 {content.length} 文字
               </span>
               <button
                 type="submit"
                 form="journal-form"
                 disabled={!content.trim()}
-                className="rounded bg-gray-800 px-3 py-1.5 text-xs font-medium text-white transition-all hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded bg-wellness-primary px-3 py-1.5 text-xs font-medium text-white transition-all hover:bg-wellness-secondary disabled:cursor-not-allowed disabled:opacity-50"
               >
                 保存
               </button>
@@ -259,7 +263,7 @@ export default function Journal() {
           {/* Mood Selector - Compact */}
           <div className="py-3">
             <div className="mb-2 flex items-center gap-3">
-              <span className="whitespace-nowrap text-xs font-medium text-gray-600">
+              <span className="whitespace-nowrap text-xs font-medium text-wellness-text">
                 今の気分
               </span>
               <div className="flex gap-1 overflow-x-auto">
@@ -270,8 +274,8 @@ export default function Journal() {
                       type="button"
                       className={`flex-shrink-0 rounded px-2 py-1 text-xs transition-all ${color} ${
                         selectedMood === mood
-                          ? `text-gray-700`
-                          : `${hoverColor} text-gray-500`
+                          ? `text-wellness-text`
+                          : `${hoverColor} text-wellness-textLight`
                       }`}
                       onClick={() => setSelectedMood(mood)}
                     >
@@ -290,7 +294,7 @@ export default function Journal() {
                 id="content"
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                className="h-full min-h-[60vh] w-full resize-none bg-transparent p-3 text-sm leading-relaxed text-gray-700 placeholder-gray-400 focus:outline-none"
+                className="h-full min-h-[60vh] w-full resize-none bg-transparent p-3 text-sm leading-relaxed text-wellness-text placeholder-wellness-textLight/60 focus:outline-none"
                 placeholder="今日はどんな一日でしたか？&#10;&#10;思ったことや感じたことを、ここに自由に書いてみてください...&#10;&#10;あなたの心の声に耳を傾けて、素直な気持ちを記録しましょう。"
                 autoFocus
                 spellCheck="false"
@@ -303,7 +307,7 @@ export default function Journal() {
 
               {/* Writing Guidelines */}
               {!content && (
-                <div className="absolute bottom-4 left-4 right-4 space-y-1 text-xs text-gray-400">
+                <div className="absolute bottom-4 left-4 right-4 space-y-1 text-xs text-wellness-textLight/70">
                   <p>💡 書き方のヒント:</p>
                   <p>• 今日あった出来事や感じたこと</p>
                   <p>• 心に残った瞬間や気づき</p>
@@ -315,11 +319,13 @@ export default function Journal() {
 
             {/* Writing Stats & Tips */}
             <div className="flex items-center justify-between pt-2">
-              <div className="flex items-center gap-3 text-xs text-gray-400">
+              <div className="flex items-center gap-3 text-xs text-wellness-textLight">
                 <span>{content.split("\n").length} 行</span>
                 <span>{content.replace(/\s/g, "").length} 文字</span>
               </div>
-              <div className="text-xs text-gray-400">気持ちを込めて ✨</div>
+              <div className="text-xs text-wellness-textLight">
+                気持ちを込めて ✨
+              </div>
             </div>
           </div>
         </form>
@@ -327,7 +333,7 @@ export default function Journal() {
 
       {/* Floating Action Hints */}
       {content.length > 50 && (
-        <div className="fixed bottom-4 right-4 animate-pulse rounded bg-gray-800 px-2 py-1 text-xs text-white">
+        <div className="fixed bottom-4 right-4 animate-pulse rounded bg-wellness-primary px-2 py-1 text-xs text-white">
           いい感じです！✨
         </div>
       )}

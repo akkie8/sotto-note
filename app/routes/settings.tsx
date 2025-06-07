@@ -349,8 +349,8 @@ export default function Settings() {
     return (
       <div className="mx-auto min-h-full max-w-md px-4 py-8">
         <div className="text-center">
-          <h1 className="mb-6 text-2xl font-bold text-gray-900">設定</h1>
-          <p className="text-gray-600">読み込み中...</p>
+          <h1 className="mb-6 text-2xl font-bold text-wellness-text">設定</h1>
+          <p className="text-wellness-textLight">読み込み中...</p>
         </div>
       </div>
     );
@@ -361,11 +361,11 @@ export default function Settings() {
     return (
       <div className="mx-auto min-h-full max-w-md px-4 py-8">
         <div className="text-center">
-          <h1 className="mb-6 text-2xl font-bold text-gray-900">設定</h1>
-          <p className="mb-6 text-gray-600">ログインが必要です</p>
+          <h1 className="mb-6 text-2xl font-bold text-wellness-text">設定</h1>
+          <p className="mb-6 text-wellness-textLight">ログインが必要です</p>
           <Link
             to="/about"
-            className="inline-block rounded-lg bg-indigo-600 px-6 py-3 text-white transition-colors hover:bg-indigo-700"
+            className="inline-block rounded-lg bg-wellness-primary px-6 py-3 text-white transition-colors hover:bg-wellness-secondary"
           >
             ログイン
           </Link>
@@ -377,8 +377,8 @@ export default function Settings() {
   return (
     <div className="mx-auto min-h-full max-w-md space-y-6 px-6 py-6">
       {/* 名前設定セクション */}
-      <div className="rounded-md bg-white p-4">
-        <h2 className="mb-3 text-xs font-medium uppercase tracking-wide text-gray-500">
+      <div className="rounded-md bg-wellness-surface p-4">
+        <h2 className="mb-3 text-xs font-medium uppercase tracking-wide text-wellness-textLight">
           表示名
         </h2>
         <form onSubmit={handleNameSubmit} className="flex gap-2">
@@ -389,11 +389,11 @@ export default function Settings() {
             value={editingName}
             onChange={handleNameChange}
             placeholder="あなたの名前"
-            className="flex-1 rounded bg-gray-50 px-3 py-2 text-xs text-gray-800 transition-all focus:bg-white"
+            className="flex-1 rounded bg-wellness-bg px-3 py-2 text-xs text-wellness-text transition-all focus:bg-wellness-surface"
           />
           <button
             type="submit"
-            className="rounded bg-gray-800 px-3 py-2 text-xs font-medium text-white transition-all hover:bg-gray-700"
+            className="rounded bg-wellness-primary px-3 py-2 text-xs font-medium text-white transition-all hover:bg-wellness-secondary"
           >
             保存
           </button>
@@ -401,8 +401,8 @@ export default function Settings() {
       </div>
 
       {/* データ初期化セクション */}
-      <div className="rounded-md bg-white p-4">
-        <h2 className="mb-3 text-xs font-medium uppercase tracking-wide text-gray-500">
+      <div className="rounded-md bg-wellness-surface p-4">
+        <h2 className="mb-3 text-xs font-medium uppercase tracking-wide text-wellness-textLight">
           データ管理
         </h2>
         {!showResetConfirm ? (
@@ -429,7 +429,7 @@ export default function Settings() {
               </Form>
               <button
                 onClick={() => setShowResetConfirm(false)}
-                className="rounded bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-200"
+                className="rounded bg-wellness-bg px-3 py-1.5 text-xs font-medium text-wellness-text transition-colors hover:bg-wellness-primary/10"
               >
                 キャンセル
               </button>
@@ -439,11 +439,11 @@ export default function Settings() {
       </div>
 
       {/* 開発者サポートセクション */}
-      <div className="rounded-md bg-white p-4">
-        <h2 className="mb-3 text-xs font-medium uppercase tracking-wide text-gray-500">
+      <div className="rounded-md bg-wellness-surface p-4">
+        <h2 className="mb-3 text-xs font-medium uppercase tracking-wide text-wellness-textLight">
           サポート
         </h2>
-        <p className="mb-4 text-xs leading-relaxed text-gray-600">
+        <p className="mb-4 text-xs leading-relaxed text-wellness-textLight">
           このアプリを気に入っていただけましたら、ぜひ開発者をサポートしてください
         </p>
         <div className="grid grid-cols-3 gap-2">
@@ -469,8 +469,8 @@ export default function Settings() {
       </div>
 
       {/* フィードバックセクション */}
-      <div className="rounded-md bg-white p-4">
-        <h2 className="mb-3 text-xs font-medium uppercase tracking-wide text-gray-500">
+      <div className="rounded-md bg-wellness-surface p-4">
+        <h2 className="mb-3 text-xs font-medium uppercase tracking-wide text-wellness-textLight">
           フィードバック
         </h2>
         <Form method="post" className="space-y-3">
@@ -478,12 +478,12 @@ export default function Settings() {
           <textarea
             name="feedback"
             rows={3}
-            className="w-full resize-none rounded bg-gray-50 px-3 py-2 text-xs text-gray-800 transition-all focus:bg-white"
+            className="w-full resize-none rounded bg-wellness-bg px-3 py-2 text-xs text-wellness-text transition-all focus:bg-wellness-surface"
             placeholder="ご意見・ご要望をお聞かせください..."
           />
           <button
             type="submit"
-            className="w-full rounded bg-gray-800 px-3 py-2 text-xs font-medium text-white transition-all hover:bg-gray-700"
+            className="w-full rounded bg-wellness-primary px-3 py-2 text-xs font-medium text-white transition-all hover:bg-wellness-secondary"
           >
             送信する
           </button>

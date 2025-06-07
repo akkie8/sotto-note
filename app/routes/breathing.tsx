@@ -21,6 +21,13 @@ export default function Breathing() {
   const [timeLeft, setTimeLeft] = useState(0);
   const [currentCycle, setCurrentCycle] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
+  const [tempSettings, setTempSettings] = useState<BreathingSettings>({
+    inhaleTime: 4,
+    holdInTime: 2,
+    exhaleTime: 6,
+    holdOutTime: 2,
+    cycles: 5,
+  });
   const [userName, setUserName] = useState("");
   const [user, setUser] = useState<{ id: string } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -171,6 +178,20 @@ export default function Breathing() {
     setCurrentCycle(0);
   };
 
+  const openSettings = () => {
+    setTempSettings(settings);
+    setShowSettings(true);
+  };
+
+  const closeSettings = () => {
+    setShowSettings(false);
+  };
+
+  const saveSettings = () => {
+    setSettings(tempSettings);
+    setShowSettings(false);
+  };
+
   const getCircleScale = () => {
     if (phase === "inhale") return "scale-110";
     if (phase === "exhale") return "scale-75";
@@ -186,10 +207,12 @@ export default function Breathing() {
   // Show loading state
   if (loading) {
     return (
-      <div className="flex min-h-full items-center justify-center bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 p-4">
+      <div className="flex min-h-full items-center justify-center bg-wellness-bg p-4">
         <div className="text-center">
-          <h1 className="mb-6 text-2xl font-bold text-emerald-800">深呼吸</h1>
-          <p className="text-emerald-600">読み込み中...</p>
+          <h1 className="mb-6 text-2xl font-bold text-wellness-primary">
+            深呼吸
+          </h1>
+          <p className="text-wellness-textLight">読み込み中...</p>
         </div>
       </div>
     );
@@ -198,13 +221,15 @@ export default function Breathing() {
   // Show login prompt if no user
   if (!user) {
     return (
-      <div className="flex min-h-full items-center justify-center bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 p-4">
+      <div className="flex min-h-full items-center justify-center bg-wellness-bg p-4">
         <div className="text-center">
-          <h1 className="mb-6 text-2xl font-bold text-emerald-800">深呼吸</h1>
-          <p className="mb-6 text-emerald-600">ログインが必要です</p>
+          <h1 className="mb-6 text-2xl font-bold text-wellness-primary">
+            深呼吸
+          </h1>
+          <p className="mb-6 text-wellness-textLight">ログインが必要です</p>
           <Link
             to="/about"
-            className="inline-block rounded-lg bg-emerald-600 px-6 py-3 text-white transition-colors hover:bg-emerald-700"
+            className="inline-block rounded-lg bg-wellness-primary px-6 py-3 text-white transition-colors hover:bg-wellness-secondary"
           >
             ログイン
           </Link>
@@ -214,14 +239,14 @@ export default function Breathing() {
   }
 
   return (
-    <div className="flex min-h-full items-center justify-center bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 p-4">
+    <div className="flex min-h-full items-center justify-center bg-wellness-bg p-4">
       <div className="relative z-10 mx-auto max-w-2xl text-center">
         {/* Header */}
         <div className="fade-in mb-12">
-          <h1 className="mb-4 text-4xl font-light text-emerald-800 md:text-5xl">
+          <h1 className="mb-4 text-4xl font-light text-wellness-primary md:text-5xl">
             深呼吸
           </h1>
-          <p className="text-lg text-emerald-600">
+          <p className="text-lg text-wellness-textLight">
             {userName ? `${userName}さん、` : ""}
             心を落ち着けて、今この瞬間に集中しましょう
           </p>
@@ -233,11 +258,11 @@ export default function Breathing() {
             className={`breathing-circle mx-auto flex h-80 w-80 items-center justify-center rounded-full transition-all duration-1000 ease-in-out ${getCircleScale()} ${getCircleAnimation()}`}
           >
             <div className="text-center">
-              <div className="mb-2 text-3xl font-light text-emerald-800 md:text-4xl">
+              <div className="mb-2 text-3xl font-light text-wellness-primary md:text-4xl">
                 {getPhaseText(phase)}
               </div>
               {isActive && (
-                <div className="text-6xl font-light text-emerald-700">
+                <div className="text-6xl font-light text-wellness-secondary">
                   {timeLeft}
                 </div>
               )}
@@ -247,11 +272,11 @@ export default function Breathing() {
 
         {/* Phase description */}
         <div className="mb-8">
-          <p className="text-lg font-light text-emerald-700">
+          <p className="text-lg font-light text-wellness-text">
             {getPhaseDescription(phase)}
           </p>
           {isActive && (
-            <p className="mt-2 text-emerald-600">
+            <p className="mt-2 text-wellness-textLight">
               サイクル {currentCycle + 1} / {settings.cycles}
             </p>
           )}
@@ -262,7 +287,7 @@ export default function Breathing() {
           {!isActive ? (
             <button
               onClick={startBreathing}
-              className="flex min-w-[120px] items-center gap-2 whitespace-nowrap rounded-full bg-emerald-500 px-6 py-2.5 font-medium text-white transition-colors duration-200 hover:bg-emerald-600"
+              className="flex min-w-[120px] items-center gap-2 whitespace-nowrap rounded-full bg-wellness-primary px-6 py-2.5 font-medium text-white transition-colors duration-200 hover:bg-wellness-secondary"
             >
               <Play size={18} />
               開始
@@ -270,7 +295,7 @@ export default function Breathing() {
           ) : (
             <button
               onClick={pauseBreathing}
-              className="flex min-w-[120px] items-center gap-2 whitespace-nowrap rounded-full bg-emerald-500 px-6 py-2.5 font-medium text-white transition-colors duration-200 hover:bg-emerald-600"
+              className="flex min-w-[120px] items-center gap-2 whitespace-nowrap rounded-full bg-wellness-primary px-6 py-2.5 font-medium text-white transition-colors duration-200 hover:bg-wellness-secondary"
             >
               <Pause size={18} />
               一時停止
@@ -279,149 +304,165 @@ export default function Breathing() {
 
           <button
             onClick={resetBreathing}
-            className="flex min-w-[120px] items-center gap-2 whitespace-nowrap rounded-full bg-emerald-100 px-6 py-2.5 font-medium text-emerald-700 transition-colors duration-200 hover:bg-emerald-200"
+            className="flex min-w-[120px] items-center gap-2 whitespace-nowrap rounded-full bg-wellness-primary/10 px-6 py-2.5 font-medium text-wellness-primary transition-colors duration-200 hover:bg-wellness-primary/20"
           >
             <RotateCcw size={18} />
             リセット
           </button>
 
           <button
-            onClick={() => setShowSettings(!showSettings)}
-            className="flex min-w-[120px] items-center gap-2 whitespace-nowrap rounded-full bg-emerald-100 px-6 py-2.5 font-medium text-emerald-700 transition-colors duration-200 hover:bg-emerald-200"
+            onClick={openSettings}
+            className="flex min-w-[120px] items-center gap-2 whitespace-nowrap rounded-full bg-wellness-primary/10 px-6 py-2.5 font-medium text-wellness-primary transition-colors duration-200 hover:bg-wellness-primary/20"
           >
             <Settings size={18} />
             設定
           </button>
         </div>
 
-        {/* Settings panel */}
+        {/* Settings Modal */}
         {showSettings && (
-          <div className="fade-in rounded-2xl bg-white/80 p-6 backdrop-blur-sm">
-            <h3 className="mb-4 text-xl font-medium text-emerald-800">
-              呼吸設定
-            </h3>
-            <div className="mb-4 grid grid-cols-2 gap-4 md:grid-cols-4">
-              <div>
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div className="fade-in w-full max-w-md rounded-2xl bg-wellness-surface p-6 shadow-lg">
+              <h3 className="mb-6 text-xl font-medium text-wellness-primary">
+                呼吸設定
+              </h3>
+              <div className="mb-6 grid grid-cols-2 gap-4">
+                <div>
+                  <label
+                    htmlFor="inhaleTime"
+                    className="mb-1 block text-sm text-wellness-text"
+                  >
+                    吸う時間
+                  </label>
+                  <input
+                    id="inhaleTime"
+                    type="number"
+                    min="1"
+                    max="10"
+                    value={tempSettings.inhaleTime}
+                    onChange={(e) =>
+                      setTempSettings((prev) => ({
+                        ...prev,
+                        inhaleTime: Number.parseInt(e.target.value),
+                      }))
+                    }
+                    className="w-full rounded-lg bg-wellness-bg px-3 py-2 text-wellness-text focus:outline-none focus:ring-2 focus:ring-wellness-primary/30"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="holdInTime"
+                    className="mb-1 block text-sm text-wellness-text"
+                  >
+                    止める時間
+                  </label>
+                  <input
+                    id="holdInTime"
+                    type="number"
+                    min="0"
+                    max="10"
+                    value={tempSettings.holdInTime}
+                    onChange={(e) =>
+                      setTempSettings((prev) => ({
+                        ...prev,
+                        holdInTime: Number.parseInt(e.target.value),
+                      }))
+                    }
+                    className="w-full rounded-lg bg-wellness-bg px-3 py-2 text-wellness-text focus:outline-none focus:ring-2 focus:ring-wellness-primary/30"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="exhaleTime"
+                    className="mb-1 block text-sm text-wellness-text"
+                  >
+                    吐く時間
+                  </label>
+                  <input
+                    id="exhaleTime"
+                    type="number"
+                    min="1"
+                    max="10"
+                    value={tempSettings.exhaleTime}
+                    onChange={(e) =>
+                      setTempSettings((prev) => ({
+                        ...prev,
+                        exhaleTime: Number.parseInt(e.target.value),
+                      }))
+                    }
+                    className="w-full rounded-lg bg-wellness-bg px-3 py-2 text-wellness-text focus:outline-none focus:ring-2 focus:ring-wellness-primary/30"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="holdOutTime"
+                    className="mb-1 block text-sm text-wellness-text"
+                  >
+                    止める時間
+                  </label>
+                  <input
+                    id="holdOutTime"
+                    type="number"
+                    min="0"
+                    max="10"
+                    value={tempSettings.holdOutTime}
+                    onChange={(e) =>
+                      setTempSettings((prev) => ({
+                        ...prev,
+                        holdOutTime: Number.parseInt(e.target.value),
+                      }))
+                    }
+                    className="w-full rounded-lg bg-wellness-bg px-3 py-2 text-wellness-text focus:outline-none focus:ring-2 focus:ring-wellness-primary/30"
+                  />
+                </div>
+              </div>
+              <div className="mb-6">
                 <label
-                  htmlFor="inhaleTime"
-                  className="mb-1 block text-sm text-emerald-700"
+                  htmlFor="cycles"
+                  className="mb-1 block text-sm text-wellness-text"
                 >
-                  吸う時間
+                  サイクル数
                 </label>
                 <input
-                  id="inhaleTime"
+                  id="cycles"
                   type="number"
                   min="1"
-                  max="10"
-                  value={settings.inhaleTime}
+                  max="20"
+                  value={tempSettings.cycles}
                   onChange={(e) =>
-                    setSettings((prev) => ({
+                    setTempSettings((prev) => ({
                       ...prev,
-                      inhaleTime: Number.parseInt(e.target.value),
+                      cycles: Number.parseInt(e.target.value),
                     }))
                   }
-                  className="w-full rounded-lg bg-emerald-50 px-3 py-2"
+                  className="w-full rounded-lg bg-wellness-bg px-3 py-2 text-wellness-text focus:outline-none focus:ring-2 focus:ring-wellness-primary/30"
                 />
               </div>
-              <div>
-                <label
-                  htmlFor="holdInTime"
-                  className="mb-1 block text-sm text-emerald-700"
+              <div className="flex gap-3">
+                <button
+                  onClick={closeSettings}
+                  className="flex-1 rounded-lg bg-wellness-primary/10 px-4 py-2 text-wellness-primary transition-colors hover:bg-wellness-primary/20"
                 >
-                  止める時間
-                </label>
-                <input
-                  id="holdInTime"
-                  type="number"
-                  min="0"
-                  max="10"
-                  value={settings.holdInTime}
-                  onChange={(e) =>
-                    setSettings((prev) => ({
-                      ...prev,
-                      holdInTime: Number.parseInt(e.target.value),
-                    }))
-                  }
-                  className="w-full rounded-lg bg-emerald-50 px-3 py-2"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="exhaleTime"
-                  className="mb-1 block text-sm text-emerald-700"
+                  キャンセル
+                </button>
+                <button
+                  onClick={saveSettings}
+                  className="flex-1 rounded-lg bg-wellness-primary px-4 py-2 text-white transition-colors hover:bg-wellness-secondary"
                 >
-                  吐く時間
-                </label>
-                <input
-                  id="exhaleTime"
-                  type="number"
-                  min="1"
-                  max="10"
-                  value={settings.exhaleTime}
-                  onChange={(e) =>
-                    setSettings((prev) => ({
-                      ...prev,
-                      exhaleTime: Number.parseInt(e.target.value),
-                    }))
-                  }
-                  className="w-full rounded-lg bg-emerald-50 px-3 py-2"
-                />
+                  保存
+                </button>
               </div>
-              <div>
-                <label
-                  htmlFor="holdOutTime"
-                  className="mb-1 block text-sm text-emerald-700"
-                >
-                  止める時間
-                </label>
-                <input
-                  id="holdOutTime"
-                  type="number"
-                  min="0"
-                  max="10"
-                  value={settings.holdOutTime}
-                  onChange={(e) =>
-                    setSettings((prev) => ({
-                      ...prev,
-                      holdOutTime: Number.parseInt(e.target.value),
-                    }))
-                  }
-                  className="w-full rounded-lg bg-emerald-50 px-3 py-2"
-                />
-              </div>
-            </div>
-            <div className="mb-4">
-              <label
-                htmlFor="cycles"
-                className="mb-1 block text-sm text-emerald-700"
-              >
-                サイクル数
-              </label>
-              <input
-                id="cycles"
-                type="number"
-                min="1"
-                max="20"
-                value={settings.cycles}
-                onChange={(e) =>
-                  setSettings((prev) => ({
-                    ...prev,
-                    cycles: Number.parseInt(e.target.value),
-                  }))
-                }
-                className="w-full rounded-lg border border-emerald-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-300"
-              />
             </div>
           </div>
         )}
 
         {/* Completion message */}
         {!isActive && currentCycle > 0 && phase !== "paused" && (
-          <div className="fade-in rounded-2xl bg-emerald-100/80 p-6 backdrop-blur-sm">
-            <h3 className="mb-2 text-xl font-medium text-emerald-800">
+          <div className="fade-in rounded-2xl bg-wellness-surface/80 p-6 backdrop-blur-sm">
+            <h3 className="mb-2 text-xl font-medium text-wellness-primary">
               お疲れさまでした
             </h3>
-            <p className="text-emerald-700">
+            <p className="text-wellness-text">
               {userName ? `${userName}さん、` : ""}
               {settings.cycles}
               サイクルの深呼吸が完了しました。心は落ち着きましたか？
