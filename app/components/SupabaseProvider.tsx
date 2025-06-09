@@ -8,12 +8,6 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log(
-        "[SupabaseProvider] Auth state changed:",
-        event,
-        session?.user?.id
-      );
-
       if (session) {
         // セッションが存在する場合、サーバーにセッション情報を送信
         try {
@@ -27,7 +21,6 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
               refresh_token: session.refresh_token,
             }),
           });
-          console.log("[SupabaseProvider] Session synced to server");
         } catch (error) {
           console.error("[SupabaseProvider] Failed to sync session:", error);
         }

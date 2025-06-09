@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeft, Calendar, Clock } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, Share2 } from "lucide-react";
 
 import {
   extractHashtags,
@@ -8,6 +8,7 @@ import {
   getUserTags,
   mergeTags,
 } from "~/lib/hashtag";
+import { MessageShare } from "./MessageShare";
 import { TagSelector } from "./TagSelector";
 
 export type JournalMode = "new" | "edit" | "view";
@@ -40,6 +41,7 @@ export interface JournalEditorProps {
   error?: string;
   userJournals?: Array<{ tags?: string }>; // ユーザーの過去ジャーナル（タグ取得用）
   baseTags?: string[]; // ベースタグ
+  userName?: string; // ユーザー名（シェア用）
 }
 
 const MAX_CHARACTERS = 1500;
@@ -57,9 +59,11 @@ export function JournalEditor({
   error,
   userJournals = [],
   baseTags = [],
+  userName,
 }: JournalEditorProps) {
   const [content, setContent] = useState(entry?.content || "");
   const [manualTags, setManualTags] = useState<string[]>([]);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -117,19 +121,10 @@ export function JournalEditor({
   }, [content, adjustTextareaHeight]);
 
   const handleSave = async () => {
-    console.log("[JournalEditor] handleSave called with:", {
-      content: content.trim(),
-      mode,
-      contentLength: content.trim().length,
-      manualTags: manualTags,
-    });
-
     if (!content.trim()) {
-      console.log("[JournalEditor] Content is empty");
       return;
     }
 
-    console.log("[JournalEditor] Calling onSave...");
     await onSave(content.trim(), "neutral", manualTags); // 手動タグも渡す
   };
 
@@ -159,41 +154,11 @@ export function JournalEditor({
   const suggestedTags = getSuggestedTags(userTags, baseTags);
   const allCurrentTags = mergeTags(content, manualTags);
 
-  // デバッグ用ログ
-  console.log("[JournalEditor] Current state:", {
-    mode,
-    content: content.slice(0, 50) + "...",
-    contentLength: content.length,
-    contentTrimmed: !!content.trim(),
-    saving,
-    isButtonDisabled: saving || !content.trim(),
-  });
-
   const getPlaceholder = () => {
     if (mode === "new") {
       return "今はどんな気持ちですか？";
     }
     return "内容を編集してください...";
-  };
-
-  // Xでシェア機能
-  const handleShareToX = () => {
-    if (!aiReply) return;
-
-    // 文字数制限を考慮してAI回答を調整（より短く）
-    const maxContentLength = 100; // AI回答部分の最大文字数
-    let content = aiReply;
-
-    if (content.length > maxContentLength) {
-      content = content.substring(0, maxContentLength) + "...";
-    }
-
-    const shareText = `"${content}"
-
-#そっとノート`;
-
-    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
-    window.open(twitterUrl, "_blank", "noopener,noreferrer");
   };
 
   return (
@@ -222,7 +187,7 @@ export function JournalEditor({
                   {onEdit && (
                     <button
                       onClick={onEdit}
-                      className="min-h-[44px] touch-manipulation rounded-lg bg-wellness-primary px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-wellness-secondary active:scale-95"
+                      className="min-h-[36px] touch-manipulation rounded-lg bg-wellness-primary px-4 py-1.5 text-sm font-medium text-white transition-all hover:bg-wellness-secondary active:scale-95"
                     >
                       編集
                     </button>
@@ -368,11 +333,12 @@ export function JournalEditor({
                 </h3>
               </div>
               <button
-                onClick={handleShareToX}
-                className="flex items-center gap-1 rounded-full bg-black px-3 py-1.5 text-xs text-white transition-colors hover:bg-gray-800 active:bg-gray-900"
-                title="Xでシェア"
+                onClick={() => setIsShareModalOpen(true)}
+                className="flex items-center gap-1 rounded-full bg-wellness-primary px-3 py-1.5 text-xs text-white transition-colors hover:bg-wellness-secondary active:bg-wellness-primary/80"
+                title="メッセージをシェア"
               >
-                <span>Xでシェア</span>
+                <Share2 size={14} />
+                <span>シェア</span>
               </button>
             </div>
             <div className="mx-auto max-w-2xl rounded-lg bg-wellness-primary/5 p-4">
@@ -428,16 +394,6 @@ export function JournalEditor({
         )}
 
         {/* AI相談ボタン */}
-        {(() => {
-          console.log("[JournalEditor] Button check:", {
-            onAskAI: !!onAskAI,
-            isView,
-            aiReply: !!aiReply,
-            has_ai_reply: entry?.has_ai_reply,
-            showButton: onAskAI && isView && !aiReply && !entry?.has_ai_reply,
-          });
-          return null;
-        })()}
         {onAskAI && isView && !aiReply && !entry?.has_ai_reply && (
           <div className="mb-4 border-t border-wellness-primary/20 pt-4">
             <div className="text-center">
@@ -465,6 +421,16 @@ export function JournalEditor({
           </div>
         )}
       </div>
+
+      {/* Share Modal */}
+      {aiReply && (
+        <MessageShare
+          message={aiReply}
+          userName={userName}
+          isOpen={isShareModalOpen}
+          onClose={() => setIsShareModalOpen(false)}
+        />
+      )}
     </div>
   );
 }

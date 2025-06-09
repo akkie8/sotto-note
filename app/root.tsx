@@ -191,15 +191,12 @@ export default function App() {
       }
 
       if (accessToken) {
-        console.log("[Root] OAuth callback detected, processing...");
-
         // Supabaseがセッションを処理するのを待つ
         const {
           data: { user },
         } = await supabase.auth.getUser();
 
         if (user) {
-          console.log("[Root] User authenticated:", user.id);
           // ハッシュフラグメントをクリーンアップ
           window.history.replaceState(null, "", window.location.pathname);
           // ホームページにリダイレクト

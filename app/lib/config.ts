@@ -34,10 +34,6 @@ export const getOAuthRedirectUrl = () => {
 
     // 開発環境では現在のポートを自動検出
     const currentOrigin = window.location.origin;
-    console.log(
-      "[Config] Using current origin for OAuth redirect:",
-      currentOrigin
-    );
     return `${currentOrigin}/`;
   }
 

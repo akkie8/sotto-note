@@ -198,19 +198,6 @@ export default function Index() {
         }
       }
 
-      // Debug log for today's entries
-      const todayString = new Date()
-        .toLocaleDateString("ja-JP", {
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit",
-        })
-        .replace(/\//g, "-");
-
-      if (normalizedDate === todayString) {
-        console.log("Today's entry found:", entry.content.slice(0, 50));
-      }
-
       activityMap.set(
         normalizedDate,
         (activityMap.get(normalizedDate) || 0) + 1
@@ -260,50 +247,6 @@ export default function Index() {
       }
       weeks.push(weekData);
     }
-
-    // Debug log
-    const todayString = new Date()
-      .toLocaleDateString("ja-JP", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-      })
-      .replace(/\//g, "-");
-
-    // Find today in the grid
-    let todayPosition = null;
-    weeks.forEach((week, weekIndex) => {
-      week.forEach((day, dayIndex) => {
-        if (
-          day.date.getDate() === today.getDate() &&
-          day.date.getMonth() === today.getMonth() &&
-          day.date.getFullYear() === today.getFullYear()
-        ) {
-          todayPosition = { week: weekIndex, day: dayIndex, count: day.count };
-        }
-      });
-    });
-
-    console.log("=== Activity Debug ===");
-    console.log(
-      "Today:",
-      today.toDateString(),
-      `(${["日", "月", "火", "水", "木", "金", "土"][today.getDay()]})`
-    );
-    console.log("Today's position in grid:", todayPosition);
-    console.log(
-      "Bottom-right should be today:",
-      weeks[3]?.[6]?.date.toDateString()
-    );
-    console.log(
-      "Is bottom-right today?",
-      weeks[3]?.[6]?.date.toDateString() === today.toDateString()
-    );
-    console.log(
-      "Today's activity count from map:",
-      activityMap.get(todayString) || 0
-    );
-    console.log("Bottom-right count:", weeks[3]?.[6]?.count);
 
     return weeks;
   }, [journalEntries]);

@@ -4,8 +4,6 @@ import { getOptionalUser } from "~/lib/auth.server";
 import { getSupabase } from "~/lib/supabase.server";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  console.log("=== [AI API] FUNCTION CALLED ===");
-
   try {
     if (request.method !== "POST") {
       return new Response(JSON.stringify({ error: "Method not allowed" }), {
@@ -31,20 +29,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       });
     }
 
-    // リクエストヘッダーをログ出力
-    console.log("[AI API] Request headers:", {
-      authorization: request.headers.get("authorization")
-        ? "Bearer ..."
-        : "None",
-      contentType: request.headers.get("content-type"),
-    });
-
-    // 認証ユーザーを取得（オプション）
+    // 認証ユーザーを取得（必須）
     const { user } = await getOptionalUser(request);
-    console.log(
-      "[AI API] User:",
-      user ? `ID: ${user.id}` : "Not authenticated"
-    );
 
     // 既にAI回答が存在するかチェック
     if (user) {
@@ -80,17 +66,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       }
     }
 
-    console.log("[AI API] Starting OpenAI request...");
     const { openai } = await import("~/lib/openai.server");
-    console.log("[AI API] OpenAI client loaded");
 
     // プロンプトを環境変数から取得
     const systemPrompt = process.env.PROMPT_SOTTO_MESSAGE;
 
     if (!systemPrompt) {
-      console.error(
-        "[AI API] PROMPT_SOTTO_MESSAGE environment variable is not set"
-      );
       throw new Error("そっとさんのプロンプトが設定されていません");
     }
 
@@ -110,20 +91,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       temperature: 0.7,
     });
 
-    console.log("[AI API] OpenAI response received");
     const reply =
       completion.choices[0]?.message?.content ||
       "申し訳ありません。返答を生成できませんでした。";
-    console.log("[AI API] Reply generated, length:", reply.length);
 
     // AI回答をデータベースに保存
     if (user) {
-      console.log(
-        "[AI API] Attempting to save reply for user:",
-        user.id,
-        "journal:",
-        journalId
-      );
       const response = new Response();
       const supabase = getSupabase(request, response);
 
@@ -136,7 +109,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           refresh_token: "", // リフレッシュトークンは不要
         });
       }
-      const { data, error: saveError } = await supabase
+      const { error: saveError } = await supabase
         .from("ai_replies")
         .insert({
           journal_id: journalId,
@@ -147,15 +120,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         .select();
 
       if (saveError) {
-        console.error("[AI API] Failed to save reply:", saveError);
-        console.error(
-          "[AI API] Save error details:",
-          JSON.stringify(saveError, null, 2)
-        );
         // エラーでも回答は返す
       } else {
-        console.log("[AI API] Reply saved to database:", data);
-
         // journalsテーブルのhas_ai_replyフラグを更新
         const { error: updateError } = await supabase
           .from("journals")
@@ -164,23 +130,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           .eq("user_id", user.id);
 
         if (updateError) {
-          console.error(
-            "[AI API] Failed to update has_ai_reply flag:",
-            updateError
-          );
-        } else {
-          console.log("[AI API] Updated has_ai_reply flag");
+          // Error updating flag
         }
       }
-    } else {
-      console.log("[AI API] No user found, reply not saved");
     }
 
     return new Response(JSON.stringify({ reply }), {
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("[AI API] Error:", error);
     return new Response(
       JSON.stringify({ error: "AI返答の生成中にエラーが発生しました。" }),
       {

@@ -9,39 +9,40 @@ import { supabase } from "../lib/supabase.client";
 export function Header() {
   const [user, setUser] = useState<User | null>(null);
   const [userName, setUserName] = useState<string>("");
+  const [userRole, setUserRole] = useState<string>("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const fetchUserProfile = async (userId: string) => {
     // Check cache first
-    const cachedProfile = cache.get<{ name: string }>(
+    const cachedProfile = cache.get<{ name: string; role: string }>(
       CACHE_KEYS.USER_PROFILE(userId)
     );
 
     if (cachedProfile?.name) {
       setUserName(cachedProfile.name);
+      setUserRole(cachedProfile.role || "");
     } else {
       // Fetch user profile
       const { data: profile } = await supabase
         .from("profiles")
-        .select("name")
+        .select("name, role")
         .eq("user_id", userId)
         .single();
 
-      if (profile?.name) {
-        setUserName(profile.name);
+      if (profile) {
+        setUserName(profile.name || "ユーザー");
+        setUserRole(profile.role || "");
         // Cache the profile
         cache.set(CACHE_KEYS.USER_PROFILE(userId), profile, 10 * 60 * 1000);
       } else {
         setUserName("ユーザー");
+        setUserRole("");
       }
     }
   };
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
-      console.log("[Header] useEffect supabase.auth.getUser user:", user);
-      console.log("[Header] user metadata:", user?.user_metadata);
-      console.log("[Header] avatar_url:", user?.user_metadata?.avatar_url);
       setUser(user);
 
       if (user) {
@@ -51,20 +52,19 @@ export function Header() {
     // セッション変化も監視
     const { data: listener } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        console.log("[Header] onAuthStateChange session:", session);
         setUser(session?.user ?? null);
 
         if (session?.user) {
           fetchUserProfile(session.user.id);
         } else {
           setUserName("");
+          setUserRole("");
         }
       }
     );
 
     // プロフィール更新イベントをリッスン
     const handleProfileUpdate = (event: CustomEvent) => {
-      console.log("[Header] Profile updated:", event.detail);
       setUserName(event.detail.name);
     };
 
@@ -83,7 +83,6 @@ export function Header() {
   }, []);
 
   const handleLogout = async () => {
-    console.log("[Header] handleLogout called");
     await supabase.auth.signOut();
     setUser(null);
     setIsMenuOpen(false);
@@ -121,39 +120,53 @@ export function Header() {
         <div>
           {user ? (
             <div className="user-menu relative">
-              <button
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="flex min-h-[44px] min-w-[44px] touch-manipulation items-center gap-2 rounded-full p-2 transition-colors hover:bg-wellness-primary/10 active:bg-wellness-primary/20"
-              >
-                {user.user_metadata?.avatar_url ? (
-                  <img
-                    src={user.user_metadata.avatar_url}
-                    alt="ユーザーアバター"
-                    className="h-9 w-9 rounded-full"
-                  />
-                ) : (
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-wellness-primary text-white">
-                    <svg
-                      className="h-4 w-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                      />
-                    </svg>
-                  </div>
+              <div className="flex items-center gap-2">
+                {userRole === "admin" && (
+                  <span className="rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-800">
+                    admin
+                  </span>
                 )}
-              </button>
+                <button
+                  onClick={() => setIsMenuOpen(!isMenuOpen)}
+                  className="flex min-h-[44px] min-w-[44px] touch-manipulation items-center gap-2 rounded-full p-2 transition-colors hover:bg-wellness-primary/10 active:bg-wellness-primary/20"
+                >
+                  {user.user_metadata?.avatar_url ? (
+                    <img
+                      src={user.user_metadata.avatar_url}
+                      alt="ユーザーアバター"
+                      className="h-9 w-9 rounded-full"
+                    />
+                  ) : (
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-wellness-primary text-white">
+                      <svg
+                        className="h-4 w-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                        />
+                      </svg>
+                    </div>
+                  )}
+                </button>
+              </div>
 
               {isMenuOpen && (
-                <div className="absolute right-0 top-12 w-40 rounded-lg border border-gray-100 bg-white py-2 shadow-lg">
-                  <div className="border-b border-gray-100 px-4 py-2 text-sm font-medium text-gray-800">
-                    {userName || "ユーザー"}
+                <div className="absolute right-0 top-12 w-48 rounded-lg border border-gray-100 bg-white py-2 shadow-lg">
+                  <div className="border-b border-gray-100 px-4 py-2">
+                    <div className="text-sm font-medium text-gray-800">
+                      {userName || "ユーザー"}
+                    </div>
+                    {userRole && (
+                      <div className="mt-1 text-xs text-gray-500">
+                        Role: {userRole}
+                      </div>
+                    )}
                   </div>
                   <Link
                     to="/settings"

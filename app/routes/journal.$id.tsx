@@ -11,13 +11,13 @@ import {
   type JournalEntry,
   type JournalMode,
 } from "~/components/JournalEditor";
-import { getOptionalUser, requireAuth } from "~/lib/auth.server";
+import { getOptionalUser } from "~/lib/auth.server";
 import { cache, CACHE_KEYS } from "~/lib/cache.client";
 import { mergeTags, tagsToString } from "~/lib/hashtag";
 import { supabase } from "../lib/supabase.client";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  // 認証エラーでも続行（クライアント側で認証チェック）
+  // Get user (any role) - client will handle role check
   const { user } = await getOptionalUser(request);
   const { id } = params;
 
@@ -49,7 +49,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
       aiReply = data?.content || null;
     } catch (error) {
-      console.error("Failed to load AI reply:", error);
+      // Failed to load AI reply
     }
   }
 
@@ -61,31 +61,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export const action = async ({ request, params }: ActionFunctionArgs) => {
-  console.log("=== [Action] FUNCTION CALLED ===");
-  console.log(
-    "[Action] Starting action for:",
-    params.id,
-    "method:",
-    request.method
-  );
-  console.log("[Action] Request URL:", request.url);
-  console.log("[Action] Request headers:", {
-    authorization:
-      request.headers.get("authorization")?.substring(0, 50) + "...",
-    contentType: request.headers.get("content-type"),
-  });
-
   try {
     const { id } = params;
 
     if (!id) {
-      console.log("[Action] Missing ID parameter");
       return Response.json({ error: "IDが見つかりません" }, { status: 400 });
     }
 
     // フォームデータの処理（新規作成・更新）- 認証が必要
-    const { user, supabase: serverSupabase } = await requireAuth(request);
-    console.log("[Action] Auth successful, user:", user.id);
+    const { user, supabase: serverSupabase } = await getOptionalUser(request);
+
+    if (!user) {
+      return Response.json({ error: "認証が必要です" }, { status: 401 });
+    }
 
     // Supabaseクライアントのセッションを設定
     const authHeader = request.headers.get("authorization");
@@ -95,21 +83,13 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
         access_token: token,
         refresh_token: "",
       });
-      console.log("[Action] Supabase session set with token");
     }
 
-    console.log("[Action] Processing request for id:", id);
     const formData = await request.formData();
     const content = formData.get("content");
     const mood = formData.get("mood");
 
-    console.log("[Action] Form data:", {
-      content: content?.toString(),
-      mood: mood?.toString(),
-    });
-
     if (!content || typeof content !== "string" || !content.trim()) {
-      console.log("[Action] Invalid content");
       return Response.json(
         { error: "内容を入力してください" },
         { status: 400 }
@@ -130,12 +110,9 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
     const finalTags = mergeTags(content.trim(), manualTags);
     const tagsString = tagsToString(finalTags);
 
-    console.log("[Action] Final tags:", finalTags);
-
     try {
       // 新規作成の場合
       if (id === "new") {
-        console.log("[Action] Creating new journal entry");
         const insertData = {
           content: content.trim(),
           mood: finalMood,
@@ -144,7 +121,6 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
           timestamp: Date.now(),
           date: new Date().toLocaleDateString("ja-JP"),
         };
-        console.log("[Action] Insert data:", insertData);
 
         const { data, error } = await serverSupabase
           .from("journals")
@@ -160,7 +136,6 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
           );
         }
 
-        console.log("[Action] Successfully created:", data);
         return Response.json({
           success: true,
           redirect: `/journal/${data.id}`,
@@ -183,7 +158,6 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
         return Response.json({ error: "更新に失敗しました" }, { status: 500 });
       }
 
-      console.log("[Action] Successfully updated");
       return Response.json({ success: true });
     } catch (error) {
       console.error("[Action] Error:", error);
@@ -241,8 +215,6 @@ export default function JournalPage() {
   const [aiLoading, setAiLoading] = useState(false);
   const [error, setError] = useState<string>("");
 
-  console.log("[JournalPage] initialAiReply:", initialAiReply);
-  console.log("[JournalPage] aiReply state:", aiReply);
   const [userJournals, setUserJournals] = useState<Array<{ tags?: string }>>(
     []
   );
@@ -385,7 +357,6 @@ export default function JournalPage() {
   // Handle fetcher response
   useEffect(() => {
     if (fetcher.state === "idle" && fetcher.data) {
-      console.log("[Frontend] Fetcher response:", fetcher.data);
       setSaving(false);
 
       const actionData = fetcher.data as {
@@ -409,7 +380,6 @@ export default function JournalPage() {
         navigate(actionData.redirect);
       } else if (actionData.success) {
         // 更新の場合は状態を更新
-        console.log("[Frontend] Update successful");
         if (entry) {
           // Note: We'll need to pass the content and mood to update the entry
           // For now, just switch to view mode
@@ -443,14 +413,6 @@ export default function JournalPage() {
     mood: string,
     manualTags: string[]
   ) => {
-    console.log("[Frontend] handleSave called with:", {
-      content,
-      mood,
-      manualTags,
-      journalId,
-      isNewEntry,
-    });
-
     if (!content.trim()) {
       toast.error("内容を入力してください");
       return;
@@ -470,8 +432,6 @@ export default function JournalPage() {
         return;
       }
 
-      console.log("[Frontend] Using session access token for request");
-
       // アクセストークンをヘッダーに含めてリクエスト
       const formData = new FormData();
       formData.append("content", content.trim());
@@ -486,7 +446,6 @@ export default function JournalPage() {
         body: formData,
       });
 
-      console.log("[Frontend] Response status:", response.status);
       console.log(
         "[Frontend] Response headers:",
         Object.fromEntries(response.headers.entries())
@@ -501,10 +460,8 @@ export default function JournalPage() {
       let data;
       try {
         data = JSON.parse(responseText);
-        console.log("[Frontend] Parsed JSON:", data);
       } catch (e) {
         console.error("[Frontend] Failed to parse JSON:", e);
-        console.log("[Frontend] Raw response was HTML, likely an error page");
 
         // データは保存されている可能性が高いので、成功として扱う
         if (response.status === 200) {
@@ -561,13 +518,10 @@ export default function JournalPage() {
       isNewEntry
     );
     if (isNewEntry) {
-      console.log("[handleCancel] Navigating to home");
       navigate("/", { replace: true });
     } else if (mode === "edit") {
-      console.log("[handleCancel] Switching to view mode");
       setMode("view");
     } else {
-      console.log("[handleCancel] Navigating back");
       navigate(-1);
     }
   };
@@ -588,8 +542,6 @@ export default function JournalPage() {
         data: { session },
       } = await supabase.auth.getSession();
 
-      console.log("[handleAskAI] Session:", session ? "Found" : "Not found");
-
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
       };
@@ -597,9 +549,6 @@ export default function JournalPage() {
       // セッションがある場合は認証ヘッダーを追加
       if (session) {
         headers.Authorization = `Bearer ${session.access_token}`;
-        console.log("[handleAskAI] Authorization header added");
-      } else {
-        console.log("[handleAskAI] No session, no auth header");
       }
 
       const response = await fetch("/api/ai", {
@@ -611,13 +560,8 @@ export default function JournalPage() {
         }),
       });
 
-      console.log("AI response status:", response.status);
-      console.log("AI response ok:", response.ok);
-      console.log("AI response headers:", response.headers.get("content-type"));
-
       // レスポンステキストを確認
       const responseText = await response.text();
-      console.log("AI response text:", responseText.substring(0, 200));
 
       let data;
       try {
@@ -627,7 +571,6 @@ export default function JournalPage() {
         console.error("Response was not JSON:", responseText.substring(0, 500));
         throw new Error("Invalid JSON response");
       }
-      console.log("AI response data:", data);
 
       if (response.ok) {
         setAiReply(data.reply || "");
