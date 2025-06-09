@@ -1,50 +1,118 @@
 import { useEffect, useState } from "react";
 import {
-  json,
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
 } from "@remix-run/node";
-import { Link, useLoaderData, useNavigate } from "@remix-run/react";
-import { ArrowLeft, Bot, Calendar, Clock, Edit, Save } from "lucide-react";
+import { useLoaderData, useNavigate } from "@remix-run/react";
+import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 import { toast } from "sonner";
 
+import {
+  JournalEditor,
+  type JournalEntry,
+  type JournalMode,
+} from "~/components/JournalEditor";
 import { getOptionalUser, requireAuth } from "~/lib/auth.server";
 import { cache, CACHE_KEYS } from "~/lib/cache.client";
+import { openai } from "~/lib/openai.server";
 import { supabase } from "../lib/supabase.client";
-import { moodColors } from "../moodColors";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { user } = await getOptionalUser(request);
   const { id } = params;
 
-  return json({
+  return Response.json({
     serverUser: user,
     journalId: id,
   });
 }
 
 export const action = async ({ request, params }: ActionFunctionArgs) => {
-  const { user } = await requireAuth(request);
+  const { user, supabase: serverSupabase } = await requireAuth(request);
   const { id } = params;
 
   if (!id) {
-    return json({ error: "IDが見つかりません" }, { status: 400 });
+    return Response.json({ error: "IDが見つかりません" }, { status: 400 });
   }
 
+  const contentType = request.headers.get("content-type");
+
+  // AI相談のリクエスト
+  if (contentType?.includes("application/json")) {
+    try {
+      const body = await request.json();
+      const { content } = body;
+      if (!content || typeof content !== "string") {
+        return Response.json({ error: "内容がありません" }, { status: 400 });
+      }
+
+      const openaiMessages: ChatCompletionMessageParam[] = [
+        {
+          role: "system",
+          content:
+            "あなたは共感的なセラピストです。ユーザーの気持ちをやさしく受け止めてください。",
+        },
+        {
+          role: "user",
+          content,
+        },
+      ];
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4",
+        messages: openaiMessages,
+      });
+
+      const reply =
+        completion.choices[0].message?.content ??
+        "うまく返答できませんでした。";
+      return Response.json({ reply });
+    } catch (err: unknown) {
+      return Response.json(
+        { error: err instanceof Error ? err.message : "サーバーエラー" },
+        { status: 500 }
+      );
+    }
+  }
+
+  // フォームデータの処理（新規作成・更新）
   const formData = await request.formData();
   const content = formData.get("content");
   const mood = formData.get("mood");
 
   if (!content || typeof content !== "string" || !content.trim()) {
-    return json({ error: "内容を入力してください" }, { status: 400 });
+    return Response.json({ error: "内容を入力してください" }, { status: 400 });
   }
 
   if (!mood || typeof mood !== "string") {
-    return json({ error: "気分を選択してください" }, { status: 400 });
+    return Response.json({ error: "気分を選択してください" }, { status: 400 });
   }
 
   try {
-    const { error } = await user.supabase
+    // 新規作成の場合
+    if (id === "new") {
+      const { data, error } = await serverSupabase
+        .from("journals")
+        .insert({
+          content: content.trim(),
+          mood,
+          user_id: user.id,
+          timestamp: Date.now(),
+          date: new Date().toLocaleDateString("ja-JP"),
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Insert error:", error);
+        return Response.json({ error: "保存に失敗しました" }, { status: 500 });
+      }
+
+      return Response.json({ success: true, redirect: `/journal/${data.id}` });
+    }
+
+    // 更新の場合
+    const { error } = await serverSupabase
       .from("journals")
       .update({
         content: content.trim(),
@@ -55,38 +123,34 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 
     if (error) {
       console.error("Update error:", error);
-      return json({ error: "更新に失敗しました" }, { status: 500 });
+      return Response.json({ error: "更新に失敗しました" }, { status: 500 });
     }
 
-    return json({ success: true });
+    return Response.json({ success: true });
   } catch (error) {
     console.error("Action error:", error);
-    return json({ error: "サーバーエラーが発生しました" }, { status: 500 });
+    return Response.json(
+      { error: "サーバーエラーが発生しました" },
+      { status: 500 }
+    );
   }
 };
 
-// 時間帯に応じた背景グラデーション
-function getTimeGradient(timestamp: number) {
-  const hour = new Date(timestamp).getHours();
-  if (hour >= 5 && hour < 12) {
-    return "from-yellow-50 to-orange-50"; // 朝
-  } else if (hour >= 12 && hour < 17) {
-    return "from-blue-50 to-cyan-50"; // 昼
-  } else {
-    return "from-purple-50 to-pink-50"; // 夜
-  }
-}
-
-export default function JournalDetail() {
+export default function JournalPage() {
   const { serverUser, journalId } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
-  const [entry, setEntry] = useState<any>(null);
+  const [entry, setEntry] = useState<JournalEntry | null>(null);
   const [user, setUser] = useState<{ id: string } | null>(serverUser);
   const [loading, setLoading] = useState(true);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editContent, setEditContent] = useState("");
-  const [editMood, setEditMood] = useState("");
+  const [mode, setMode] = useState<JournalMode>(
+    journalId === "new" ? "new" : "view"
+  );
   const [saving, setSaving] = useState(false);
+  const [aiReply, setAiReply] = useState<string>("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [error, setError] = useState<string>("");
+
+  const isNewEntry = journalId === "new";
 
   useEffect(() => {
     const checkAuthAndFetchEntry = async () => {
@@ -96,13 +160,19 @@ export default function JournalDetail() {
         } = await supabase.auth.getUser();
         setUser(clientUser);
 
+        // 新規作成の場合はデータ取得をスキップ
+        if (isNewEntry) {
+          setLoading(false);
+          return;
+        }
+
         if (clientUser && journalId) {
           // Check cache first
           const cacheKey = CACHE_KEYS.JOURNAL_ENTRY(journalId);
           const cachedEntry = cache.get(cacheKey);
 
           if (cachedEntry) {
-            setEntry(cachedEntry);
+            setEntry(cachedEntry as JournalEntry);
             setLoading(false);
             return;
           }
@@ -116,11 +186,17 @@ export default function JournalDetail() {
             .single();
 
           if (!error && data) {
-            setEntry(data);
-            setEditContent(data.content);
-            setEditMood(data.mood);
+            const journalEntry: JournalEntry = {
+              id: data.id,
+              content: data.content,
+              mood: data.mood,
+              timestamp: data.timestamp,
+              date: data.date,
+              user_id: data.user_id,
+            };
+            setEntry(journalEntry);
             // Cache the entry for 15 minutes
-            cache.set(cacheKey, data, 15 * 60 * 1000);
+            cache.set(cacheKey, journalEntry, 15 * 60 * 1000);
           }
         }
       } catch (error) {
@@ -131,56 +207,107 @@ export default function JournalDetail() {
     };
 
     checkAuthAndFetchEntry();
-  }, [journalId]);
+  }, [journalId, isNewEntry]);
 
-  const handleEdit = () => {
-    setIsEditing(true);
-  };
-
-  const handleSave = async () => {
-    if (!editContent.trim()) {
+  const handleSave = async (content: string, mood: string) => {
+    if (!content.trim()) {
       toast.error("内容を入力してください");
+      return;
+    }
+
+    if (!mood) {
+      toast.error("気分を選択してください");
       return;
     }
 
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from("journals")
-        .update({
-          content: editContent.trim(),
-          mood: editMood,
-        })
-        .eq("id", journalId)
-        .eq("user_id", user!.id);
+      const formData = new FormData();
+      formData.append("content", content.trim());
+      formData.append("mood", mood);
 
-      if (error) {
-        toast.error("更新に失敗しました");
+      const response = await fetch(`/journal/${journalId}`, {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast.error(data.error || "保存に失敗しました");
         return;
       }
 
-      // Update local state
-      setEntry({ ...entry, content: editContent.trim(), mood: editMood });
-      setIsEditing(false);
-      toast.success("更新しました");
+      if (isNewEntry && data.redirect) {
+        // 新規作成の場合はリダイレクト
+        toast.success("保存しました");
+        navigate(data.redirect);
+      } else {
+        // 更新の場合は状態を更新
+        if (entry) {
+          const updatedEntry: JournalEntry = {
+            ...entry,
+            content: content.trim(),
+            mood,
+          };
+          setEntry(updatedEntry);
+        }
+        setMode("view");
+        toast.success("更新しました");
 
-      // Clear cache
-      cache.invalidate(CACHE_KEYS.JOURNAL_ENTRY(journalId));
-      if (user) {
-        cache.invalidate(CACHE_KEYS.JOURNAL_ENTRIES(user.id));
+        // Clear cache
+        cache.invalidate(CACHE_KEYS.JOURNAL_ENTRY(journalId));
+        if (user) {
+          cache.invalidate(CACHE_KEYS.JOURNAL_ENTRIES(user.id));
+        }
       }
     } catch (error) {
       console.error("Save error:", error);
-      toast.error("更新に失敗しました");
+      toast.error("保存に失敗しました");
     } finally {
       setSaving(false);
     }
   };
 
   const handleCancel = () => {
-    setEditContent(entry.content);
-    setEditMood(entry.mood);
-    setIsEditing(false);
+    if (isNewEntry) {
+      navigate("/");
+    } else {
+      setMode("view");
+    }
+  };
+
+  const handleEdit = () => {
+    setMode("edit");
+  };
+
+  const handleAskAI = async () => {
+    if (!entry?.content) return;
+
+    setAiLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch(`/journal/${journalId || "new"}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ content: entry.content }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setAiReply(data.reply || "");
+      } else {
+        setError(data.error || "エラーが発生しました");
+      }
+    } catch (err) {
+      setError("ネットワークエラーが発生しました");
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   // Show loading state
@@ -198,147 +325,27 @@ export default function JournalDetail() {
     return null;
   }
 
-  if (!entry) {
-    return null;
+  // 新規作成の場合はentryがnullでもOK
+  if (!isNewEntry && !entry) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p className="text-gray-600">エントリーが見つかりません</p>
+      </div>
+    );
   }
 
-  const timeGradient = getTimeGradient(entry.timestamp);
-  const mood = moodColors[entry.mood as keyof typeof moodColors];
-
   return (
-    <div className="min-h-screen bg-transparent">
-      {/* ヘッダー */}
-      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm">
-        <div className="flex items-center justify-between px-4 py-3">
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-gray-600 transition-colors hover:text-gray-800"
-          >
-            <ArrowLeft size={20} />
-            <span className="text-sm">戻る</span>
-          </button>
-          {!isEditing && (
-            <div className="flex items-center gap-2">
-              <Link
-                to={`/journal/view/${entry.id}`}
-                className="rounded-full p-2 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-800"
-                title="閲覧モード"
-              >
-                <Bot size={18} />
-              </Link>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* メインコンテンツ */}
-      <div className="mx-auto max-w-3xl px-4 py-6">
-        <div
-          className={`rounded-2xl bg-gradient-to-br ${timeGradient} p-6 shadow-sm`}
-        >
-          {/* 日付と時間 */}
-          <div className="mb-4 flex items-center gap-3 text-sm text-gray-600">
-            <div className="flex items-center gap-1">
-              <Calendar size={14} />
-              <span>{entry.date}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Clock size={14} />
-              <span>
-                {new Date(entry.timestamp).toLocaleTimeString("ja-JP", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </span>
-            </div>
-          </div>
-
-          {/* 気分 */}
-          <div className="mb-6">
-            {!isEditing ? (
-              <span
-                className={`inline-flex items-center rounded-full px-3 py-1 text-sm ${
-                  mood?.color || "bg-gray-100 text-gray-600"
-                }`}
-              >
-                {mood?.label || entry.mood}
-              </span>
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {Object.entries(moodColors).map(([moodKey, { color, label }]) => (
-                  <button
-                    key={moodKey}
-                    type="button"
-                    className={`rounded-full px-3 py-1 text-sm transition-all ${color} ${
-                      editMood === moodKey
-                        ? "ring-2 ring-offset-2 ring-wellness-primary"
-                        : "opacity-60 hover:opacity-100"
-                    }`}
-                    onClick={() => setEditMood(moodKey)}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* 内容 */}
-          <div className="prose prose-gray max-w-none">
-            {!isEditing ? (
-              <p className="whitespace-pre-wrap leading-relaxed text-gray-800">
-                {entry.content}
-              </p>
-            ) : (
-              <textarea
-                value={editContent}
-                onChange={(e) => setEditContent(e.target.value)}
-                className="min-h-[300px] w-full resize-none rounded-lg border border-gray-200 bg-white/80 p-4 text-gray-800 focus:outline-none focus:ring-2 focus:ring-wellness-primary"
-                placeholder="内容を編集してください..."
-              />
-            )}
-          </div>
-        </div>
-
-        {/* アクションエリア */}
-        <div className="mt-8 space-y-3">
-          {!isEditing ? (
-            <>
-              <button
-                onClick={handleEdit}
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-gray-800 px-4 py-3 text-white transition-colors hover:bg-gray-700"
-              >
-                <Edit size={18} />
-                <span>編集する</span>
-              </button>
-              <Link
-                to={`/journal/view/${entry.id}`}
-                className="flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-700 transition-colors hover:bg-gray-50"
-              >
-                <Bot size={18} />
-                <span>AIに相談する</span>
-              </Link>
-            </>
-          ) : (
-            <>
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-gray-800 px-4 py-3 text-white transition-colors hover:bg-gray-700 disabled:opacity-50"
-              >
-                <Save size={18} />
-                <span>{saving ? "保存中..." : "保存する"}</span>
-              </button>
-              <button
-                onClick={handleCancel}
-                className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-700 transition-colors hover:bg-gray-50"
-              >
-                <span>キャンセル</span>
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
+    <JournalEditor
+      mode={mode}
+      entry={entry || undefined}
+      onSave={handleSave}
+      onCancel={handleCancel}
+      onEdit={handleEdit}
+      onAskAI={handleAskAI}
+      aiLoading={aiLoading}
+      saving={saving}
+      aiReply={aiReply}
+      error={error}
+    />
   );
 }

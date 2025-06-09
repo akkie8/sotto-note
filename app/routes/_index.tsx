@@ -362,7 +362,7 @@ export default function Index() {
           data: { user },
         } = await supabase.auth.getUser();
         if (user) {
-          navigate("/journal");
+          navigate("/journal/new");
         } else {
           await supabase.auth.signInWithOAuth({
             provider: "google",
@@ -1232,10 +1232,10 @@ export default function Index() {
         {/* 新規エントリーボタン */}
         <div className="mb-4">
           <Link
-            to="/journal"
+            to="/journal/new"
             className="block w-full rounded-md bg-wellness-primary px-3 py-2 text-center text-white transition-all hover:bg-wellness-secondary"
           >
-            <span className="text-xs">今日の気持ちを記録する</span>
+            <span className="text-xs">今の気持ちをノートに書く</span>
           </Link>
         </div>
 
@@ -1304,7 +1304,7 @@ export default function Index() {
                       </span>
                     </div>
                   </div>
-                  <Link to={`/journal/view/${entry.id}`} className="block">
+                  <Link to={`/journal/${entry.id}`} className="block">
                     <p className="line-clamp-2 text-sm leading-relaxed text-wellness-text">
                       {entry.content}
                     </p>
