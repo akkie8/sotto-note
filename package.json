@@ -10,7 +10,9 @@
     "start": "remix-serve ./build/server/index.js",
     "typecheck": "tsc",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "precommit": "yarn format && yarn build",
+    "precommit:check": "yarn format:check && yarn typecheck && yarn build"
   },
   "dependencies": {
     "@remix-run/css-bundle": "^2.16.7",

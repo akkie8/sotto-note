@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "@remix-run/react";
-import { Home, Pause, Play, RotateCcw, Settings } from "lucide-react";
+import { Pause, Play, RotateCcw, Settings } from "lucide-react";
 
 import { cache, CACHE_KEYS } from "~/lib/cache.client";
 import { supabase } from "../lib/supabase.client";
@@ -49,7 +49,7 @@ export default function Breathing() {
 
         if (clientUser) {
           // Check cache first
-          const cachedProfile = cache.get(
+          const cachedProfile = cache.get<{ name: string }>(
             CACHE_KEYS.USER_PROFILE(clientUser.id)
           );
 
@@ -114,9 +114,10 @@ export default function Breathing() {
 
   const nextPhase = useCallback(() => {
     setPhase((currentPhase) => {
+      const holdInTime = settings.holdInTime || 0;
+      const holdOutTime = settings.holdOutTime || 0;
       switch (currentPhase) {
         case "inhale":
-          const holdInTime = settings.holdInTime || 0;
           if (holdInTime > 0) {
             setTimeLeft(holdInTime);
             return "hold-in";
@@ -128,7 +129,6 @@ export default function Breathing() {
           setTimeLeft(settings.exhaleTime);
           return "exhale";
         case "exhale":
-          const holdOutTime = settings.holdOutTime || 0;
           if (holdOutTime > 0) {
             setTimeLeft(holdOutTime);
             return "hold-out";
