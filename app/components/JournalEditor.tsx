@@ -1,7 +1,16 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft, Bot, Calendar, Clock, Edit, Save } from "lucide-react";
 
+import {
+  containsHashtags,
+  extractHashtags,
+  getManualTags,
+  getSuggestedTags,
+  getUserTags,
+  mergeTags,
+} from "~/lib/hashtag";
 import { moodColors } from "~/moodColors";
+import { TagSelector } from "./TagSelector";
 
 export type JournalMode = "new" | "edit" | "view";
 
@@ -9,6 +18,7 @@ export interface JournalEntry {
   id?: string;
   content: string;
   mood: string;
+  tags?: string;
   timestamp?: number;
   date?: string;
   user_id?: string;
@@ -17,7 +27,11 @@ export interface JournalEntry {
 export interface JournalEditorProps {
   mode: JournalMode;
   entry?: JournalEntry;
-  onSave: (content: string, mood: string) => Promise<void>;
+  onSave: (
+    content: string,
+    mood: string,
+    manualTags: string[]
+  ) => Promise<void>;
   onCancel: () => void;
   onEdit?: () => void;
   onAskAI?: () => void;
@@ -25,6 +39,7 @@ export interface JournalEditorProps {
   saving?: boolean;
   aiReply?: string;
   error?: string;
+  userJournals?: Array<{ tags?: string }>; // ユーザーの過去ジャーナル（タグ取得用）
 }
 
 export function JournalEditor({
@@ -38,26 +53,43 @@ export function JournalEditor({
   saving = false,
   aiReply,
   error,
+  userJournals = [],
 }: JournalEditorProps) {
   const [content, setContent] = useState(entry?.content || "");
   const [selectedMood, setSelectedMood] = useState(entry?.mood || "");
+  const [manualTags, setManualTags] = useState<string[]>([]);
 
   useEffect(() => {
     if (entry) {
       setContent(entry.content);
       setSelectedMood(entry.mood);
+
+      // 既存エントリーの場合、保存されているタグから手動タグを抽出
+      if (entry.tags) {
+        const allSavedTags = entry.tags
+          .split(",")
+          .filter((tag) => tag.trim() !== "");
+        const manualOnlyTags = getManualTags(allSavedTags, entry.content);
+        setManualTags(manualOnlyTags);
+      }
     }
   }, [entry]);
 
   const handleSave = async () => {
+    console.log("[JournalEditor] handleSave called with:", {
+      content: content.trim(),
+      mode,
+      contentLength: content.trim().length,
+      manualTags: manualTags,
+    });
+
     if (!content.trim()) {
-      return;
-    }
-    if (!selectedMood) {
+      console.log("[JournalEditor] Content is empty");
       return;
     }
 
-    await onSave(content.trim(), selectedMood);
+    console.log("[JournalEditor] Calling onSave...");
+    await onSave(content.trim(), "neutral", manualTags); // 手動タグも渡す
   };
 
   const isEditable = mode === "new" || mode === "edit";
@@ -65,6 +97,21 @@ export function JournalEditor({
   const mood = selectedMood
     ? moodColors[selectedMood as keyof typeof moodColors]
     : null;
+
+  // タグ関連の計算
+  const userTags = getUserTags(userJournals);
+  const suggestedTags = getSuggestedTags(userTags);
+  const allCurrentTags = mergeTags(content, manualTags);
+
+  // デバッグ用ログ
+  console.log("[JournalEditor] Current state:", {
+    mode,
+    content: content.slice(0, 50) + "...",
+    contentLength: content.length,
+    contentTrimmed: !!content.trim(),
+    saving,
+    isButtonDisabled: saving || !content.trim(),
+  });
 
   const getPlaceholder = () => {
     if (mode === "new") {
@@ -123,10 +170,20 @@ export function JournalEditor({
                   </button>
                   <button
                     onClick={handleSave}
-                    disabled={saving || !content.trim() || !selectedMood}
+                    disabled={saving || !content.trim()}
                     className="rounded bg-wellness-primary px-3 py-1.5 text-xs font-medium text-white transition-all hover:bg-wellness-secondary disabled:cursor-not-allowed disabled:opacity-50"
+                    title={
+                      saving
+                        ? "保存中..."
+                        : !content.trim()
+                          ? "内容を入力してください"
+                          : "保存"
+                    }
                   >
                     {saving ? "保存中..." : "保存"}
+                    {!content.trim() && (
+                      <span className="ml-1 text-red-300">!</span>
+                    )}
                   </button>
                 </>
               )}
@@ -137,7 +194,7 @@ export function JournalEditor({
 
       {/* Main Content */}
       <div className="flex flex-1 flex-col px-6">
-        {/* 日付と時間 - コンパクト */}
+        {/* 日付と時間 - 既存エントリーのみ上部表示 */}
         {mode !== "new" && entry && entry.date && (
           <div className="py-2">
             <div className="flex items-center gap-3 text-xs text-wellness-textLight">
@@ -159,43 +216,6 @@ export function JournalEditor({
             </div>
           </div>
         )}
-
-        {/* 気分セレクター - コンパクト */}
-        <div className="py-3">
-          <div className="mb-2 flex items-center gap-3">
-            <span className="whitespace-nowrap text-xs font-medium text-wellness-text">
-              {mode === "new" ? "今の気分" : "気分"}
-            </span>
-            <div className="flex gap-1 overflow-x-auto">
-              {isView ? (
-                <span
-                  className={`flex-shrink-0 rounded px-2 py-1 text-xs ${
-                    mood?.color || "bg-gray-100 text-gray-600"
-                  }`}
-                >
-                  {mood?.label || selectedMood}
-                </span>
-              ) : (
-                Object.entries(moodColors).map(
-                  ([moodKey, { color, hoverColor, label }]) => (
-                    <button
-                      key={moodKey}
-                      type="button"
-                      className={`flex-shrink-0 rounded px-2 py-1 text-xs transition-all ${color} ${
-                        selectedMood === moodKey
-                          ? `text-wellness-text`
-                          : `${hoverColor} text-wellness-textLight`
-                      }`}
-                      onClick={() => setSelectedMood(moodKey)}
-                    >
-                      {label}
-                    </button>
-                  )
-                )
-              )}
-            </div>
-          </div>
-        </div>
 
         {/* Writing Area - Main Focus */}
         <div className="flex flex-1 flex-col pb-4">
@@ -234,6 +254,76 @@ export function JournalEditor({
             {error}
           </div>
         )}
+
+        {/* 下部情報エリア（新規作成時の日付・時間・タグ） */}
+        <div className="mt-4 border-t border-wellness-primary/10 pt-4">
+          {/* 新規作成時の日付・時間 */}
+          {mode === "new" && (
+            <div className="mb-3">
+              <div className="flex items-center gap-3 text-xs text-wellness-textLight">
+                <div className="flex items-center gap-1">
+                  <Calendar size={12} />
+                  <span>{new Date().toLocaleDateString("ja-JP")}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Clock size={12} />
+                  <span>
+                    {new Date().toLocaleTimeString("ja-JP", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* タグエリア */}
+          {(allCurrentTags.length > 0 || isEditable) && (
+            <div className="mb-3">
+              {/* 現在のタグ表示（自動抽出 + 手動選択を統合） */}
+              {allCurrentTags.length > 0 && (
+                <div className="mb-3">
+                  <div className="flex items-center gap-3">
+                    <span className="whitespace-nowrap text-xs font-medium text-wellness-text">
+                      タグ
+                    </span>
+                    <div className="flex flex-wrap gap-1">
+                      {allCurrentTags.map((tag, index) => {
+                        const isAutoTag =
+                          extractHashtags(content).includes(tag);
+                        return (
+                          <span
+                            key={index}
+                            className={`rounded-full px-2 py-1 text-xs ${
+                              isAutoTag
+                                ? "bg-wellness-secondary/20 text-wellness-secondary"
+                                : "bg-wellness-primary/20 text-wellness-primary"
+                            }`}
+                            title={
+                              isAutoTag ? "テキストから自動抽出" : "手動選択"
+                            }
+                          >
+                            {tag}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* タグ選択UI（編集可能モードのみ） */}
+              {isEditable && (
+                <TagSelector
+                  selectedTags={manualTags}
+                  suggestedTags={suggestedTags}
+                  onTagsChange={setManualTags}
+                />
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
