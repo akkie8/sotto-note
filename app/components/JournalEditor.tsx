@@ -8,7 +8,6 @@ import {
   getUserTags,
   mergeTags,
 } from "~/lib/hashtag";
-import { moodColors } from "~/moodColors";
 import { TagSelector } from "./TagSelector";
 
 export type JournalMode = "new" | "edit" | "view";

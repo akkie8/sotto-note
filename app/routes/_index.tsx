@@ -22,7 +22,6 @@ import { getOptionalUser } from "~/lib/auth.server";
 import { cache, CACHE_KEYS } from "~/lib/cache.client";
 import { getOAuthRedirectUrl } from "~/lib/config";
 import { supabase } from "../lib/supabase.client";
-import { moodColors } from "../moodColors";
 
 // ジャーナルエントリー型
 type JournalEntry = {
@@ -1297,18 +1296,6 @@ export default function Index() {
                           hour: "2-digit",
                           minute: "2-digit",
                         })}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`rounded px-1.5 py-0.5 text-xs ${
-                          moodColors[entry.mood as keyof typeof moodColors]
-                            ?.color ||
-                          "bg-wellness-primary/10 text-wellness-primary"
-                        }`}
-                      >
-                        {moodColors[entry.mood as keyof typeof moodColors]
-                          ?.label || entry.mood}
                       </span>
                     </div>
                   </div>
