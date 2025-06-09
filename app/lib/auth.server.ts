@@ -120,6 +120,26 @@ export async function getOptionalUser(request: Request) {
   const supabase = getSupabase(request, response);
 
   try {
+    // Authorizationヘッダーからトークンを取得
+    const authHeader = request.headers.get("authorization");
+    if (authHeader?.startsWith("Bearer ")) {
+      const token = authHeader.substring(7);
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser(token);
+
+      console.log("[getOptionalUser] Token auth result:", {
+        userId: user?.id,
+        error: error?.message,
+      });
+
+      if (user) {
+        return { user, headers: response.headers, supabase };
+      }
+    }
+
+    // 通常のセッションチェック
     const {
       data: { user },
       error,

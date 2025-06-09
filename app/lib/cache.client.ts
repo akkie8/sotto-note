@@ -6,7 +6,7 @@ interface CacheEntry<T> {
 }
 
 class ClientCache {
-  private cache = new Map<string, CacheEntry<any>>();
+  private cache = new Map<string, CacheEntry<unknown>>();
   private static instance: ClientCache;
 
   static getInstance(): ClientCache {
@@ -34,7 +34,7 @@ class ClientCache {
       return null;
     }
 
-    return entry.data;
+    return entry.data as T;
   }
 
   invalidate(key: string): void {

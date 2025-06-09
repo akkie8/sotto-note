@@ -131,7 +131,7 @@ export const action: ActionFunction = async ({ request }) => {
       try {
         const tagsArray = baseTags
           .split(",")
-          .filter((tag) => tag.trim() !== "");
+          .filter((tag: string) => tag.trim() !== "");
 
         // プロフィールテーブルのbase_tagsカラムを更新（存在しない場合は作成）
         const { data: updateData, error: updateError } = await supabase
@@ -262,7 +262,7 @@ export default function Settings() {
           if (cachedProfile?.base_tags) {
             const userBaseTags = cachedProfile.base_tags
               .split(",")
-              .filter((tag) => tag.trim() !== "");
+              .filter((tag: string) => tag.trim() !== "");
             setBaseTags(
               userBaseTags.length > 0 ? userBaseTags : DEFAULT_BASE_TAGS
             );
@@ -286,7 +286,7 @@ export default function Settings() {
             if (profile?.base_tags) {
               const userBaseTags = profile.base_tags
                 .split(",")
-                .filter((tag) => tag.trim() !== "");
+                .filter((tag: string) => tag.trim() !== "");
               setBaseTags(
                 userBaseTags.length > 0 ? userBaseTags : DEFAULT_BASE_TAGS
               );
@@ -645,12 +645,17 @@ export default function Settings() {
           このアプリを気に入っていただけましたら、ぜひ開発者をサポートしてください
         </p>
         <div className="grid grid-cols-3 gap-2">
-          <button className="group rounded bg-amber-50 p-3 text-center transition-colors hover:bg-amber-100">
+          <a
+            href="https://buy.stripe.com/test_eVq4gBc6R2eHdQr4JD67S00"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group rounded bg-amber-50 p-3 text-center transition-colors hover:bg-amber-100"
+          >
             <div className="mb-1 text-lg transition-transform group-hover:scale-110">
               ☕
             </div>
             <div className="text-xs font-medium text-amber-800">¥500</div>
-          </button>
+          </a>
           <button className="group rounded bg-green-50 p-3 text-center transition-colors hover:bg-green-100">
             <div className="mb-1 text-lg transition-transform group-hover:scale-110">
               🍱

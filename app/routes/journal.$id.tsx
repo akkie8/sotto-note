@@ -26,10 +26,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // ログインしている場合は既存のAI回答を取得
   if (user && id) {
     try {
-      const { createSupabaseServerClient } = await import(
-        "~/lib/supabase.server"
-      );
-      const supabase = createSupabaseServerClient(request);
+      const { getSupabase } = await import("~/lib/supabase.server");
+      const response = new Response();
+      const supabase = getSupabase(request, response);
+
+      // 認証ヘッダーからトークンを取得してセッション設定
+      const authHeader = request.headers.get("authorization");
+      if (authHeader?.startsWith("Bearer ")) {
+        const token = authHeader.substring(7);
+        await supabase.auth.setSession({
+          access_token: token,
+          refresh_token: "",
+        });
+      }
+
       const { data } = await supabase
         .from("ai_replies")
         .select("content")
@@ -73,79 +83,20 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       return Response.json({ error: "IDが見つかりません" }, { status: 400 });
     }
 
-    const contentType = request.headers.get("content-type");
-
-    // AI相談のリクエスト（認証不要）
-    if (contentType?.includes("application/json")) {
-      const body = await request.json();
-      const { content } = body;
-
-      if (!content || typeof content !== "string" || !content.trim()) {
-        return Response.json(
-          { error: "内容を入力してください" },
-          { status: 400 }
-        );
-      }
-
-      try {
-        console.log("[AI] Starting OpenAI request...");
-        const { openai } = await import("~/lib/openai.server");
-        console.log("[AI] OpenAI client loaded");
-
-        const completion = await openai.chat.completions.create({
-          model: "gpt-3.5-turbo",
-          messages: [
-            {
-              role: "system",
-              content: `あなたは「そっとさん」という名前の、優しく共感的なカウンセラーです。
-
-あなたの特徴：
-- 相手の気持ちに寄り添い、批判せずに受け入れる
-- 温かく優しい口調で話す
-- 相手の感情を認め、共感を示す
-- 押し付けがましくならず、そっと見守る姿勢
-- 日記の内容に対して適切なアドバイスや励ましを提供する
-- 200-300文字程度の簡潔で心温まる返答をする
-
-以下の日記の内容を読んで、優しく共感的な返答をしてください。`,
-            },
-            {
-              role: "user",
-              content,
-            },
-          ],
-          max_tokens: 500,
-          temperature: 0.7,
-        });
-
-        console.log("[AI] OpenAI response received");
-        const reply =
-          completion.choices[0]?.message?.content ||
-          "申し訳ありません。返答を生成できませんでした。";
-        console.log("[AI] Reply generated, length:", reply.length);
-
-        return new Response(JSON.stringify({ reply }), {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-      } catch (error) {
-        console.error("OpenAI API error:", error);
-        return new Response(
-          JSON.stringify({ error: "AI返答の生成中にエラーが発生しました。" }),
-          {
-            status: 500,
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-      }
-    }
-
     // フォームデータの処理（新規作成・更新）- 認証が必要
     const { user, supabase: serverSupabase } = await requireAuth(request);
     console.log("[Action] Auth successful, user:", user.id);
+
+    // Supabaseクライアントのセッションを設定
+    const authHeader = request.headers.get("authorization");
+    if (authHeader?.startsWith("Bearer ")) {
+      const token = authHeader.substring(7);
+      await serverSupabase.auth.setSession({
+        access_token: token,
+        refresh_token: "",
+      });
+      console.log("[Action] Supabase session set with token");
+    }
 
     console.log("[Action] Processing request for id:", id);
     const formData = await request.formData();
@@ -271,6 +222,9 @@ export default function JournalPage() {
   const [aiReply, setAiReply] = useState<string>(initialAiReply || "");
   const [aiLoading, setAiLoading] = useState(false);
   const [error, setError] = useState<string>("");
+
+  console.log("[JournalPage] initialAiReply:", initialAiReply);
+  console.log("[JournalPage] aiReply state:", aiReply);
   const [userJournals, setUserJournals] = useState<Array<{ tags?: string }>>(
     []
   );
@@ -327,10 +281,38 @@ export default function JournalPage() {
               timestamp: data.timestamp,
               date: data.date,
               user_id: data.user_id,
+              has_ai_reply: data.has_ai_reply || false,
             };
             setEntry(journalEntry);
             // Cache the entry for 15 minutes
             cache.set(cacheKey, journalEntry, 15 * 60 * 1000);
+
+            console.log(
+              "[JournalPage] Entry loaded, has_ai_reply:",
+              data.has_ai_reply
+            );
+          }
+
+          // has_ai_replyがtrueの場合のみAI回答を取得
+          if (data?.has_ai_reply) {
+            console.log(
+              "[JournalPage] Fetching AI reply for journal:",
+              journalId
+            );
+            const { data: aiReplyData } = await supabase
+              .from("ai_replies")
+              .select("content")
+              .eq("journal_id", journalId)
+              .eq("user_id", clientUser.id)
+              .single();
+
+            if (aiReplyData?.content) {
+              console.log(
+                "[JournalPage] AI reply fetched:",
+                aiReplyData.content
+              );
+              setAiReply(aiReplyData.content);
+            }
           }
         }
       } catch (error) {
@@ -371,7 +353,7 @@ export default function JournalPage() {
         if (profile?.base_tags) {
           const userBaseTags = profile.base_tags
             .split(",")
-            .filter((tag) => tag.trim() !== "");
+            .filter((tag: string) => tag.trim() !== "");
           setBaseTags(userBaseTags);
         }
       } catch (error) {
@@ -583,11 +565,28 @@ export default function JournalPage() {
     setError("");
 
     try {
+      // セッション情報を取得
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      console.log("[handleAskAI] Session:", session ? "Found" : "Not found");
+
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+
+      // セッションがある場合は認証ヘッダーを追加
+      if (session) {
+        headers.Authorization = `Bearer ${session.access_token}`;
+        console.log("[handleAskAI] Authorization header added");
+      } else {
+        console.log("[handleAskAI] No session, no auth header");
+      }
+
       const response = await fetch("/api/ai", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers,
         body: JSON.stringify({
           content: entry.content,
           journalId: journalId,
@@ -621,8 +620,8 @@ export default function JournalPage() {
       }
     } catch (err) {
       console.error("AI request failed:", err);
-      console.error("Error type:", err.constructor.name);
-      console.error("Error message:", err.message);
+      console.error("Error type:", (err as Error).constructor.name);
+      console.error("Error message:", (err as Error).message);
       setError("ネットワークエラーが発生しました");
     } finally {
       setAiLoading(false);

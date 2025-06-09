@@ -3,3 +3,8 @@ node_modules
 /.cache
 /build
 .env
+
+# プロンプトファイル（機密情報）
+/prompts/*.md
+!/prompts/*.example.md
+!/prompts/README.md

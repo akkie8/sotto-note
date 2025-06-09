@@ -1,7 +1,6 @@
-import { useEffect } from "react";
-import { redirect, type LoaderFunctionArgs } from "@remix-run/node";
+import { redirect } from "@remix-run/node";
 
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader() {
   // /journal にアクセスしたら自動的に /journal/new にリダイレクト
   return redirect("/journal/new");
 }

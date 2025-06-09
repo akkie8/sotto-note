@@ -81,7 +81,7 @@ export const action: ActionFunction = async ({ request }) => {
       try {
         const tagsArray = baseTags
           .split(",")
-          .filter((tag) => tag.trim() !== "");
+          .filter((tag: string) => tag.trim() !== "");
 
         const { data: updateData, error: updateError } = await supabase
           .from("profiles")
@@ -152,8 +152,6 @@ export default function Tags() {
   );
   const [activeTab, setActiveTab] = useState<"browse" | "manage">("browse");
   const [baseTags, setBaseTags] = useState<string[]>(DEFAULT_BASE_TAGS);
-  const [originalBaseTags, setOriginalBaseTags] =
-    useState<string[]>(DEFAULT_BASE_TAGS);
   const [newTag, setNewTag] = useState("");
   const [draggedTag, setDraggedTag] = useState<string | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
@@ -196,10 +194,9 @@ export default function Tags() {
       if (profile?.base_tags) {
         const userBaseTags = profile.base_tags
           .split(",")
-          .filter((tag) => tag.trim() !== "");
+          .filter((tag: string) => tag.trim() !== "");
         const tags = userBaseTags.length > 0 ? userBaseTags : DEFAULT_BASE_TAGS;
         setBaseTags(tags);
-        setOriginalBaseTags(tags);
         setHasChanges(false);
       }
     } catch (error) {
@@ -331,7 +328,6 @@ export default function Tags() {
       }
 
       console.log("Tags saved successfully");
-      setOriginalBaseTags([...baseTags]);
       setHasChanges(false);
       toast.success("タグを更新しました");
     } catch (error) {

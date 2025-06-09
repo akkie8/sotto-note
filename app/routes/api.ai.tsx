@@ -31,6 +31,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       });
     }
 
+    // リクエストヘッダーをログ出力
+    console.log("[AI API] Request headers:", {
+      authorization: request.headers.get("authorization")
+        ? "Bearer ..."
+        : "None",
+      contentType: request.headers.get("content-type"),
+    });
+
     // 認証ユーザーを取得（オプション）
     const { user } = await getOptionalUser(request);
     console.log(
@@ -42,6 +50,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     if (user) {
       const response = new Response();
       const supabase = getSupabase(request, response);
+
+      // Supabaseセッションを設定
+      const authHeader = request.headers.get("authorization");
+      if (authHeader?.startsWith("Bearer ")) {
+        const token = authHeader.substring(7);
+        await supabase.auth.setSession({
+          access_token: token,
+          refresh_token: "", // リフレッシュトークンは不要
+        });
+      }
       const { data: existingReply } = await supabase
         .from("ai_replies")
         .select("id")
@@ -66,45 +84,22 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const { openai } = await import("~/lib/openai.server");
     console.log("[AI API] OpenAI client loaded");
 
+    // プロンプトを環境変数から取得
+    const systemPrompt = process.env.PROMPT_SOTTO_MESSAGE;
+
+    if (!systemPrompt) {
+      console.error(
+        "[AI API] PROMPT_SOTTO_MESSAGE environment variable is not set"
+      );
+      throw new Error("そっとさんのプロンプトが設定されていません");
+    }
+
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
         {
           role: "system",
-          content: `あなたは「そっとさん」という名前の、温かく寄り添う存在です。
-
-返答ルール：
-- まずはユーザーの気持ちに共感する一言から始める（例：「わかる、その感じ…」「それ、すごくしんどいと思う」など）
-- 「無理しないで」「自分を責めないで」など、安心感や肯定感が伝わる言葉を添える
-- 相手や状況を決めつけず、「本当のところはわからないけど」など、余白を残す
-- ユーザーが安心して弱音を吐ける、あたたかい雰囲気を意識する
-- 「ここでいつでも吐き出していいからね」「少しでも心が軽くなりますように」など、締めに寄り添いの一言を入れる
-- アドバイスや指示、ポジティブ変換などは極力控える
-- 必ず改行を入れて、2-3行に分けて読みやすくする
-- 200-300文字程度でしっかりと寄り添う返答をする
-- 絶対に「そっとさん」という名前で自分を呼ばない（あなたがそっとさんです）
-
-以下の日記の内容を読んで、共感と寄り添いを重視した温かい返答をしてください。
-
-重要：必ず改行を使って2-3行に分けてください。改行文字は自然に入れてください。
-
-正しい例：
-わかる、その感じ…
-無理しないでね。
-いつでもここで吐き出していいからね。
-
-間違った例（絶対にしてはいけない）：
-わかる、その感じ…\\n無理しないでね。
-わかる、その感じ…\n無理しないでね。
-
-重要な注意事項：
-- 「\\n」「\n」「<br>」などの改行記号や文字は絶対に使用禁止です
-- 改行したい場合は、文章を区切って次の行に続けてください
-- バックスラッシュ（\\）やnの文字を組み合わせた記号は一切使わないでください
-- HTMLタグも使用しないでください
-- 自然な文章の区切りで改行してください
-- 「〜よね」「〜でしょ」など相手に同意を求める表現は使わない
-- 断定的に共感する（「わかるよ」「そうだと思う」など）`,
+          content: systemPrompt,
         },
         {
           role: "user",
@@ -131,6 +126,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       );
       const response = new Response();
       const supabase = getSupabase(request, response);
+
+      // Supabaseセッションを設定
+      const authHeader = request.headers.get("authorization");
+      if (authHeader?.startsWith("Bearer ")) {
+        const token = authHeader.substring(7);
+        await supabase.auth.setSession({
+          access_token: token,
+          refresh_token: "", // リフレッシュトークンは不要
+        });
+      }
       const { data, error: saveError } = await supabase
         .from("ai_replies")
         .insert({
@@ -150,6 +155,22 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         // エラーでも回答は返す
       } else {
         console.log("[AI API] Reply saved to database:", data);
+
+        // journalsテーブルのhas_ai_replyフラグを更新
+        const { error: updateError } = await supabase
+          .from("journals")
+          .update({ has_ai_reply: true })
+          .eq("id", journalId)
+          .eq("user_id", user.id);
+
+        if (updateError) {
+          console.error(
+            "[AI API] Failed to update has_ai_reply flag:",
+            updateError
+          );
+        } else {
+          console.log("[AI API] Updated has_ai_reply flag");
+        }
       }
     } else {
       console.log("[AI API] No user found, reply not saved");

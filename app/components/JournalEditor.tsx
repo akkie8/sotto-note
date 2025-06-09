@@ -20,6 +20,7 @@ export interface JournalEntry {
   timestamp?: number;
   date?: string;
   user_id?: string;
+  has_ai_reply?: boolean;
 }
 
 export interface JournalEditorProps {
@@ -355,13 +356,17 @@ export function JournalEditor({
         )}
 
         {/* AI相談ボタン */}
-        {console.log(
-          "[JournalEditor] aiReply value:",
-          aiReply,
-          "show button:",
-          onAskAI && isView && !aiReply
-        )}
-        {onAskAI && isView && !aiReply && (
+        {(() => {
+          console.log("[JournalEditor] Button check:", {
+            onAskAI: !!onAskAI,
+            isView,
+            aiReply: !!aiReply,
+            has_ai_reply: entry?.has_ai_reply,
+            showButton: onAskAI && isView && !aiReply && !entry?.has_ai_reply,
+          });
+          return null;
+        })()}
+        {onAskAI && isView && !aiReply && !entry?.has_ai_reply && (
           <div className="mb-4 border-t border-wellness-primary/20 pt-4">
             <div className="text-center">
               <button

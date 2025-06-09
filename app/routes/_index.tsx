@@ -20,7 +20,6 @@ import {
 
 import { getOptionalUser } from "~/lib/auth.server";
 import { cache, CACHE_KEYS } from "~/lib/cache.client";
-import { getOAuthRedirectUrl } from "~/lib/config";
 import { supabase } from "../lib/supabase.client";
 
 // ジャーナルエントリー型
@@ -31,6 +30,7 @@ type JournalEntry = {
   timestamp: number;
   date: string;
   tags?: string;
+  has_ai_reply?: boolean;
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -51,16 +51,6 @@ export const meta: MetaFunction = () => {
     },
   ];
 };
-
-// 時間帯アイコンを返す関数を追加
-function getTimeIcon(timestamp: number) {
-  const hour = new Date(timestamp).getHours();
-  if (hour >= 5 && hour < 12)
-    return <Sunrise size={16} className="text-yellow-400" />; // 朝
-  if (hour >= 12 && hour < 17)
-    return <Sun size={16} className="text-yellow-500" />; // 昼
-  return <Moon size={16} className="text-indigo-400" />; // 夜
-}
 
 export default function Index() {
   const { serverUser } = useLoaderData<typeof loader>();
@@ -1373,13 +1363,30 @@ export default function Index() {
                   <div className="mb-1 flex items-center justify-between">
                     <div className="flex items-center gap-2 text-xs text-wellness-textLight">
                       <span>{entry.date}</span>
-                      {getTimeIcon(entry.timestamp)}
                       <span>
                         {new Date(entry.timestamp).toLocaleTimeString("ja-JP", {
                           hour: "2-digit",
                           minute: "2-digit",
                         })}
                       </span>
+                      {entry.has_ai_reply && (
+                        <span className="flex items-center gap-1 rounded-full bg-wellness-secondary/10 px-2 py-0.5 text-xs text-wellness-secondary">
+                          <svg
+                            className="h-3 w-3"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"
+                            />
+                          </svg>
+                          <span>返信済み</span>
+                        </span>
+                      )}
                     </div>
                   </div>
                   <Link to={`/journal/${entry.id}`} className="block">
@@ -1432,11 +1439,6 @@ export default function Index() {
                 {getActivityData().map((week, weekIndex) => (
                   <div key={weekIndex} className="grid grid-cols-7 gap-1">
                     {week.map((day, dayIndex) => {
-                      const today = new Date();
-                      const isToday =
-                        day.date.getFullYear() === today.getFullYear() &&
-                        day.date.getMonth() === today.getMonth() &&
-                        day.date.getDate() === today.getDate();
                       // 改善されたサイズ計算: 1投稿=30%, 2投稿=50%, 3投稿=70%, 4投稿=85%, 5投稿以上=100%
                       let sizePercent;
                       if (day.count === 0) sizePercent = 0;

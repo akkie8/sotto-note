@@ -12,7 +12,7 @@ import {
   useLocation,
   useNavigate,
 } from "@remix-run/react";
-import { Home, PenTool, Tag, Wind } from "lucide-react";
+import { Home, PenTool, Tag } from "lucide-react";
 import { Toaster } from "sonner";
 
 import { Header } from "~/components/Header";
