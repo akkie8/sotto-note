@@ -20,6 +20,7 @@ import {
 
 import { getOptionalUser } from "~/lib/auth.server";
 import { cache, CACHE_KEYS } from "~/lib/cache.client";
+import { getOAuthRedirectUrl } from "~/lib/config";
 import { supabase } from "../lib/supabase.client";
 import { moodColors } from "../moodColors";
 
@@ -343,6 +344,9 @@ export default function Index() {
       try {
         const { error } = await supabase.auth.signInWithOAuth({
           provider: "google",
+          options: {
+            redirectTo: window.location.origin,
+          },
         });
 
         if (error) {
@@ -361,9 +365,16 @@ export default function Index() {
         if (user) {
           navigate("/journal/new");
         } else {
-          await supabase.auth.signInWithOAuth({
+          const { error } = await supabase.auth.signInWithOAuth({
             provider: "google",
+            options: {
+              redirectTo: window.location.origin,
+            },
           });
+
+          if (error) {
+            console.error("[Index] handleJournalClick error:", error);
+          }
         }
       } catch (e) {
         console.error("[Index] handleJournalClick error:", e);
@@ -630,7 +641,7 @@ export default function Index() {
               <div className="rounded-2xl bg-wellness-surface/30 p-6 shadow-soft">
                 <div className="mb-4 flex items-center gap-3">
                   <img
-                    src="/book-writer.svg"
+                    src="/svg/book-writer.svg"
                     alt="書くイラスト"
                     className="h-12 w-12"
                   />

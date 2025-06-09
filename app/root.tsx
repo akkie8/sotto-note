@@ -147,5 +147,40 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // OAuth認証後のリダイレクト処理
+    const handleOAuthCallback = async () => {
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const accessToken = hashParams.get("access_token");
+      const error = hashParams.get("error");
+
+      if (error) {
+        console.error("[Root] OAuth error:", error);
+        return;
+      }
+
+      if (accessToken) {
+        console.log("[Root] OAuth callback detected, processing...");
+
+        // Supabaseがセッションを処理するのを待つ
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (user) {
+          console.log("[Root] User authenticated:", user.id);
+          // ハッシュフラグメントをクリーンアップ
+          window.history.replaceState(null, "", window.location.pathname);
+          // ホームページにリダイレクト
+          navigate("/");
+        }
+      }
+    };
+
+    handleOAuthCallback();
+  }, [navigate]);
+
   return <Outlet />;
 }
