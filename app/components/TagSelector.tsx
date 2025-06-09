@@ -70,16 +70,16 @@ export function TagSelector({
                 key={tag}
                 onClick={() => handleTagToggle(tag)}
                 disabled={isMaxReached}
-                className={`inline-flex min-h-[32px] touch-manipulation items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-all active:scale-95 ${
+                className={`inline-flex min-h-[28px] touch-manipulation items-center gap-1 rounded-md px-2 py-1 text-xs transition-all active:scale-95 ${
                   isMaxReached
-                    ? "cursor-not-allowed border border-gray-200 bg-gray-100 text-gray-400"
+                    ? "cursor-not-allowed border border-gray-200 bg-gray-50 text-gray-300"
                     : isSelected
                       ? isAutoTag
-                        ? "border border-wellness-secondary bg-wellness-secondary text-white"
-                        : "border border-wellness-primary bg-wellness-primary text-white"
+                        ? "border border-wellness-secondary/40 bg-wellness-secondary/20 text-wellness-secondary/80"
+                        : "border border-wellness-primary/40 bg-wellness-primary/20 text-wellness-primary/80"
                       : isAutoTag
-                        ? "border border-wellness-secondary/30 bg-wellness-secondary/10 text-wellness-secondary hover:bg-wellness-secondary/20"
-                        : "border border-wellness-primary/30 bg-wellness-primary/10 text-wellness-primary hover:bg-wellness-primary/20"
+                        ? "border border-wellness-secondary/20 bg-wellness-secondary/5 text-wellness-secondary/60 hover:bg-wellness-secondary/10"
+                        : "border border-wellness-primary/20 bg-wellness-primary/5 text-wellness-primary/60 hover:bg-wellness-primary/10"
                 }`}
                 title={
                   isMaxReached

@@ -94,20 +94,27 @@ export function getSuggestedTags(
   userTags: string[],
   baseTags?: string[]
 ): string[] {
-  const suggested = new Set<string>();
+  const result: string[] = [];
+  const used = new Set<string>();
 
-  // ユーザーの過去タグを優先（最大10個）
-  userTags.slice(0, 10).forEach((tag) => suggested.add(tag));
-
-  // ベースタグまたはプリセットタグを追加（ユーザータグと重複しないもの）
+  // 1. ベースタグを最初に追加
   const defaultTags = baseTags && baseTags.length > 0 ? baseTags : PRESET_TAGS;
   defaultTags.forEach((tag) => {
-    if (!suggested.has(tag) && suggested.size < 15) {
-      suggested.add(tag);
+    if (result.length < 15) {
+      result.push(tag);
+      used.add(tag);
     }
   });
 
-  return Array.from(suggested);
+  // 2. ユーザーの過去タグを追加（ベースタグと重複しないもの）
+  userTags.forEach((tag) => {
+    if (!used.has(tag) && result.length < 15) {
+      result.push(tag);
+      used.add(tag);
+    }
+  });
+
+  return result;
 }
 
 /**

@@ -85,21 +85,42 @@ export function Layout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setIsHydrated(true);
 
-    // クライアントサイドでSupabase認証状態を取得
+    // 認証状態チェックを1回のみに制限
+    let mounted = true;
+
     import("~/lib/supabase.client").then(({ supabase }) => {
+      if (!mounted) return;
+
       supabase.auth.getUser().then(({ data: { user } }) => {
-        setIsLoggedIn(!!user);
+        if (mounted) {
+          setIsLoggedIn(!!user);
+        }
       });
-      // セッション変化も監視
+
+      // セッション変化監視（デバウンス付き）
+      let timeoutId: NodeJS.Timeout;
       const { data: listener } = supabase.auth.onAuthStateChange(
         (_event, session) => {
-          setIsLoggedIn(!!session?.user);
+          if (!mounted) return;
+          clearTimeout(timeoutId);
+          timeoutId = setTimeout(() => {
+            if (mounted) {
+              setIsLoggedIn(!!session?.user);
+            }
+          }, 100);
         }
       );
+
       return () => {
+        mounted = false;
+        clearTimeout(timeoutId);
         listener?.subscription.unsubscribe();
       };
     });
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   return (

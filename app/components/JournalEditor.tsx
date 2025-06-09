@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowLeft, Calendar, Clock } from "lucide-react";
 
 import {
@@ -38,7 +38,10 @@ export interface JournalEditorProps {
   aiReply?: string;
   error?: string;
   userJournals?: Array<{ tags?: string }>; // ユーザーの過去ジャーナル（タグ取得用）
+  baseTags?: string[]; // ベースタグ
 }
+
+const MAX_CHARACTERS = 1500;
 
 export function JournalEditor({
   mode,
@@ -52,16 +55,15 @@ export function JournalEditor({
   aiReply,
   error,
   userJournals = [],
+  baseTags = [],
 }: JournalEditorProps) {
   const [content, setContent] = useState(entry?.content || "");
-  const [selectedMood, setSelectedMood] = useState(entry?.mood || "");
   const [manualTags, setManualTags] = useState<string[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (entry) {
       setContent(entry.content);
-      setSelectedMood(entry.mood);
 
       // 既存エントリーの場合、保存されているタグから手動タグを抽出
       if (entry.tags) {
@@ -75,23 +77,24 @@ export function JournalEditor({
   }, [entry]);
 
   // テキストエリアの自動リサイズ機能
-  const adjustTextareaHeight = () => {
+  const adjustTextareaHeight = useCallback(() => {
     const textarea = textareaRef.current;
     if (textarea) {
       textarea.style.height = "auto";
       const lineHeight = 1.5; // leading-relaxed
-      const fontSize = 16; // text-base
-      const padding = 24; // p-3 (12px * 2)
-      const minHeight = fontSize * lineHeight * 5 + padding; // 5行分
+      const fontSize = 14; // text-sm
+      const padding = 24; // py-3 (12px * 2)
+      const minRows = mode === "new" ? 2 : 5; // 新規作成時は2行、編集時は5行
+      const minHeight = fontSize * lineHeight * minRows + padding;
       const newHeight = Math.max(textarea.scrollHeight, minHeight);
       textarea.style.height = newHeight + "px";
     }
-  };
+  }, [mode]);
 
   // コンテンツが変更されたときにテキストエリアの高さを調整
   useEffect(() => {
     adjustTextareaHeight();
-  }, [content]);
+  }, [content, adjustTextareaHeight]);
 
   const handleSave = async () => {
     console.log("[JournalEditor] handleSave called with:", {
@@ -115,7 +118,7 @@ export function JournalEditor({
 
   // タグ関連の計算
   const userTags = getUserTags(userJournals);
-  const suggestedTags = getSuggestedTags(userTags); // TODO: ベースタグを渡す
+  const suggestedTags = getSuggestedTags(userTags, baseTags);
   const allCurrentTags = mergeTags(content, manualTags);
 
   // デバッグ用ログ
@@ -130,29 +133,33 @@ export function JournalEditor({
 
   const getPlaceholder = () => {
     if (mode === "new") {
-      return "今日はどんな一日でしたか？\n\n思ったことや感じたことを、ここに自由に書いてみてください...\n\nあなたの心の声に耳を傾けて、素直な気持ちを記録しましょう。";
+      return "今はどんな気持ちですか？";
     }
     return "内容を編集してください...";
   };
 
   return (
-    <div className="flex min-h-full flex-col bg-wellness-bg">
+    <div className="flex min-h-screen flex-col bg-white">
       {/* Header - Fixed at top */}
-      <div className="sticky top-0 z-10 bg-wellness-surface/90 backdrop-blur-sm">
-        <div className="px-6 py-2">
+      <div className="sticky top-0 z-10 bg-white/90 backdrop-blur-sm">
+        <div className="px-4 py-3">
           <div className="flex items-center justify-between">
-            <button
-              onClick={onCancel}
-              className="flex touch-manipulation items-center gap-2 rounded p-2 text-wellness-textLight transition-colors hover:text-wellness-text active:bg-wellness-primary/5"
-            >
-              <ArrowLeft size={18} />
-              <span className="text-sm font-medium">戻る</span>
-            </button>
+            {mode !== "new" && (
+              <button
+                onClick={onCancel}
+                className="flex touch-manipulation items-center gap-2 rounded p-2 text-wellness-textLight transition-colors hover:text-wellness-text active:bg-wellness-primary/5"
+              >
+                <ArrowLeft size={18} />
+                <span className="text-sm font-medium">戻る</span>
+              </button>
+            )}
+            {mode === "new" && <div />}
             <div className="flex items-center gap-2">
               {isView ? (
                 <>
                   <span className="text-xs text-wellness-textLight">
-                    {content.length} 文字 • {allCurrentTags.length} タグ
+                    {content.length}/{MAX_CHARACTERS} 文字 •{" "}
+                    {allCurrentTags.length} タグ
                   </span>
                   {onEdit && (
                     <button
@@ -162,26 +169,26 @@ export function JournalEditor({
                       編集
                     </button>
                   )}
-                  {onAskAI && (
-                    <button
-                      onClick={onAskAI}
-                      disabled={aiLoading}
-                      className="min-h-[44px] touch-manipulation rounded-lg bg-wellness-secondary px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-wellness-primary active:scale-95 disabled:opacity-50"
-                    >
-                      {aiLoading ? "AI思考中..." : "AI相談"}
-                    </button>
-                  )}
                 </>
               ) : (
                 <>
                   <span className="text-xs text-wellness-textLight">
-                    {content.length} 文字 • 手動{manualTags.length}/5 • 自動
+                    <span
+                      className={
+                        content.length > MAX_CHARACTERS * 0.9
+                          ? "text-orange-500"
+                          : ""
+                      }
+                    >
+                      {content.length}/{MAX_CHARACTERS}
+                    </span>
+                    {" • "}手動{manualTags.length}/5 • 自動
                     {extractHashtags(content).length}
                   </span>
                   <button
                     onClick={handleSave}
                     disabled={saving || !content.trim()}
-                    className="min-h-[44px] touch-manipulation rounded-lg bg-wellness-primary px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-wellness-secondary active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="min-h-[36px] touch-manipulation rounded-lg bg-wellness-primary px-4 py-1.5 text-sm font-medium text-white transition-all hover:bg-wellness-secondary active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                     title={
                       saving
                         ? "保存中..."
@@ -203,11 +210,11 @@ export function JournalEditor({
       </div>
 
       {/* Main Content */}
-      <div className="flex flex-1 flex-col px-6">
+      <div className="flex flex-col p-4">
         {/* 日付と時間 - 既存エントリーのみ上部表示 */}
         {mode !== "new" && entry && entry.date && (
-          <div className="py-2">
-            <div className="flex items-center gap-3 text-xs text-wellness-textLight">
+          <div className="">
+            <div className="mb-2 flex items-center gap-3 text-xs text-wellness-textLight">
               <div className="flex items-center gap-1">
                 <Calendar size={12} />
                 <span>{entry.date}</span>
@@ -227,12 +234,12 @@ export function JournalEditor({
           </div>
         )}
 
-        {/* Writing Area - Main Focus */}
-        <div className="flex flex-1 flex-col pb-4">
-          <div className="relative flex-1">
+        {/* Writing Area - Main Focus - NO FLEX-1 */}
+        <div className="flex flex-col pb-4">
+          <div className="relative">
             {isView ? (
               <div
-                className="w-full p-3 text-base leading-relaxed text-wellness-text md:text-sm"
+                className="w-full px-2 py-3 text-sm leading-relaxed text-wellness-text"
                 style={{ minHeight: "auto" }}
               >
                 <pre className="whitespace-pre-wrap font-sans">{content}</pre>
@@ -241,10 +248,15 @@ export function JournalEditor({
               <textarea
                 ref={textareaRef}
                 value={content}
-                onChange={(e) => setContent(e.target.value)}
-                className="w-full resize-none bg-transparent p-3 text-base leading-relaxed text-wellness-text placeholder-wellness-textLight/60 focus:outline-none md:text-sm"
+                onChange={(e) => {
+                  const newValue = e.target.value;
+                  if (newValue.length <= MAX_CHARACTERS) {
+                    setContent(newValue);
+                  }
+                }}
+                className="w-full resize-none bg-transparent px-2 py-3 text-sm leading-relaxed text-wellness-text placeholder-wellness-textLight/60 focus:outline-none"
                 placeholder={getPlaceholder()}
-                rows={5}
+                rows={mode === "new" ? 2 : 5}
                 style={{
                   height: "auto",
                   overflow: "hidden",
@@ -260,11 +272,11 @@ export function JournalEditor({
             <h3 className="mb-3 text-sm font-medium text-wellness-textLight">
               タグ
             </h3>
-            <div className="flex flex-wrap gap-2">
+            <div className="mb-4 flex flex-wrap gap-2">
               {allCurrentTags.map((tag, index) => (
                 <span
                   key={index}
-                  className="rounded-md bg-wellness-primary/10 px-3 py-1.5 text-sm text-wellness-primary"
+                  className="rounded-md bg-wellness-primary/5 px-2 py-1 text-xs text-wellness-primary/60"
                 >
                   {tag}
                 </span>
@@ -273,14 +285,31 @@ export function JournalEditor({
           </div>
         )}
 
-        {/* AI返答エリア */}
+        {/* そっとさんからの返答 */}
         {aiReply && (
-          <div className="mt-6 rounded-lg bg-wellness-surface p-4">
-            <h3 className="mb-3 text-sm font-medium text-wellness-text">
-              AIからの返答
-            </h3>
-            <div className="whitespace-pre-wrap rounded bg-wellness-bg p-3 text-sm text-wellness-text">
-              {aiReply}
+          <div className="mt-6 border-t border-wellness-primary/10 pt-4">
+            <div className="mb-3 flex items-center gap-2">
+              <svg
+                className="h-4 w-4 text-wellness-primary"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <h3 className="text-sm font-medium text-wellness-primary">
+                そっとさんからのメッセージ
+              </h3>
+            </div>
+            <div className="text-sm leading-relaxed text-wellness-text">
+              {aiReply.split("\n").map((line, index) => (
+                <div key={index} className={index > 0 ? "mt-3" : ""}>
+                  {line || "\u00A0"}
+                </div>
+              ))}
             </div>
           </div>
         )}
@@ -292,41 +321,72 @@ export function JournalEditor({
           </div>
         )}
 
-        {/* 下部情報エリア（新規作成時の日付・時間・タグ） */}
-        <div className="mt-4 border-t border-wellness-primary/10 pt-4">
-          {/* 新規作成時の日付・時間 */}
-          {mode === "new" && (
-            <div className="mb-3">
-              <div className="flex items-center gap-3 text-xs text-wellness-textLight">
-                <div className="flex items-center gap-1">
-                  <Calendar size={12} />
-                  <span>{new Date().toLocaleDateString("ja-JP")}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Clock size={12} />
-                  <span>
-                    {new Date().toLocaleTimeString("ja-JP", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </span>
-                </div>
+        {/* 新規作成時の日付・時間 */}
+        {mode === "new" && (
+          <div className="mb-4">
+            <div className="flex items-center gap-3 text-xs text-wellness-textLight">
+              <div className="flex items-center gap-1">
+                <Calendar size={12} />
+                <span>{new Date().toLocaleDateString("ja-JP")}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Clock size={12} />
+                <span>
+                  {new Date().toLocaleTimeString("ja-JP", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* タグエリア */}
-          {isEditable && (
-            <div className="mb-3">
-              <TagSelector
-                selectedTags={manualTags}
-                suggestedTags={suggestedTags}
-                autoTags={extractHashtags(content)}
-                onTagsChange={setManualTags}
-              />
+        {/* タグエリア */}
+        {isEditable && (
+          <div className="mb-4">
+            <TagSelector
+              selectedTags={manualTags}
+              suggestedTags={suggestedTags}
+              autoTags={extractHashtags(content)}
+              onTagsChange={setManualTags}
+            />
+          </div>
+        )}
+
+        {/* AI相談ボタン */}
+        {console.log(
+          "[JournalEditor] aiReply value:",
+          aiReply,
+          "show button:",
+          onAskAI && isView && !aiReply
+        )}
+        {onAskAI && isView && !aiReply && (
+          <div className="mb-4 border-t border-wellness-primary/20 pt-4">
+            <div className="text-center">
+              <button
+                onClick={onAskAI}
+                disabled={aiLoading}
+                className="inline-flex items-center gap-3 rounded-full bg-wellness-primary px-6 py-3 text-base font-semibold text-white shadow-lg transition-all hover:bg-wellness-primary/90 hover:shadow-xl disabled:opacity-50 disabled:hover:shadow-lg"
+              >
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-3.582 8-8 8a8.955 8.955 0 01-2.993-.523c-.993.266-2.207.423-2.957.423-2.485 0-4.05-1.565-4.05-4.05 0-.75.157-1.964.423-2.957A8.955 8.955 0 013 12a8 8 0 118 8z"
+                  />
+                </svg>
+                {aiLoading ? "そっとさん思考中..." : "そっとさんに聞いてもらう"}
+              </button>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

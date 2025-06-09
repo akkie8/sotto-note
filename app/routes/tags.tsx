@@ -292,23 +292,45 @@ export default function Tags() {
   };
 
   const saveBaseTags = async () => {
+    console.log("Save button clicked", { user: !!user, baseTags, hasChanges });
+
     if (!user) {
       toast.error("ログインが必要です");
       return;
     }
 
     try {
-      const { error } = await supabase.from("profiles").upsert({
-        user_id: user.id,
-        base_tags: baseTags.join(","),
-      });
+      console.log("Attempting to save tags:", baseTags.join(","));
 
-      if (error) {
-        console.error("Base tags save error:", error);
-        toast.error("タグの保存に失敗しました");
+      // まず既存のプロフィールを更新
+      const { data: updateData, error: updateError } = await supabase
+        .from("profiles")
+        .update({ base_tags: baseTags.join(",") })
+        .eq("user_id", user.id)
+        .select();
+
+      if (updateError && updateError.code !== "PGRST116") {
+        console.error("Base tags update error:", updateError);
+        toast.error("タグの更新に失敗しました: " + updateError.message);
         return;
       }
 
+      // 更新されたレコードがない場合は新規作成
+      if (!updateData || updateData.length === 0) {
+        console.log("No existing profile found, creating new one");
+        const { error: insertError } = await supabase.from("profiles").insert({
+          user_id: user.id,
+          base_tags: baseTags.join(","),
+        });
+
+        if (insertError) {
+          console.error("Base tags insert error:", insertError);
+          toast.error("タグの保存に失敗しました: " + insertError.message);
+          return;
+        }
+      }
+
+      console.log("Tags saved successfully");
       setOriginalBaseTags([...baseTags]);
       setHasChanges(false);
       toast.success("タグを更新しました");

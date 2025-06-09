@@ -4,7 +4,6 @@ import {
   type LoaderFunctionArgs,
 } from "@remix-run/node";
 import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
-import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 import { toast } from "sonner";
 
 import {
@@ -14,8 +13,7 @@ import {
 } from "~/components/JournalEditor";
 import { getOptionalUser, requireAuth } from "~/lib/auth.server";
 import { cache, CACHE_KEYS } from "~/lib/cache.client";
-import { extractHashtags, mergeTags, tagsToString } from "~/lib/hashtag";
-import { openai } from "~/lib/openai.server";
+import { mergeTags, tagsToString } from "~/lib/hashtag";
 import { supabase } from "../lib/supabase.client";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -23,9 +21,32 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { user } = await getOptionalUser(request);
   const { id } = params;
 
+  let aiReply = null;
+
+  // ログインしている場合は既存のAI回答を取得
+  if (user && id) {
+    try {
+      const { createSupabaseServerClient } = await import(
+        "~/lib/supabase.server"
+      );
+      const supabase = createSupabaseServerClient(request);
+      const { data } = await supabase
+        .from("ai_replies")
+        .select("content")
+        .eq("journal_id", id)
+        .eq("user_id", user.id)
+        .single();
+
+      aiReply = data?.content || null;
+    } catch (error) {
+      console.error("Failed to load AI reply:", error);
+    }
+  }
+
   return Response.json({
     serverUser: user,
     journalId: id,
+    aiReply,
   });
 }
 
@@ -45,9 +66,6 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
   });
 
   try {
-    const { user, supabase: serverSupabase } = await requireAuth(request);
-    console.log("[Action] Auth successful, user:", user.id);
-
     const { id } = params;
 
     if (!id) {
@@ -57,15 +75,78 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 
     const contentType = request.headers.get("content-type");
 
-    // AI相談のリクエスト（一時的に無効化）
+    // AI相談のリクエスト（認証不要）
     if (contentType?.includes("application/json")) {
-      return Response.json(
-        { error: "AI機能は一時的に無効です" },
-        { status: 400 }
-      );
+      const body = await request.json();
+      const { content } = body;
+
+      if (!content || typeof content !== "string" || !content.trim()) {
+        return Response.json(
+          { error: "内容を入力してください" },
+          { status: 400 }
+        );
+      }
+
+      try {
+        console.log("[AI] Starting OpenAI request...");
+        const { openai } = await import("~/lib/openai.server");
+        console.log("[AI] OpenAI client loaded");
+
+        const completion = await openai.chat.completions.create({
+          model: "gpt-3.5-turbo",
+          messages: [
+            {
+              role: "system",
+              content: `あなたは「そっとさん」という名前の、優しく共感的なカウンセラーです。
+
+あなたの特徴：
+- 相手の気持ちに寄り添い、批判せずに受け入れる
+- 温かく優しい口調で話す
+- 相手の感情を認め、共感を示す
+- 押し付けがましくならず、そっと見守る姿勢
+- 日記の内容に対して適切なアドバイスや励ましを提供する
+- 200-300文字程度の簡潔で心温まる返答をする
+
+以下の日記の内容を読んで、優しく共感的な返答をしてください。`,
+            },
+            {
+              role: "user",
+              content,
+            },
+          ],
+          max_tokens: 500,
+          temperature: 0.7,
+        });
+
+        console.log("[AI] OpenAI response received");
+        const reply =
+          completion.choices[0]?.message?.content ||
+          "申し訳ありません。返答を生成できませんでした。";
+        console.log("[AI] Reply generated, length:", reply.length);
+
+        return new Response(JSON.stringify({ reply }), {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+      } catch (error) {
+        console.error("OpenAI API error:", error);
+        return new Response(
+          JSON.stringify({ error: "AI返答の生成中にエラーが発生しました。" }),
+          {
+            status: 500,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+      }
     }
 
-    // フォームデータの処理（新規作成・更新）
+    // フォームデータの処理（新規作成・更新）- 認証が必要
+    const { user, supabase: serverSupabase } = await requireAuth(request);
+    console.log("[Action] Auth successful, user:", user.id);
+
     console.log("[Action] Processing request for id:", id);
     const formData = await request.formData();
     const content = formData.get("content");
@@ -173,7 +254,11 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 };
 
 export default function JournalPage() {
-  const { serverUser, journalId } = useLoaderData<typeof loader>();
+  const {
+    serverUser,
+    journalId,
+    aiReply: initialAiReply,
+  } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const fetcher = useFetcher();
   const [entry, setEntry] = useState<JournalEntry | null>(null);
@@ -183,14 +268,22 @@ export default function JournalPage() {
     journalId === "new" ? "new" : "view"
   );
   const [saving, setSaving] = useState(false);
-  const [aiReply, setAiReply] = useState<string>("");
+  const [aiReply, setAiReply] = useState<string>(initialAiReply || "");
   const [aiLoading, setAiLoading] = useState(false);
   const [error, setError] = useState<string>("");
   const [userJournals, setUserJournals] = useState<Array<{ tags?: string }>>(
     []
   );
+  const [baseTags, setBaseTags] = useState<string[]>([]);
 
   const isNewEntry = journalId === "new";
+
+  // loaderデータが変更されたときにaiReplyを更新
+  useEffect(() => {
+    if (initialAiReply) {
+      setAiReply(initialAiReply);
+    }
+  }, [initialAiReply]);
 
   useEffect(() => {
     const checkAuthAndFetchEntry = async () => {
@@ -250,28 +343,43 @@ export default function JournalPage() {
     checkAuthAndFetchEntry();
   }, [journalId, isNewEntry]);
 
-  // ユーザージャーナルを取得（タグ推奨のため）
+  // ユーザージャーナルとベースタグを取得（タグ推奨のため）
   useEffect(() => {
-    const fetchUserJournals = async () => {
+    const fetchUserData = async () => {
       if (!user) return;
 
       try {
-        const { data } = await supabase
+        // ユーザージャーナルを取得
+        const { data: journals } = await supabase
           .from("journals")
           .select("tags")
           .eq("user_id", user.id)
           .order("timestamp", { ascending: false })
           .limit(50); // 最新50件まで
 
-        if (data) {
-          setUserJournals(data);
+        if (journals) {
+          setUserJournals(journals);
+        }
+
+        // ベースタグを取得
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("base_tags")
+          .eq("user_id", user.id)
+          .single();
+
+        if (profile?.base_tags) {
+          const userBaseTags = profile.base_tags
+            .split(",")
+            .filter((tag) => tag.trim() !== "");
+          setBaseTags(userBaseTags);
         }
       } catch (error) {
-        console.error("Error fetching user journals:", error);
+        console.error("Error fetching user data:", error);
       }
     };
 
-    fetchUserJournals();
+    fetchUserData();
   }, [user]);
 
   // Handle fetcher response
@@ -280,7 +388,11 @@ export default function JournalPage() {
       console.log("[Frontend] Fetcher response:", fetcher.data);
       setSaving(false);
 
-      const actionData = fetcher.data as any;
+      const actionData = fetcher.data as {
+        error?: string;
+        success?: boolean;
+        redirect?: string;
+      };
 
       if (actionData.error) {
         toast.error(actionData.error);
@@ -442,10 +554,21 @@ export default function JournalPage() {
   };
 
   const handleCancel = () => {
+    console.log(
+      "[handleCancel] Called with mode:",
+      mode,
+      "isNewEntry:",
+      isNewEntry
+    );
     if (isNewEntry) {
-      navigate("/");
-    } else {
+      console.log("[handleCancel] Navigating to home");
+      navigate("/", { replace: true });
+    } else if (mode === "edit") {
+      console.log("[handleCancel] Switching to view mode");
       setMode("view");
+    } else {
+      console.log("[handleCancel] Navigating back");
+      navigate(-1);
     }
   };
 
@@ -460,23 +583,46 @@ export default function JournalPage() {
     setError("");
 
     try {
-      const response = await fetch(`/journal/${journalId || "new"}`, {
+      const response = await fetch("/api/ai", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ content: entry.content }),
-        credentials: "include",
+        body: JSON.stringify({
+          content: entry.content,
+          journalId: journalId,
+        }),
       });
 
-      const data = await response.json();
+      console.log("AI response status:", response.status);
+      console.log("AI response ok:", response.ok);
+      console.log("AI response headers:", response.headers.get("content-type"));
+
+      // レスポンステキストを確認
+      const responseText = await response.text();
+      console.log("AI response text:", responseText.substring(0, 200));
+
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (jsonError) {
+        console.error("JSON parse error:", jsonError);
+        console.error("Response was not JSON:", responseText.substring(0, 500));
+        throw new Error("Invalid JSON response");
+      }
+      console.log("AI response data:", data);
 
       if (response.ok) {
         setAiReply(data.reply || "");
+        console.log("AI reply set successfully");
       } else {
+        console.error("AI response error:", data.error);
         setError(data.error || "エラーが発生しました");
       }
     } catch (err) {
+      console.error("AI request failed:", err);
+      console.error("Error type:", err.constructor.name);
+      console.error("Error message:", err.message);
       setError("ネットワークエラーが発生しました");
     } finally {
       setAiLoading(false);
@@ -520,6 +666,7 @@ export default function JournalPage() {
       aiReply={aiReply}
       error={error}
       userJournals={userJournals}
+      baseTags={baseTags}
     />
   );
 }
