@@ -120,16 +120,16 @@ export function Header() {
             <div className="user-menu relative">
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="flex items-center gap-2 rounded-full p-1.5 transition-colors hover:bg-wellness-primary/10"
+                className="flex min-h-[44px] min-w-[44px] touch-manipulation items-center gap-2 rounded-full p-2 transition-colors hover:bg-wellness-primary/10 active:bg-wellness-primary/20"
               >
                 {user.user_metadata?.avatar_url ? (
                   <img
                     src={user.user_metadata.avatar_url}
                     alt="ユーザーアバター"
-                    className="h-8 w-8 rounded-full"
+                    className="h-9 w-9 rounded-full"
                   />
                 ) : (
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-wellness-primary text-white">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-wellness-primary text-white">
                     <svg
                       className="h-4 w-4"
                       fill="none"
@@ -148,20 +148,20 @@ export function Header() {
               </button>
 
               {isMenuOpen && (
-                <div className="absolute right-0 top-10 w-36 rounded-md bg-white py-1 shadow-sm">
-                  <div className="px-3 py-1.5 text-xs font-medium text-gray-800">
+                <div className="absolute right-0 top-12 w-40 rounded-lg border border-gray-100 bg-white py-2 shadow-lg">
+                  <div className="border-b border-gray-100 px-4 py-2 text-sm font-medium text-gray-800">
                     {userName || "ユーザー"}
                   </div>
                   <Link
                     to="/settings"
-                    className="block px-3 py-1.5 text-xs text-gray-600 transition-colors hover:bg-gray-50"
+                    className="block touch-manipulation px-4 py-3 text-sm text-gray-600 transition-colors hover:bg-gray-50 active:bg-gray-100"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     設定
                   </Link>
                   <button
                     onClick={handleLogout}
-                    className="block w-full px-3 py-1.5 text-left text-xs text-gray-600 transition-colors hover:bg-gray-50"
+                    className="block w-full touch-manipulation px-4 py-3 text-left text-sm text-gray-600 transition-colors hover:bg-gray-50 active:bg-gray-100"
                   >
                     ログアウト
                   </button>

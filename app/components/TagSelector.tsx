@@ -26,9 +26,9 @@ export function TagSelector({
     }
   };
 
-  const handleTagRemove = (tag: string) => {
-    onTagsChange(selectedTags.filter((t) => t !== tag));
-  };
+  // const handleTagRemove = (tag: string) => {
+  //   onTagsChange(selectedTags.filter((t) => t !== tag));
+  // };
 
   // 表示するタグの数を制御
   const displayTags = showAllTags ? suggestedTags : suggestedTags.slice(0, 8);
@@ -44,7 +44,7 @@ export function TagSelector({
           {suggestedTags.length > 8 && (
             <button
               onClick={() => setShowAllTags(!showAllTags)}
-              className="text-xs text-wellness-primary transition-colors hover:text-wellness-secondary"
+              className="touch-manipulation rounded p-1 text-sm text-wellness-primary transition-colors hover:text-wellness-secondary active:bg-wellness-primary/5"
             >
               {showAllTags ? "少なく表示" : "もっと見る"}
             </button>
@@ -58,7 +58,7 @@ export function TagSelector({
               <button
                 key={tag}
                 onClick={() => handleTagToggle(tag)}
-                className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs transition-all ${
+                className={`inline-flex min-h-[36px] touch-manipulation items-center gap-1 rounded-full px-3 py-2 text-sm transition-all active:scale-95 ${
                   isSelected
                     ? "bg-wellness-primary text-white"
                     : "bg-wellness-primary/10 text-wellness-primary hover:bg-wellness-primary/20"
@@ -67,11 +67,11 @@ export function TagSelector({
                 {isSelected ? (
                   <>
                     {tag}
-                    <X size={10} />
+                    <X size={12} />
                   </>
                 ) : (
                   <>
-                    <Plus size={10} />
+                    <Plus size={12} />
                     {tag}
                   </>
                 )}

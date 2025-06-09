@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, Bot, Calendar, Clock, Edit, Save } from "lucide-react";
+import { ArrowLeft, Calendar, Clock } from "lucide-react";
 
 import {
-  containsHashtags,
   extractHashtags,
   getManualTags,
   getSuggestedTags,
@@ -94,9 +93,6 @@ export function JournalEditor({
 
   const isEditable = mode === "new" || mode === "edit";
   const isView = mode === "view";
-  const mood = selectedMood
-    ? moodColors[selectedMood as keyof typeof moodColors]
-    : null;
 
   // タグ関連の計算
   const userTags = getUserTags(userJournals);
@@ -128,10 +124,10 @@ export function JournalEditor({
           <div className="flex items-center justify-between">
             <button
               onClick={onCancel}
-              className="flex items-center gap-2 text-wellness-textLight transition-colors hover:text-wellness-text"
+              className="flex touch-manipulation items-center gap-2 rounded p-2 text-wellness-textLight transition-colors hover:text-wellness-text active:bg-wellness-primary/5"
             >
-              <ArrowLeft size={16} />
-              <span className="text-xs">戻る</span>
+              <ArrowLeft size={18} />
+              <span className="text-sm font-medium">戻る</span>
             </button>
             <div className="flex items-center gap-2">
               {isView ? (
@@ -142,7 +138,7 @@ export function JournalEditor({
                   {onEdit && (
                     <button
                       onClick={onEdit}
-                      className="rounded bg-wellness-primary px-3 py-1.5 text-xs font-medium text-white transition-all hover:bg-wellness-secondary"
+                      className="min-h-[44px] touch-manipulation rounded-lg bg-wellness-primary px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-wellness-secondary active:scale-95"
                     >
                       編集
                     </button>
@@ -151,7 +147,7 @@ export function JournalEditor({
                     <button
                       onClick={onAskAI}
                       disabled={aiLoading}
-                      className="rounded bg-wellness-secondary px-3 py-1.5 text-xs font-medium text-white transition-all hover:bg-wellness-primary disabled:opacity-50"
+                      className="min-h-[44px] touch-manipulation rounded-lg bg-wellness-secondary px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-wellness-primary active:scale-95 disabled:opacity-50"
                     >
                       {aiLoading ? "AI思考中..." : "AI相談"}
                     </button>
@@ -164,14 +160,14 @@ export function JournalEditor({
                   </span>
                   <button
                     onClick={onCancel}
-                    className="rounded border border-wellness-primary px-3 py-1.5 text-xs font-medium text-wellness-primary transition-all hover:bg-wellness-primary hover:text-white"
+                    className="min-h-[44px] touch-manipulation rounded-lg border border-wellness-primary px-4 py-2.5 text-sm font-medium text-wellness-primary transition-all hover:bg-wellness-primary hover:text-white active:scale-95"
                   >
                     {mode === "new" ? "戻る" : "キャンセル"}
                   </button>
                   <button
                     onClick={handleSave}
                     disabled={saving || !content.trim()}
-                    className="rounded bg-wellness-primary px-3 py-1.5 text-xs font-medium text-white transition-all hover:bg-wellness-secondary disabled:cursor-not-allowed disabled:opacity-50"
+                    className="min-h-[44px] touch-manipulation rounded-lg bg-wellness-primary px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-wellness-secondary active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                     title={
                       saving
                         ? "保存中..."
@@ -221,16 +217,15 @@ export function JournalEditor({
         <div className="flex flex-1 flex-col pb-4">
           <div className="relative flex-1">
             {isView ? (
-              <div className="h-full min-h-[60vh] w-full p-3 text-sm leading-relaxed text-wellness-text">
+              <div className="h-full min-h-[60vh] w-full p-3 text-base leading-relaxed text-wellness-text md:text-sm">
                 <pre className="whitespace-pre-wrap font-sans">{content}</pre>
               </div>
             ) : (
               <textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                className="h-full min-h-[60vh] w-full resize-none bg-transparent p-3 text-sm leading-relaxed text-wellness-text placeholder-wellness-textLight/60 focus:outline-none"
+                className="h-full min-h-[60vh] w-full resize-none bg-transparent p-3 text-base leading-relaxed text-wellness-text placeholder-wellness-textLight/60 focus:outline-none md:text-sm"
                 placeholder={getPlaceholder()}
-                autoFocus
               />
             )}
           </div>
