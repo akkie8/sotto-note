@@ -110,7 +110,10 @@ export function Header() {
   }, [isMenuOpen]);
 
   return (
-    <header className="fixed left-0 right-0 top-0 z-50 h-14 border-b border-wellness-primary/10 bg-wellness-surface/90 backdrop-blur-sm">
+    <header
+      className="fixed left-0 right-0 top-0 z-50 h-14 bg-wellness-surface/90 backdrop-blur-sm"
+      style={{ boxShadow: "inset 0 -8px 16px -8px rgba(0, 0, 0, 0.1)" }}
+    >
       <div className="mx-auto flex h-full max-w-4xl items-center justify-between px-6">
         <Link to="/" className="text-base font-medium text-wellness-primary">
           そっとノート

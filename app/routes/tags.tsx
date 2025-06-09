@@ -152,7 +152,12 @@ export default function Tags() {
   );
   const [activeTab, setActiveTab] = useState<"browse" | "manage">("browse");
   const [baseTags, setBaseTags] = useState<string[]>(DEFAULT_BASE_TAGS);
+  const [originalBaseTags, setOriginalBaseTags] =
+    useState<string[]>(DEFAULT_BASE_TAGS);
   const [newTag, setNewTag] = useState("");
+  const [draggedTag, setDraggedTag] = useState<string | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [hasChanges, setHasChanges] = useState(false);
 
   // ユーザーデータを取得
   const fetchUserData = useCallback(async (userId: string) => {
@@ -192,7 +197,10 @@ export default function Tags() {
         const userBaseTags = profile.base_tags
           .split(",")
           .filter((tag) => tag.trim() !== "");
-        setBaseTags(userBaseTags.length > 0 ? userBaseTags : DEFAULT_BASE_TAGS);
+        const tags = userBaseTags.length > 0 ? userBaseTags : DEFAULT_BASE_TAGS;
+        setBaseTags(tags);
+        setOriginalBaseTags(tags);
+        setHasChanges(false);
       }
     } catch (error) {
       console.error("Error fetching user data:", error);
@@ -270,13 +278,17 @@ export default function Tags() {
 
   const addTag = () => {
     if (newTag.trim() && !baseTags.includes(newTag.trim())) {
-      setBaseTags([...baseTags, newTag.trim()]);
+      const newTags = [...baseTags, newTag.trim()];
+      setBaseTags(newTags);
       setNewTag("");
+      setHasChanges(true);
     }
   };
 
   const removeTag = (tagToRemove: string) => {
-    setBaseTags(baseTags.filter((tag) => tag !== tagToRemove));
+    const newTags = baseTags.filter((tag) => tag !== tagToRemove);
+    setBaseTags(newTags);
+    setHasChanges(true);
   };
 
   const saveBaseTags = async () => {
@@ -297,11 +309,53 @@ export default function Tags() {
         return;
       }
 
-      toast.success("タグを保存しました");
+      setOriginalBaseTags([...baseTags]);
+      setHasChanges(false);
+      toast.success("タグを更新しました");
     } catch (error) {
       console.error("Base tags save failed:", error);
       toast.error("タグの保存に失敗しました");
     }
+  };
+
+  // ドラッグアンドドロップのハンドラー
+  const handleDragStart = (e: React.DragEvent, tag: string) => {
+    setDraggedTag(tag);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/html", tag);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDragOverIndex(index);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverIndex(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault();
+
+    if (!draggedTag) return;
+
+    const draggedIndex = baseTags.indexOf(draggedTag);
+    if (draggedIndex === -1) return;
+
+    const newTags = [...baseTags];
+    newTags.splice(draggedIndex, 1);
+    newTags.splice(targetIndex, 0, draggedTag);
+
+    setBaseTags(newTags);
+    setDraggedTag(null);
+    setDragOverIndex(null);
+    setHasChanges(true);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedTag(null);
+    setDragOverIndex(null);
   };
 
   // タグをソート
@@ -578,16 +632,34 @@ export default function Tags() {
                 <h3 className="mb-3 text-sm font-medium text-wellness-text">
                   現在の設定タグ
                 </h3>
+                <p className="mb-3 text-xs text-wellness-textLight">
+                  ドラッグ&ドロップで並び順を変更できます
+                </p>
                 <div className="flex flex-wrap gap-2">
-                  {baseTags.map((tag) => (
+                  {baseTags.map((tag, index) => (
                     <div
                       key={tag}
-                      className="flex items-center gap-1 rounded-full bg-wellness-primary/10 px-3 py-1 text-sm"
+                      draggable={true}
+                      onDragStart={(e) => handleDragStart(e, tag)}
+                      onDragOver={(e) => handleDragOver(e, index)}
+                      onDragLeave={handleDragLeave}
+                      onDrop={(e) => handleDrop(e, index)}
+                      onDragEnd={handleDragEnd}
+                      className={`flex cursor-move items-center gap-1 rounded-full px-3 py-1 text-sm transition-all ${
+                        draggedTag === tag
+                          ? "scale-95 opacity-50"
+                          : dragOverIndex === index
+                            ? "scale-105 bg-wellness-primary/20"
+                            : "bg-wellness-primary/10"
+                      } hover:bg-wellness-primary/15`}
                     >
-                      <span className="text-wellness-primary">{tag}</span>
+                      <span className="select-none text-wellness-primary">
+                        {tag}
+                      </span>
                       <button
                         onClick={() => removeTag(tag)}
                         className="text-wellness-textLight hover:text-red-500"
+                        onMouseDown={(e) => e.stopPropagation()}
                       >
                         <X size={14} />
                       </button>
@@ -618,10 +690,20 @@ export default function Tags() {
               {/* 保存ボタン */}
               <button
                 onClick={saveBaseTags}
-                className="w-full rounded bg-wellness-primary px-4 py-3 text-sm font-medium text-white transition-all hover:bg-wellness-secondary"
+                disabled={!hasChanges}
+                className={`w-full rounded px-4 py-3 text-sm font-medium transition-all ${
+                  hasChanges
+                    ? "bg-wellness-primary text-white hover:bg-wellness-secondary"
+                    : "cursor-not-allowed bg-wellness-primary/20 text-wellness-textLight"
+                }`}
               >
-                タグを保存
+                {hasChanges ? "変更を保存" : "保存済み"}
               </button>
+              {hasChanges && (
+                <p className="mt-2 text-center text-xs text-orange-600">
+                  ※ 未保存の変更があります
+                </p>
+              )}
             </div>
           </div>
         )}

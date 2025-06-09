@@ -36,7 +36,12 @@ export const links: LinksFunction = () => [
 
 function BottomNav() {
   const location = useLocation();
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) => {
+    if (path === "/journal") {
+      return location.pathname.startsWith("/journal");
+    }
+    return location.pathname === path;
+  };
 
   const navItems = [
     { path: "/", icon: Home, label: "ホーム" },
@@ -45,7 +50,10 @@ function BottomNav() {
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 h-14 bg-white/90 backdrop-blur-sm">
+    <div
+      className="fixed bottom-0 left-0 right-0 z-50 h-14 bg-white/90 backdrop-blur-sm"
+      style={{ boxShadow: "inset 0 8px 16px -8px rgba(0, 0, 0, 0.1)" }}
+    >
       <div className="mx-auto h-full max-w-md">
         <div className="flex h-full items-center justify-around">
           {navItems.map((item) => {
@@ -56,7 +64,7 @@ function BottomNav() {
                 to={item.path}
                 className={`flex h-full items-center justify-center px-4 transition-colors duration-200 ${
                   isActive(item.path)
-                    ? "text-gray-800"
+                    ? "text-wellness-primary"
                     : "text-gray-400 hover:text-gray-600"
                 }`}
               >
