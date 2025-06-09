@@ -1,16 +1,36 @@
 import { useEffect, useState } from "react";
 import type { ActionFunction, LoaderFunctionArgs } from "@remix-run/node";
 import { Form, Link, useActionData, useLoaderData } from "@remix-run/react";
+import { Plus, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { getOptionalUser } from "~/lib/auth.server";
 import { cache, CACHE_KEYS } from "~/lib/cache.client";
 import { supabase } from "../lib/supabase.client";
 
+// デフォルトのベースタグ
+const DEFAULT_BASE_TAGS = [
+  "仕事",
+  "疲れ",
+  "嬉しい",
+  "ストレス",
+  "感謝",
+  "不安",
+  "楽しい",
+  "悲しい",
+  "怒り",
+  "リラックス",
+  "成長",
+  "家族",
+  "友達",
+  "健康",
+  "趣味",
+];
+
 type ActionData = {
   success?: boolean;
   error?: string;
-  action?: "reset" | "feedback" | "update-profile";
+  action?: "reset" | "feedback" | "update-profile" | "update-base-tags";
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -29,6 +49,7 @@ export const action: ActionFunction = async ({ request }) => {
   const action = formData.get("action");
   const feedback = formData.get("feedback");
   const name = formData.get("name");
+  const baseTags = formData.get("baseTags");
 
   switch (action) {
     case "update-profile":
@@ -102,6 +123,62 @@ export const action: ActionFunction = async ({ request }) => {
         );
       }
 
+    case "update-base-tags":
+      if (!baseTags || typeof baseTags !== "string") {
+        return Response.json({ error: "ベースタグが無効です" }, { headers });
+      }
+
+      try {
+        const tagsArray = baseTags
+          .split(",")
+          .filter((tag) => tag.trim() !== "");
+
+        // プロフィールテーブルのbase_tagsカラムを更新（存在しない場合は作成）
+        const { data: updateData, error: updateError } = await supabase
+          .from("profiles")
+          .update({ base_tags: tagsArray.join(",") })
+          .eq("user_id", user.id)
+          .select();
+
+        if (updateError && updateError.code !== "PGRST116") {
+          console.error("Base tags update error:", updateError);
+          return Response.json(
+            { error: "ベースタグの更新に失敗しました: " + updateError.message },
+            { headers }
+          );
+        }
+
+        // プロフィールが存在しない場合は作成
+        if (!updateData || updateData.length === 0) {
+          const { error: insertError } = await supabase
+            .from("profiles")
+            .insert({
+              user_id: user.id,
+              base_tags: tagsArray.join(","),
+            });
+
+          if (insertError) {
+            console.error("Base tags insert error:", insertError);
+            return Response.json(
+              {
+                error: "ベースタグの保存に失敗しました: " + insertError.message,
+              },
+              { headers }
+            );
+          }
+        }
+
+        return Response.json(
+          { success: true, action: "update-base-tags" },
+          { headers }
+        );
+      } catch (error) {
+        return Response.json(
+          { error: "ベースタグの更新に失敗しました" },
+          { headers }
+        );
+      }
+
     case "reset":
       try {
         const { error } = await supabase
@@ -158,6 +235,8 @@ export default function Settings() {
   const [editingName, setEditingName] = useState("");
   const [user, setUser] = useState<{ id: string } | null>(serverUser);
   const [loading, setLoading] = useState(true);
+  const [baseTags, setBaseTags] = useState<string[]>(DEFAULT_BASE_TAGS);
+  const [newTag, setNewTag] = useState("");
 
   // Check client-side authentication
   useEffect(() => {
@@ -170,19 +249,31 @@ export default function Settings() {
 
         if (clientUser) {
           // Check cache first
-          const cachedProfile = cache.get<{ name: string }>(
-            CACHE_KEYS.USER_PROFILE(clientUser.id)
-          );
+          const cachedProfile = cache.get<{
+            name?: string;
+            base_tags?: string;
+          }>(CACHE_KEYS.USER_PROFILE(clientUser.id));
 
           if (cachedProfile?.name) {
             console.log("Using cached profile:", cachedProfile);
             setEditingName(cachedProfile.name);
-          } else {
+          }
+
+          if (cachedProfile?.base_tags) {
+            const userBaseTags = cachedProfile.base_tags
+              .split(",")
+              .filter((tag) => tag.trim() !== "");
+            setBaseTags(
+              userBaseTags.length > 0 ? userBaseTags : DEFAULT_BASE_TAGS
+            );
+          }
+
+          if (!cachedProfile) {
             // Fetch user profile
             console.log("Fetching profile for user:", clientUser.id);
             const { data: profile, error } = await supabase
               .from("profiles")
-              .select("name")
+              .select("name, base_tags")
               .eq("user_id", clientUser.id)
               .single();
 
@@ -190,6 +281,18 @@ export default function Settings() {
 
             if (profile?.name) {
               setEditingName(profile.name);
+            }
+
+            if (profile?.base_tags) {
+              const userBaseTags = profile.base_tags
+                .split(",")
+                .filter((tag) => tag.trim() !== "");
+              setBaseTags(
+                userBaseTags.length > 0 ? userBaseTags : DEFAULT_BASE_TAGS
+              );
+            }
+
+            if (profile) {
               // Cache the profile
               cache.set(
                 CACHE_KEYS.USER_PROFILE(clientUser.id),
@@ -246,6 +349,8 @@ export default function Settings() {
           };
           checkUpdatedProfile();
         }
+      } else if (actionData.action === "update-base-tags") {
+        toast.success("タグを更新しました");
       } else if (actionData.action === "reset") {
         toast.success("データを初期化しました");
         // Invalidate journal cache when data is reset
@@ -344,6 +449,42 @@ export default function Settings() {
     }
   };
 
+  const addTag = () => {
+    if (newTag.trim() && !baseTags.includes(newTag.trim())) {
+      setBaseTags([...baseTags, newTag.trim()]);
+      setNewTag("");
+    }
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    setBaseTags(baseTags.filter((tag) => tag !== tagToRemove));
+  };
+
+  const saveBaseTags = async () => {
+    if (!user) {
+      toast.error("ログインが必要です");
+      return;
+    }
+
+    try {
+      const { error } = await supabase.from("profiles").upsert({
+        user_id: user.id,
+        base_tags: baseTags.join(","),
+      });
+
+      if (error) {
+        console.error("Base tags save error:", error);
+        toast.error("タグの保存に失敗しました");
+        return;
+      }
+
+      toast.success("タグを保存しました");
+    } catch (error) {
+      console.error("Base tags save failed:", error);
+      toast.error("タグの保存に失敗しました");
+    }
+  };
+
   // Show loading state
   if (loading) {
     return (
@@ -400,6 +541,63 @@ export default function Settings() {
         </form>
       </div>
 
+      {/* タグ設定セクション */}
+      <div className="rounded-md bg-wellness-surface p-4">
+        <h2 className="mb-3 text-xs font-medium uppercase tracking-wide text-wellness-textLight">
+          タグ設定
+        </h2>
+        <p className="mb-4 text-xs text-wellness-textLight">
+          ノート作成時に選択できるタグを設定できます
+        </p>
+
+        {/* 現在のタグ一覧 */}
+        <div className="mb-4">
+          <div className="flex flex-wrap gap-2">
+            {baseTags.map((tag) => (
+              <div
+                key={tag}
+                className="flex items-center gap-1 rounded-full bg-wellness-primary/10 px-3 py-1 text-xs"
+              >
+                <span className="text-wellness-primary">{tag}</span>
+                <button
+                  onClick={() => removeTag(tag)}
+                  className="text-wellness-textLight hover:text-red-500"
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* タグ追加 */}
+        <div className="mb-4 flex gap-2">
+          <input
+            type="text"
+            value={newTag}
+            onChange={(e) => setNewTag(e.target.value)}
+            onKeyPress={(e) => e.key === "Enter" && addTag()}
+            placeholder="新しいタグを追加"
+            className="flex-1 rounded bg-wellness-bg px-3 py-2 text-xs text-wellness-text transition-all focus:bg-wellness-surface"
+          />
+          <button
+            onClick={addTag}
+            className="flex items-center gap-1 rounded bg-wellness-primary px-3 py-2 text-xs font-medium text-white transition-all hover:bg-wellness-secondary"
+          >
+            <Plus size={12} />
+            追加
+          </button>
+        </div>
+
+        {/* 保存ボタン */}
+        <button
+          onClick={saveBaseTags}
+          className="w-full rounded bg-wellness-primary px-3 py-2 text-xs font-medium text-white transition-all hover:bg-wellness-secondary"
+        >
+          タグを保存
+        </button>
+      </div>
+
       {/* データ初期化セクション */}
       <div className="rounded-md bg-wellness-surface p-4">
         <h2 className="mb-3 text-xs font-medium uppercase tracking-wide text-wellness-textLight">
@@ -410,7 +608,7 @@ export default function Settings() {
             onClick={() => setShowResetConfirm(true)}
             className="rounded bg-red-50 px-3 py-2 text-xs font-medium text-red-600 transition-colors hover:bg-red-100"
           >
-            全てのジャーナルを削除
+            全てのノートを削除
           </button>
         ) : (
           <div className="space-y-3">

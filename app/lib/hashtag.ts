@@ -88,16 +88,20 @@ export function getUserTags(journals: Array<{ tags?: string }>): string[] {
 }
 
 /**
- * 推奨タグを取得（プリセット + ユーザーの過去タグ）
+ * 推奨タグを取得（ベースタグ + ユーザーの過去タグ）
  */
-export function getSuggestedTags(userTags: string[]): string[] {
+export function getSuggestedTags(
+  userTags: string[],
+  baseTags?: string[]
+): string[] {
   const suggested = new Set<string>();
 
   // ユーザーの過去タグを優先（最大10個）
   userTags.slice(0, 10).forEach((tag) => suggested.add(tag));
 
-  // プリセットタグを追加（ユーザータグと重複しないもの）
-  PRESET_TAGS.forEach((tag) => {
+  // ベースタグまたはプリセットタグを追加（ユーザータグと重複しないもの）
+  const defaultTags = baseTags && baseTags.length > 0 ? baseTags : PRESET_TAGS;
+  defaultTags.forEach((tag) => {
     if (!suggested.has(tag) && suggested.size < 15) {
       suggested.add(tag);
     }

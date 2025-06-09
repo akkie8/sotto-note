@@ -1,15 +1,36 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   json,
+  type ActionFunction,
   type LoaderFunctionArgs,
   type MetaFunction,
 } from "@remix-run/node";
-import { Link, useLoaderData } from "@remix-run/react";
-import { Filter, Hash, Search, X } from "lucide-react";
+import { Link, useActionData, useLoaderData } from "@remix-run/react";
+import { Filter, Hash, Plus, Search, Settings, X } from "lucide-react";
+import { toast } from "sonner";
 
 import { getOptionalUser } from "~/lib/auth.server";
 import { cache, CACHE_KEYS } from "~/lib/cache.client";
 import { supabase } from "~/lib/supabase.client";
+
+// デフォルトのベースタグ
+const DEFAULT_BASE_TAGS = [
+  "仕事",
+  "疲れ",
+  "嬉しい",
+  "ストレス",
+  "感謝",
+  "不安",
+  "楽しい",
+  "悲しい",
+  "怒り",
+  "リラックス",
+  "成長",
+  "家族",
+  "友達",
+  "健康",
+  "趣味",
+];
 
 // ジャーナルエントリー型
 type JournalEntry = {
@@ -28,23 +49,98 @@ type TagStat = {
   lastUsed: number;
 };
 
+// アクションデータ型
+type ActionData = {
+  success?: boolean;
+  error?: string;
+  action?: "update-base-tags";
+};
+
 export async function loader({ request }: LoaderFunctionArgs) {
   const { user } = await getOptionalUser(request);
   return json({ serverUser: user });
 }
+
+export const action: ActionFunction = async ({ request }) => {
+  const { user, headers, supabase } = await getOptionalUser(request);
+
+  if (!user) {
+    return Response.json({ error: "認証が必要です" }, { status: 401 });
+  }
+
+  const formData = await request.formData();
+  const action = formData.get("action");
+  const baseTags = formData.get("baseTags");
+
+  switch (action) {
+    case "update-base-tags":
+      if (!baseTags || typeof baseTags !== "string") {
+        return Response.json({ error: "タグが無効です" }, { headers });
+      }
+
+      try {
+        const tagsArray = baseTags
+          .split(",")
+          .filter((tag) => tag.trim() !== "");
+
+        const { data: updateData, error: updateError } = await supabase
+          .from("profiles")
+          .update({ base_tags: tagsArray.join(",") })
+          .eq("user_id", user.id)
+          .select();
+
+        if (updateError && updateError.code !== "PGRST116") {
+          return Response.json(
+            { error: "タグの更新に失敗しました: " + updateError.message },
+            { headers }
+          );
+        }
+
+        if (!updateData || updateData.length === 0) {
+          const { error: insertError } = await supabase
+            .from("profiles")
+            .insert({
+              user_id: user.id,
+              base_tags: tagsArray.join(","),
+            });
+
+          if (insertError) {
+            return Response.json(
+              { error: "タグの保存に失敗しました: " + insertError.message },
+              { headers }
+            );
+          }
+        }
+
+        return Response.json(
+          { success: true, action: "update-base-tags" },
+          { headers }
+        );
+      } catch (error) {
+        return Response.json(
+          { error: "タグの更新に失敗しました" },
+          { headers }
+        );
+      }
+
+    default:
+      return Response.json({ error: "不正なアクションです" }, { headers });
+  }
+};
 
 export const meta: MetaFunction = () => {
   return [
     { title: "タグ管理 - そっとノート" },
     {
       name: "description",
-      content: "ジャーナルのタグを管理・検索できます",
+      content: "ノートのタグを管理・検索できます",
     },
   ];
 };
 
 export default function Tags() {
   const { serverUser } = useLoaderData<typeof loader>();
+  const actionData = useActionData<ActionData>();
   const [user, setUser] = useState<{ id: string } | null>(serverUser);
   const [loading, setLoading] = useState(true);
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
@@ -54,6 +150,9 @@ export default function Tags() {
   const [sortBy, setSortBy] = useState<"count" | "recent" | "alphabetical">(
     "count"
   );
+  const [activeTab, setActiveTab] = useState<"browse" | "manage">("browse");
+  const [baseTags, setBaseTags] = useState<string[]>(DEFAULT_BASE_TAGS);
+  const [newTag, setNewTag] = useState("");
 
   // ユーザーデータを取得
   const fetchUserData = useCallback(async (userId: string) => {
@@ -80,6 +179,20 @@ export default function Tags() {
         cache.set(CACHE_KEYS.JOURNAL_ENTRIES(userId), journals, 5 * 60 * 1000);
         setJournalEntries(journals);
         calculateTagStats(journals);
+      }
+
+      // ベースタグを取得
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("base_tags")
+        .eq("user_id", userId)
+        .single();
+
+      if (profile?.base_tags) {
+        const userBaseTags = profile.base_tags
+          .split(",")
+          .filter((tag) => tag.trim() !== "");
+        setBaseTags(userBaseTags.length > 0 ? userBaseTags : DEFAULT_BASE_TAGS);
       }
     } catch (error) {
       console.error("Error fetching user data:", error);
@@ -143,6 +256,53 @@ export default function Tags() {
 
     checkAuth();
   }, [fetchUserData]);
+
+  // アクション結果の処理
+  useEffect(() => {
+    if (actionData?.success) {
+      if (actionData.action === "update-base-tags") {
+        toast.success("タグを更新しました");
+      }
+    } else if (actionData?.error) {
+      toast.error(actionData.error);
+    }
+  }, [actionData]);
+
+  const addTag = () => {
+    if (newTag.trim() && !baseTags.includes(newTag.trim())) {
+      setBaseTags([...baseTags, newTag.trim()]);
+      setNewTag("");
+    }
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    setBaseTags(baseTags.filter((tag) => tag !== tagToRemove));
+  };
+
+  const saveBaseTags = async () => {
+    if (!user) {
+      toast.error("ログインが必要です");
+      return;
+    }
+
+    try {
+      const { error } = await supabase.from("profiles").upsert({
+        user_id: user.id,
+        base_tags: baseTags.join(","),
+      });
+
+      if (error) {
+        console.error("Base tags save error:", error);
+        toast.error("タグの保存に失敗しました");
+        return;
+      }
+
+      toast.success("タグを保存しました");
+    } catch (error) {
+      console.error("Base tags save failed:", error);
+      toast.error("タグの保存に失敗しました");
+    }
+  };
 
   // タグをソート
   const sortedTags = tagStats
@@ -214,158 +374,254 @@ export default function Tags() {
             タグ管理
           </h1>
           <p className="text-sm text-wellness-textLight">
-            あなたのジャーナルのタグを管理・検索できます
+            あなたのノートのタグを管理・検索できます
           </p>
         </div>
 
-        {/* 検索とフィルタ */}
-        <div className="mb-6 space-y-4">
-          {/* 検索バー */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-wellness-textLight" />
-            <input
-              type="text"
-              placeholder="タグを検索..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-lg border border-wellness-primary/20 bg-wellness-surface py-2 pl-10 pr-4 text-sm focus:border-wellness-primary focus:outline-none focus:ring-2 focus:ring-wellness-primary/20"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-wellness-textLight hover:text-wellness-text"
-              >
-                <X size={16} />
-              </button>
-            )}
-          </div>
-
-          {/* ソートオプション */}
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-wellness-textLight" />
-            <span className="text-xs text-wellness-textLight">並び順:</span>
-            <div className="flex gap-1">
-              {[
-                { key: "count", label: "使用回数" },
-                { key: "recent", label: "最近使用" },
-                { key: "alphabetical", label: "あいうえお順" },
-              ].map((option) => (
-                <button
-                  key={option.key}
-                  onClick={() => setSortBy(option.key as typeof sortBy)}
-                  className={`rounded px-2 py-1 text-xs transition-colors ${
-                    sortBy === option.key
-                      ? "bg-wellness-primary text-white"
-                      : "bg-wellness-surface text-wellness-textLight hover:text-wellness-text"
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </div>
+        {/* タブ切り替え */}
+        <div className="mb-6 flex gap-2 rounded-lg bg-wellness-primary/10 p-1">
+          <button
+            onClick={() => setActiveTab("browse")}
+            className={`flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+              activeTab === "browse"
+                ? "bg-wellness-surface text-wellness-primary shadow-sm"
+                : "text-wellness-textLight hover:text-wellness-primary"
+            }`}
+          >
+            <Hash size={16} />
+            タグ一覧
+          </button>
+          <button
+            onClick={() => setActiveTab("manage")}
+            className={`flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+              activeTab === "manage"
+                ? "bg-wellness-surface text-wellness-primary shadow-sm"
+                : "text-wellness-textLight hover:text-wellness-primary"
+            }`}
+          >
+            <Settings size={16} />
+            タグ設定
+          </button>
         </div>
 
-        {/* タグ一覧 */}
-        <div className="mb-8">
-          <h2 className="mb-4 text-lg font-medium text-wellness-text">
-            タグ一覧 ({sortedTags.length}個)
-          </h2>
-          {sortedTags.length === 0 ? (
-            <p className="text-center text-wellness-textLight">
-              {searchQuery
-                ? "検索に一致するタグがありません"
-                : "まだタグがありません"}
-            </p>
-          ) : (
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-              {sortedTags.map((stat) => (
-                <button
-                  key={stat.tag}
-                  onClick={() => setSelectedTag(stat.tag)}
-                  className={`flex items-center justify-between rounded-lg border p-3 text-left transition-all hover:shadow-sm ${
-                    selectedTag === stat.tag
-                      ? "border-wellness-primary bg-wellness-primary/5"
-                      : "border-wellness-primary/20 bg-wellness-surface hover:border-wellness-primary/40"
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <Hash size={14} className="text-wellness-secondary" />
-                    <span className="font-medium text-wellness-text">
-                      {stat.tag}
-                    </span>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-xs font-medium text-wellness-primary">
-                      {stat.count}回
-                    </div>
-                    <div className="text-xs text-wellness-textLight">
-                      {new Date(stat.lastUsed).toLocaleDateString("ja-JP")}
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        {/* コンテンツエリア */}
+        {activeTab === "browse" ? (
+          <>
+            {/* 検索とフィルタ */}
+            <div className="mb-6 space-y-4">
+              {/* 検索バー */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-wellness-textLight" />
+                <input
+                  type="text"
+                  placeholder="タグを検索..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full rounded-lg border border-wellness-primary/20 bg-wellness-surface py-2 pl-10 pr-4 text-sm focus:border-wellness-primary focus:outline-none focus:ring-2 focus:ring-wellness-primary/20"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-wellness-textLight hover:text-wellness-text"
+                  >
+                    <X size={16} />
+                  </button>
+                )}
+              </div>
 
-        {/* 選択されたタグのジャーナル */}
-        {selectedTag && (
-          <div>
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-medium text-wellness-text">
-                「{selectedTag}」のジャーナル ({filteredJournals.length}件)
+              {/* ソートオプション */}
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-wellness-textLight" />
+                <span className="text-xs text-wellness-textLight">並び順:</span>
+                <div className="flex gap-1">
+                  {[
+                    { key: "count", label: "使用回数" },
+                    { key: "recent", label: "最近使用" },
+                    { key: "alphabetical", label: "あいうえお順" },
+                  ].map((option) => (
+                    <button
+                      key={option.key}
+                      onClick={() => setSortBy(option.key as typeof sortBy)}
+                      className={`rounded px-2 py-1 text-xs transition-colors ${
+                        sortBy === option.key
+                          ? "bg-wellness-primary text-white"
+                          : "bg-wellness-surface text-wellness-textLight hover:text-wellness-text"
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* タグ一覧 */}
+            <div className="mb-8">
+              <h2 className="mb-4 text-lg font-medium text-wellness-text">
+                タグ一覧 ({sortedTags.length}個)
               </h2>
-              <button
-                onClick={() => setSelectedTag(null)}
-                className="flex items-center gap-1 text-sm text-wellness-textLight hover:text-wellness-text"
-              >
-                <X size={16} />
-                クリア
-              </button>
+              {sortedTags.length === 0 ? (
+                <p className="text-center text-wellness-textLight">
+                  {searchQuery
+                    ? "検索に一致するタグがありません"
+                    : "まだタグがありません"}
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  {sortedTags.map((stat) => (
+                    <button
+                      key={stat.tag}
+                      onClick={() => setSelectedTag(stat.tag)}
+                      className={`flex items-center justify-between rounded-lg border p-3 text-left transition-all hover:shadow-sm ${
+                        selectedTag === stat.tag
+                          ? "border-wellness-primary bg-wellness-primary/5"
+                          : "border-wellness-primary/20 bg-wellness-surface hover:border-wellness-primary/40"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Hash size={14} className="text-wellness-secondary" />
+                        <span className="font-medium text-wellness-text">
+                          {stat.tag}
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs font-medium text-wellness-primary">
+                          {stat.count}回
+                        </div>
+                        <div className="text-xs text-wellness-textLight">
+                          {new Date(stat.lastUsed).toLocaleDateString("ja-JP")}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-            <div className="space-y-2">
-              {filteredJournals.map((journal) => (
-                <Link
-                  key={journal.id}
-                  to={`/journal/${journal.id}`}
-                  className="block rounded-lg border border-wellness-primary/10 bg-wellness-surface p-4 transition-all hover:border-wellness-primary/20 hover:shadow-sm"
-                >
-                  <div className="mb-2 flex items-center justify-between">
-                    <span className="text-xs text-wellness-textLight">
-                      {journal.date}
-                    </span>
-                    <span className="text-xs text-wellness-textLight">
-                      {new Date(journal.timestamp).toLocaleTimeString("ja-JP", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                  </div>
-                  <p className="line-clamp-2 text-sm leading-relaxed text-wellness-text">
-                    {journal.content}
-                  </p>
-                  {journal.tags && (
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {journal.tags
-                        .split(",")
-                        .filter((tag: string) => tag.trim())
-                        .map((tag: string, index: number) => (
-                          <span
-                            key={index}
-                            className={`rounded-md px-2 py-0.5 text-xs ${
-                              tag.trim() === selectedTag
-                                ? "bg-wellness-primary text-white"
-                                : "bg-wellness-primary/10 text-wellness-primary"
-                            }`}
-                          >
-                            {tag.trim()}
-                          </span>
-                        ))}
+
+            {/* 選択されたタグのジャーナル */}
+            {selectedTag && (
+              <div>
+                <div className="mb-4 flex items-center justify-between">
+                  <h2 className="text-lg font-medium text-wellness-text">
+                    「{selectedTag}」のノート ({filteredJournals.length}件)
+                  </h2>
+                  <button
+                    onClick={() => setSelectedTag(null)}
+                    className="flex items-center gap-1 text-sm text-wellness-textLight hover:text-wellness-text"
+                  >
+                    <X size={16} />
+                    クリア
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {filteredJournals.map((journal) => (
+                    <Link
+                      key={journal.id}
+                      to={`/journal/${journal.id}`}
+                      className="block rounded-lg border border-wellness-primary/10 bg-wellness-surface p-4 transition-all hover:border-wellness-primary/20 hover:shadow-sm"
+                    >
+                      <div className="mb-2 flex items-center justify-between">
+                        <span className="text-xs text-wellness-textLight">
+                          {journal.date}
+                        </span>
+                        <span className="text-xs text-wellness-textLight">
+                          {new Date(journal.timestamp).toLocaleTimeString(
+                            "ja-JP",
+                            {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            }
+                          )}
+                        </span>
+                      </div>
+                      <p className="line-clamp-2 text-sm leading-relaxed text-wellness-text">
+                        {journal.content}
+                      </p>
+                      {journal.tags && (
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {journal.tags
+                            .split(",")
+                            .filter((tag: string) => tag.trim())
+                            .map((tag: string, index: number) => (
+                              <span
+                                key={index}
+                                className={`rounded-md px-2 py-0.5 text-xs ${
+                                  tag.trim() === selectedTag
+                                    ? "bg-wellness-primary text-white"
+                                    : "bg-wellness-primary/10 text-wellness-primary"
+                                }`}
+                              >
+                                {tag.trim()}
+                              </span>
+                            ))}
+                        </div>
+                      )}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
+          /* タグ設定タブ */
+          <div className="space-y-6">
+            <div className="rounded-md bg-wellness-surface p-6">
+              <h2 className="mb-4 text-lg font-medium text-wellness-text">
+                タグ設定
+              </h2>
+              <p className="mb-6 text-sm text-wellness-textLight">
+                ノート作成時に選択できるタグを設定できます
+              </p>
+
+              {/* 現在のタグ一覧 */}
+              <div className="mb-6">
+                <h3 className="mb-3 text-sm font-medium text-wellness-text">
+                  現在の設定タグ
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {baseTags.map((tag) => (
+                    <div
+                      key={tag}
+                      className="flex items-center gap-1 rounded-full bg-wellness-primary/10 px-3 py-1 text-sm"
+                    >
+                      <span className="text-wellness-primary">{tag}</span>
+                      <button
+                        onClick={() => removeTag(tag)}
+                        className="text-wellness-textLight hover:text-red-500"
+                      >
+                        <X size={14} />
+                      </button>
                     </div>
-                  )}
-                </Link>
-              ))}
+                  ))}
+                </div>
+              </div>
+
+              {/* タグ追加 */}
+              <div className="mb-6 flex gap-2">
+                <input
+                  type="text"
+                  value={newTag}
+                  onChange={(e) => setNewTag(e.target.value)}
+                  onKeyPress={(e) => e.key === "Enter" && addTag()}
+                  placeholder="新しいタグを追加"
+                  className="flex-1 rounded bg-wellness-bg px-3 py-2 text-sm text-wellness-text transition-all focus:bg-wellness-surface focus:outline-none focus:ring-2 focus:ring-wellness-primary/20"
+                />
+                <button
+                  onClick={addTag}
+                  className="flex items-center gap-1 rounded bg-wellness-primary px-4 py-2 text-sm font-medium text-white transition-all hover:bg-wellness-secondary"
+                >
+                  <Plus size={14} />
+                  追加
+                </button>
+              </div>
+
+              {/* 保存ボタン */}
+              <button
+                onClick={saveBaseTags}
+                className="w-full rounded bg-wellness-primary px-4 py-3 text-sm font-medium text-white transition-all hover:bg-wellness-secondary"
+              >
+                タグを保存
+              </button>
             </div>
           </div>
         )}

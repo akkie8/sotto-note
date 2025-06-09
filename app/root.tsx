@@ -40,7 +40,7 @@ function BottomNav() {
 
   const navItems = [
     { path: "/", icon: Home, label: "ホーム" },
-    { path: "/journal", icon: PenTool, label: "ジャーナル" },
+    { path: "/journal", icon: PenTool, label: "ノート" },
     { path: "/tags", icon: Tag, label: "タグ" },
   ];
 

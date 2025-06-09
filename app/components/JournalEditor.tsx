@@ -115,7 +115,7 @@ export function JournalEditor({
 
   // タグ関連の計算
   const userTags = getUserTags(userJournals);
-  const suggestedTags = getSuggestedTags(userTags);
+  const suggestedTags = getSuggestedTags(userTags); // TODO: ベースタグを渡す
   const allCurrentTags = mergeTags(content, manualTags);
 
   // デバッグ用ログ

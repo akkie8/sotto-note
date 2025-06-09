@@ -86,7 +86,7 @@ export function TagSelector({
                     ? "最大5個まで選択できます"
                     : isAutoTag
                       ? "文章から自動抽出されたタグ"
-                      : "過去のジャーナルから提案されたタグ"
+                      : "過去のノートから提案されたタグ"
                 }
               >
                 {isSelected ? (

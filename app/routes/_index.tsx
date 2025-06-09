@@ -512,7 +512,7 @@ export default function Index() {
             <div className="grid gap-4 text-left sm:grid-cols-2 md:grid-cols-3 lg:gap-6">
               <div className="rounded-2xl bg-white p-4 shadow-soft">
                 <h3 className="mb-2 font-semibold text-wellness-primary">
-                  ジャーナル（感情ログ）
+                  ノート（感情ログ）
                 </h3>
                 <p className="text-sm text-wellness-textLight">
                   日々の気持ちを記録し、心の動きを可視化
@@ -660,7 +660,7 @@ export default function Index() {
                   <BookHeart className="h-8 w-8" />
                 </div>
                 <h3 className="mb-4 text-lg font-semibold text-wellness-text sm:text-xl lg:text-2xl">
-                  ジャーナル
+                  ノート
                 </h3>
                 <p className="text-sm leading-relaxed text-wellness-textLight sm:text-base">
                   書くことで、心が整う。日々の思いを言葉にすることで、自分自身をより深く理解できます。
@@ -717,7 +717,7 @@ export default function Index() {
                     className="h-12 w-12"
                   />
                   <h3 className="text-lg font-semibold text-wellness-text">
-                    書く（ジャーナルUI）
+                    書く（ノートUI）
                   </h3>
                 </div>
                 <div className="rounded-xl bg-white p-4">
@@ -906,7 +906,7 @@ export default function Index() {
                       <div className="h-full w-full rounded-full bg-wellness-primary"></div>
                     </div>
                     <span className="text-sm text-wellness-textLight">
-                      ジャーナル無制限
+                      ノート無制限
                     </span>
                   </li>
                   <li className="flex items-start gap-2">
@@ -1339,7 +1339,7 @@ export default function Index() {
                 : "text-wellness-textLight hover:text-wellness-primary"
             }`}
           >
-            記事一覧
+            リスト
           </button>
           <button
             onClick={() => setActiveTab("activity")}
@@ -1359,7 +1359,7 @@ export default function Index() {
           <div className="space-y-2">
             {journalEntries.length === 0 ? (
               <div className="text-center text-wellness-textLight">
-                <p className="text-sm">まだジャーナルエントリーがありません</p>
+                <p className="text-sm">まだノートエントリーがありません</p>
                 <p className="text-xs">
                   上のボタンから最初のエントリーを作成してみましょう
                 </p>
