@@ -203,18 +203,32 @@ export default function Index() {
         }
       }
 
+      // Debug log for today's entries
+      const todayString = new Date()
+        .toLocaleDateString("ja-JP", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+        })
+        .replace(/\//g, "-");
+
+      if (normalizedDate === todayString) {
+        console.log("Today's entry found:", entry.content.slice(0, 50));
+      }
+
       activityMap.set(
         normalizedDate,
         (activityMap.get(normalizedDate) || 0) + 1
       );
     });
 
-    // Generate 4 weeks of data
+    // Generate 4 weeks of data with TODAY always in bottom-right position
     const weeks: { date: Date; count: number }[][] = [];
 
-    // Start from 4 weeks ago Monday to ensure we capture more data
+    // Calculate start date so that today lands in position [3][6] (bottom-right)
+    // Position 27 in a 28-day grid (0-based indexing)
     const startDate = new Date(today);
-    startDate.setDate(today.getDate() - today.getDay() - 28 + 1); // Monday 4 weeks ago
+    startDate.setDate(today.getDate() - 27); // 27 days before today
     startDate.setHours(0, 0, 0, 0);
 
     for (let week = 0; week < 4; week++) {
@@ -223,21 +237,78 @@ export default function Index() {
         const currentDate = new Date(startDate);
         currentDate.setDate(startDate.getDate() + week * 7 + day);
 
-        const dateString = currentDate
+        // Try multiple date formats to match entries
+        let count = 0;
+
+        // Format 1: YYYY-MM-DD
+        const dateString1 = currentDate
           .toLocaleDateString("ja-JP", {
             year: "numeric",
             month: "2-digit",
             day: "2-digit",
           })
           .replace(/\//g, "-");
+        count = Math.max(count, activityMap.get(dateString1) || 0);
+
+        // Format 2: YYYY/M/D
+        const dateString2 = `${currentDate.getFullYear()}/${currentDate.getMonth() + 1}/${currentDate.getDate()}`;
+        count = Math.max(count, activityMap.get(dateString2) || 0);
+
+        // Format 3: YYYY年M月D日
+        const dateString3 = `${currentDate.getFullYear()}年${currentDate.getMonth() + 1}月${currentDate.getDate()}日`;
+        count = Math.max(count, activityMap.get(dateString3) || 0);
 
         weekData.push({
           date: currentDate,
-          count: activityMap.get(dateString) || 0,
+          count: count,
         });
       }
       weeks.push(weekData);
     }
+
+    // Debug log
+    const todayString = new Date()
+      .toLocaleDateString("ja-JP", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      })
+      .replace(/\//g, "-");
+
+    // Find today in the grid
+    let todayPosition = null;
+    weeks.forEach((week, weekIndex) => {
+      week.forEach((day, dayIndex) => {
+        if (
+          day.date.getDate() === today.getDate() &&
+          day.date.getMonth() === today.getMonth() &&
+          day.date.getFullYear() === today.getFullYear()
+        ) {
+          todayPosition = { week: weekIndex, day: dayIndex, count: day.count };
+        }
+      });
+    });
+
+    console.log("=== Activity Debug ===");
+    console.log(
+      "Today:",
+      today.toDateString(),
+      `(${["日", "月", "火", "水", "木", "金", "土"][today.getDay()]})`
+    );
+    console.log("Today's position in grid:", todayPosition);
+    console.log(
+      "Bottom-right should be today:",
+      weeks[3]?.[6]?.date.toDateString()
+    );
+    console.log(
+      "Is bottom-right today?",
+      weeks[3]?.[6]?.date.toDateString() === today.toDateString()
+    );
+    console.log(
+      "Today's activity count from map:",
+      activityMap.get(todayString) || 0
+    );
+    console.log("Bottom-right count:", weeks[3]?.[6]?.count);
 
     return weeks;
   }, [journalEntries]);
@@ -1343,15 +1414,17 @@ export default function Index() {
                 <p>過去4週間のアクティビティ</p>
               </div>
 
-              {/* 曜日ヘッダー */}
+              {/* 曜日ヘッダー - 今日が右下に来る順番 */}
               <div className="mb-2 grid grid-cols-7 gap-1 text-center text-xs text-wellness-textLight">
-                <div>月</div>
-                <div>火</div>
-                <div>水</div>
-                <div>木</div>
-                <div>金</div>
-                <div>土</div>
-                <div>日</div>
+                {getActivityData()[0]?.map((day, index) => (
+                  <div key={index}>
+                    {
+                      ["日", "月", "火", "水", "木", "金", "土"][
+                        day.date.getDay()
+                      ]
+                    }
+                  </div>
+                ))}
               </div>
 
               {/* アクティビティグリッド */}
@@ -1359,14 +1432,24 @@ export default function Index() {
                 {getActivityData().map((week, weekIndex) => (
                   <div key={weekIndex} className="grid grid-cols-7 gap-1">
                     {week.map((day, dayIndex) => {
+                      const today = new Date();
                       const isToday =
-                        day.date.toDateString() === new Date().toDateString();
-                      // 0段階のサイズ: 0投稿=0, 1投稿=20%, 2投稿=40%, 3投稿=60%, 4投稿=80%, 5投稿以上=100%
-                      const sizePercent = Math.min(day.count * 20, 100);
+                        day.date.getFullYear() === today.getFullYear() &&
+                        day.date.getMonth() === today.getMonth() &&
+                        day.date.getDate() === today.getDate();
+                      // 改善されたサイズ計算: 1投稿=30%, 2投稿=50%, 3投稿=70%, 4投稿=85%, 5投稿以上=100%
+                      let sizePercent;
+                      if (day.count === 0) sizePercent = 0;
+                      else if (day.count === 1) sizePercent = 30;
+                      else if (day.count === 2) sizePercent = 50;
+                      else if (day.count === 3) sizePercent = 70;
+                      else if (day.count === 4) sizePercent = 85;
+                      else sizePercent = 100;
+
                       const circleSize =
                         sizePercent > 0
-                          ? Math.max(8, Math.floor(48 * (sizePercent / 100)))
-                          : 0; // 最小8px、最大48px
+                          ? Math.max(12, Math.floor(40 * (sizePercent / 100)))
+                          : 0; // 最小12px、最大40px
 
                       return (
                         <div
@@ -1382,9 +1465,6 @@ export default function Index() {
                                 height: `${circleSize}px`,
                               }}
                             />
-                          )}
-                          {isToday && (
-                            <div className="absolute bottom-0.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-wellness-primary" />
                           )}
                         </div>
                       );
