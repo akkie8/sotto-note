@@ -1,0 +1,125 @@
+# Cursor AI Rules for sotto-note Project
+
+## Git Commit Messages
+When generating git commit messages:
+- **ALWAYS use a prefix** (feat, fix, docs, style, refactor, perf, test, chore)
+- Keep the main message under 50 characters INCLUDING the prefix
+- Use imperative mood after the prefix
+- Be specific but concise
+- No periods at the end
+- Format: `prefix: message`
+
+### Prefix Rules (Angular Convention):
+- `feat:` A new feature (新しい機能)
+- `fix:` A bug fix (バグの修正)
+- `docs:` Documentation only changes (ドキュメントのみの変更)
+- `style:` Changes that do not affect the meaning of the code (フォーマット等)
+- `refactor:` A code change that neither fixes a bug nor adds a feature (リファクタ)
+- `perf:` A code change that improves performance (パフォーマンス向上)
+- `test:` Adding missing or correcting existing tests (テスト関連)
+- `chore:` Changes to the build process or auxiliary tools (ビルド、ツール関連)
+
+### Examples:
+- ✅ `feat: add tag selector component`
+- ✅ `fix: resolve OAuth redirect issue`
+- ✅ `refactor: simplify journal editor layout`
+- ✅ `style: format hashtag functions`
+- ❌ `Add tag selector component` (missing prefix)
+- ❌ `Updated the journal editor component to include new tag selection functionality` (too long, no prefix)
+
+## Code Style
+- Use TypeScript strict mode
+- Prefer functional components with hooks
+- Use Japanese for UI text and comments
+- Follow existing code patterns in the project
+
+## File Naming Rules (ファイル命名規則)
+- **Components**: PascalCase (e.g., `JournalEditor.tsx`, `TagSelector.tsx`)
+- **Routes**: kebab-case with dots for params (e.g., `journal.$id.tsx`, `journal._index.tsx`)
+- **Utilities/Libs**: camelCase (e.g., `hashtag.ts`, `cache.client.ts`)
+- **Server-side files**: Add `.server` suffix (e.g., `auth.server.ts`, `supabase.server.ts`)
+- **Client-side files**: Add `.client` suffix when needed (e.g., `cache.client.ts`)
+- **Types**: Use `.types.ts` suffix for type-only files
+
+## Folder Structure (フォルダ構造)
+```
+app/
+├── components/        # Reusable UI components
+├── routes/           # Remix route files
+├── lib/              # Utility functions and libraries
+├── hooks/            # Custom React hooks
+├── types/            # TypeScript type definitions
+└── styles/           # Global styles and CSS modules
+```
+- Place server-only code in `*.server.ts` files
+- Keep route-specific components near their route files
+- Group related utilities in the same file
+
+## Error Handling (エラーハンドリング)
+- **Always use try-catch** for async operations
+- **User-friendly messages**: Show Japanese error messages to users via `toast.error()`
+- **Console logging**: Log detailed errors with context for debugging
+- **Graceful fallbacks**: Provide default values or states when operations fail
+- **Error boundaries**: Use for critical component errors
+```typescript
+try {
+  const result = await someOperation();
+} catch (error) {
+  console.error('[ComponentName] Operation failed:', error);
+  toast.error('操作に失敗しました');
+  // Provide fallback behavior
+}
+```
+
+## State Management (状態管理)
+- **Local state first**: Use `useState` for component-specific state
+- **URL state**: Use Remix's loader/action for server state
+- **Client cache**: Use the existing cache utility for performance
+- **Form state**: Use Remix's `useFetcher` for form submissions
+- **Global state**: Avoid unless necessary; prefer prop drilling or context
+- **State naming**: Be descriptive (e.g., `isLoading`, `hasError`, `journalEntries`)
+```typescript
+// Good state names
+const [isSubmitting, setIsSubmitting] = useState(false);
+const [userJournals, setUserJournals] = useState<Journal[]>([]);
+
+// Bad state names
+const [flag, setFlag] = useState(false);
+const [data, setData] = useState([]);
+```
+
+## API Integration (API関連)
+- **Supabase client**: Use `supabase.client.ts` for client-side operations
+- **Supabase server**: Use `supabase.server.ts` in loaders/actions
+- **Authentication**: Always check auth state before API calls
+- **Error responses**: Return consistent error format: `{ error: string }`
+- **Success responses**: Return consistent format: `{ success: true, data?: any }`
+- **Loading states**: Always show loading indicators during API calls
+```typescript
+// Client-side API call pattern
+const { data, error } = await supabase
+  .from('journals')
+  .select('*')
+  .eq('user_id', user.id)
+  .order('timestamp', { ascending: false });
+
+if (error) {
+  console.error('[Component] API error:', error);
+  toast.error('データの取得に失敗しました');
+  return;
+}
+```
+
+## Japanese Language
+- UI text should be in Japanese
+- Code comments can be in Japanese
+- Variable names and function names in English
+
+## Imports
+- Group imports: React first, then external packages, then local files
+- Use absolute imports with ~ alias when available
+
+## Component Development
+- Keep components focused and single-purpose
+- Extract reusable logic into custom hooks
+- Use proper TypeScript types, avoid 'any'
