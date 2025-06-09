@@ -17,7 +17,10 @@ import {
   Twitter,
   Wind,
 } from "lucide-react";
+import { toast } from "sonner";
 
+import { DeleteConfirmModal } from "~/components/DeleteConfirmModal";
+import { ThreeDotsMenu } from "~/components/ThreeDotsMenu";
 import { getOptionalUser } from "~/lib/auth.server";
 import { cache, CACHE_KEYS } from "~/lib/cache.client";
 import { supabase } from "../lib/supabase.client";
@@ -65,6 +68,8 @@ export default function Index() {
   const [pullDistance, setPullDistance] = useState(0);
   const [isPulling, setIsPulling] = useState(false);
   const [activeTab, setActiveTab] = useState<"list" | "activity">("list");
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [entryToDelete, setEntryToDelete] = useState<string | null>(null);
 
   // Fetch user data with caching
   const fetchUserData = useCallback(
@@ -382,6 +387,51 @@ export default function Index() {
       supabase.removeChannel(channel);
     };
   }, [user]);
+
+  // ノート削除機能
+  const handleDeleteEntry = async (entryId: string) => {
+    try {
+      const { error } = await supabase
+        .from("journals")
+        .delete()
+        .eq("id", entryId);
+
+      if (error) {
+        console.error("Error deleting entry:", error);
+        toast.error("削除に失敗しました");
+        return;
+      }
+
+      // ローカル状態を更新
+      setJournalEntries((prev) => prev.filter((entry) => entry.id !== entryId));
+
+      // キャッシュを無効化
+      if (user) {
+        cache.invalidate(CACHE_KEYS.JOURNAL_ENTRIES(user.id));
+      }
+
+      toast.success("ノートを削除しました");
+    } catch (error) {
+      console.error("Error deleting entry:", error);
+      toast.error("削除に失敗しました");
+    }
+  };
+
+  const openDeleteModal = (entryId: string) => {
+    setEntryToDelete(entryId);
+    setDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (entryToDelete) {
+      handleDeleteEntry(entryToDelete);
+      setEntryToDelete(null);
+    }
+  };
+
+  const handleEditEntry = (entryId: string) => {
+    navigate(`/journal/${entryId}?mode=edit`);
+  };
 
   // Show loading state
   if (loading) {
@@ -1388,6 +1438,10 @@ export default function Index() {
                         </span>
                       )}
                     </div>
+                    <ThreeDotsMenu
+                      onEdit={() => handleEditEntry(entry.id)}
+                      onDelete={() => openDeleteModal(entry.id)}
+                    />
                   </div>
                   <Link to={`/journal/${entry.id}`} className="block">
                     <p className="line-clamp-2 text-sm leading-relaxed text-wellness-text">
@@ -1496,6 +1550,16 @@ export default function Index() {
             </div>
           </div>
         )}
+
+        {/* 削除確認モーダル */}
+        <DeleteConfirmModal
+          isOpen={deleteModalOpen}
+          onClose={() => {
+            setDeleteModalOpen(false);
+            setEntryToDelete(null);
+          }}
+          onConfirm={handleConfirmDelete}
+        />
       </div>
     </div>
   );

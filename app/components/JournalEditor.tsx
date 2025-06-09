@@ -81,16 +81,35 @@ export function JournalEditor({
   const adjustTextareaHeight = useCallback(() => {
     const textarea = textareaRef.current;
     if (textarea) {
+      // 一時的にautoにしてscrollHeightを正確に取得
       textarea.style.height = "auto";
+
+      // 実際のコンテンツ高さを取得
+      const scrollHeight = textarea.scrollHeight;
+
+      // 最小高さを計算（編集時は内容に応じて動的に調整）
       const lineHeight = 1.5; // leading-relaxed
       const fontSize = 14; // text-sm
       const padding = 24; // py-3 (12px * 2)
-      const minRows = mode === "new" ? 2 : 5; // 新規作成時は2行、編集時は5行
+
+      // 内容の行数を概算
+      const textLines = content.split("\n").length;
+      const estimatedLines = Math.max(textLines, 1);
+
+      // 最小行数を設定（新規作成時は2行、編集時は内容に応じて1-3行）
+      let minRows;
+      if (mode === "new") {
+        minRows = 2;
+      } else {
+        minRows = Math.min(Math.max(estimatedLines, 1), 3);
+      }
+
       const minHeight = fontSize * lineHeight * minRows + padding;
-      const newHeight = Math.max(textarea.scrollHeight, minHeight);
+      const newHeight = Math.max(scrollHeight, minHeight);
+
       textarea.style.height = newHeight + "px";
     }
-  }, [mode]);
+  }, [mode, content]);
 
   // コンテンツが変更されたときにテキストエリアの高さを調整
   useEffect(() => {
@@ -117,6 +136,24 @@ export function JournalEditor({
   const isEditable = mode === "new" || mode === "edit";
   const isView = mode === "view";
 
+  // 編集モードの時に自動フォーカス
+  useEffect(() => {
+    if (isEditable && textareaRef.current) {
+      // 少し遅延させてフォーカスを設定（レンダリング完了後）
+      setTimeout(() => {
+        textareaRef.current?.focus();
+        // カーソルを文末に移動
+        const textarea = textareaRef.current;
+        if (textarea) {
+          textarea.setSelectionRange(
+            textarea.value.length,
+            textarea.value.length
+          );
+        }
+      }, 100);
+    }
+  }, [isEditable, mode]);
+
   // タグ関連の計算
   const userTags = getUserTags(userJournals);
   const suggestedTags = getSuggestedTags(userTags, baseTags);
@@ -139,8 +176,28 @@ export function JournalEditor({
     return "内容を編集してください...";
   };
 
+  // Xでシェア機能
+  const handleShareToX = () => {
+    if (!aiReply) return;
+
+    // 文字数制限を考慮してAI回答を調整（より短く）
+    const maxContentLength = 100; // AI回答部分の最大文字数
+    let content = aiReply;
+
+    if (content.length > maxContentLength) {
+      content = content.substring(0, maxContentLength) + "...";
+    }
+
+    const shareText = `"${content}"
+
+#そっとノート`;
+
+    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
+    window.open(twitterUrl, "_blank", "noopener,noreferrer");
+  };
+
   return (
-    <div className="flex min-h-screen flex-col bg-white">
+    <div className="flex min-h-full flex-col bg-white">
       {/* Header - Fixed at top */}
       <div className="sticky top-0 z-10 bg-white/90 backdrop-blur-sm">
         <div className="px-4 py-3">
@@ -257,7 +314,11 @@ export function JournalEditor({
                 }}
                 className="w-full resize-none bg-transparent px-2 py-3 text-sm leading-relaxed text-wellness-text placeholder-wellness-textLight/60 focus:outline-none"
                 placeholder={getPlaceholder()}
-                rows={mode === "new" ? 2 : 5}
+                rows={
+                  mode === "new"
+                    ? 2
+                    : Math.min(Math.max(content.split("\n").length, 1), 3)
+                }
                 style={{
                   height: "auto",
                   overflow: "hidden",
@@ -289,28 +350,39 @@ export function JournalEditor({
         {/* そっとさんからの返答 */}
         {aiReply && (
           <div className="mt-6 border-t border-wellness-primary/10 pt-4">
-            <div className="mb-3 flex items-center gap-2">
-              <svg
-                className="h-4 w-4 text-wellness-primary"
-                fill="currentColor"
-                viewBox="0 0 20 20"
+            <div className="mb-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <svg
+                  className="h-4 w-4 text-wellness-primary"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <h3 className="text-sm font-medium text-wellness-primary">
+                  そっとさんからのメッセージ
+                </h3>
+              </div>
+              <button
+                onClick={handleShareToX}
+                className="flex items-center gap-1 rounded-full bg-black px-3 py-1.5 text-xs text-white transition-colors hover:bg-gray-800 active:bg-gray-900"
+                title="Xでシェア"
               >
-                <path
-                  fillRule="evenodd"
-                  d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              <h3 className="text-sm font-medium text-wellness-primary">
-                そっとさんからのメッセージ
-              </h3>
+                <span>Xでシェア</span>
+              </button>
             </div>
-            <div className="text-sm leading-relaxed text-wellness-text">
-              {aiReply.split("\n").map((line, index) => (
-                <div key={index} className={index > 0 ? "mt-3" : ""}>
-                  {line || "\u00A0"}
-                </div>
-              ))}
+            <div className="mx-auto max-w-2xl rounded-lg bg-wellness-primary/5 p-4">
+              <div className="text-sm leading-relaxed text-wellness-text">
+                {aiReply.split("\n").map((line, index) => (
+                  <div key={index} className={index > 0 ? "mt-3" : ""}>
+                    {line || "\u00A0"}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}

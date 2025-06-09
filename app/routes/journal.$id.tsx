@@ -215,9 +215,27 @@ export default function JournalPage() {
   const [entry, setEntry] = useState<JournalEntry | null>(null);
   const [user, setUser] = useState<{ id: string } | null>(serverUser);
   const [loading, setLoading] = useState(true);
+
+  // URLパラメータから編集モードを判定（クライアントサイドのみ）
+  const [editMode, setEditMode] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const searchParams = new URLSearchParams(window.location.search);
+      setEditMode(searchParams.get("mode") === "edit");
+    }
+  }, []);
+
   const [mode, setMode] = useState<JournalMode>(
     journalId === "new" ? "new" : "view"
   );
+
+  // editModeが変更されたときにmodeを更新
+  useEffect(() => {
+    if (journalId !== "new") {
+      setMode(editMode ? "edit" : "view");
+    }
+  }, [editMode, journalId]);
   const [saving, setSaving] = useState(false);
   const [aiReply, setAiReply] = useState<string>(initialAiReply || "");
   const [aiLoading, setAiLoading] = useState(false);
