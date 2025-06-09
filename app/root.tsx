@@ -12,7 +12,7 @@ import {
   useLocation,
   useNavigate,
 } from "@remix-run/react";
-import { BookOpen, Home, Wind } from "lucide-react";
+import { Home, PenTool, Tag, Wind } from "lucide-react";
 import { Toaster } from "sonner";
 
 import { Header } from "~/components/Header";
@@ -40,8 +40,8 @@ function BottomNav() {
 
   const navItems = [
     { path: "/", icon: Home, label: "ホーム" },
-    { path: "/journal", icon: BookOpen, label: "ジャーナル" },
-    { path: "/breathing", icon: Wind, label: "呼吸" },
+    { path: "/journal", icon: PenTool, label: "ジャーナル" },
+    { path: "/tags", icon: Tag, label: "タグ" },
   ];
 
   return (

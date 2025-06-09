@@ -230,6 +230,7 @@ export default function JournalPage() {
               id: data.id,
               content: data.content,
               mood: data.mood,
+              tags: data.tags,
               timestamp: data.timestamp,
               date: data.date,
               user_id: data.user_id,

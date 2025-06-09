@@ -47,7 +47,7 @@ export function TagSelector({
       {/* タグ選択エリア */}
       <div>
         <div className="mb-2 flex items-center justify-between">
-          <span className="text-sm font-medium text-wellness-text">
+          <span className="text-xs font-medium text-wellness-text">
             タグを選択
           </span>
           {allAvailableTags.length > 8 && (
@@ -60,7 +60,7 @@ export function TagSelector({
           )}
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1">
           {displayTags.map((tag) => {
             const isSelected = selectedTags.includes(tag);
             const isAutoTag = autoTags.includes(tag);
@@ -70,7 +70,7 @@ export function TagSelector({
                 key={tag}
                 onClick={() => handleTagToggle(tag)}
                 disabled={isMaxReached}
-                className={`inline-flex min-h-[36px] touch-manipulation items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition-all active:scale-95 ${
+                className={`inline-flex min-h-[32px] touch-manipulation items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-all active:scale-95 ${
                   isMaxReached
                     ? "cursor-not-allowed border border-gray-200 bg-gray-100 text-gray-400"
                     : isSelected
@@ -91,12 +91,12 @@ export function TagSelector({
               >
                 {isSelected ? (
                   <>
-                    {isAutoTag ? <Hash size={12} /> : <X size={12} />}
+                    {isAutoTag ? <Hash size={10} /> : <X size={10} />}
                     {tag}
                   </>
                 ) : (
                   <>
-                    {isAutoTag ? <Hash size={12} /> : <Plus size={12} />}
+                    {isAutoTag ? <Hash size={10} /> : <Plus size={10} />}
                     {tag}
                   </>
                 )}
@@ -111,16 +111,23 @@ export function TagSelector({
           </p>
         )}
 
-        {/* 凡例 */}
+        {/* 凡例と制限メッセージ */}
         {allAvailableTags.length > 0 && (
-          <div className="mt-3 flex items-center gap-4 text-xs text-wellness-textLight">
-            <div className="flex items-center gap-1">
-              <Hash size={10} />
-              <span>文章から抽出</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Plus size={10} />
-              <span>過去から提案</span>
+          <div className="mt-3 space-y-2">
+            {selectedTags.length >= 5 && (
+              <div className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                手動選択は最大5個までです。これ以上タグを追加できません。
+              </div>
+            )}
+            <div className="flex items-center gap-4 text-xs text-wellness-textLight">
+              <div className="flex items-center gap-1">
+                <Hash size={10} />
+                <span>文章から抽出</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Plus size={10} />
+                <span>過去から提案</span>
+              </div>
             </div>
           </div>
         )}

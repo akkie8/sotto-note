@@ -273,30 +273,30 @@ export default function Breathing() {
   }
 
   return (
-    <div className="flex min-h-full items-center justify-center bg-wellness-bg p-4">
-      <div className="relative z-10 mx-auto max-w-2xl text-center">
+    <div className="min-h-full bg-wellness-bg p-4">
+      <div className="relative z-10 mx-auto max-w-2xl">
         {/* Header */}
-        <div className="fade-in mb-12">
-          <h1 className="mb-4 text-4xl font-light text-wellness-primary md:text-5xl">
+        <div className="fade-in mb-4 text-center">
+          <h1 className="mb-1 text-lg font-light text-wellness-primary md:text-xl">
             深呼吸
           </h1>
-          <p className="text-lg text-wellness-textLight">
+          <p className="text-xs text-wellness-textLight md:text-sm">
             {userName ? `${userName}さん、` : ""}
             心を落ち着けて、今この瞬間に集中しましょう
           </p>
         </div>
 
         {/* Main breathing circle */}
-        <div className="relative mb-12">
+        <div className="relative mb-4 flex justify-center">
           <div
-            className={`breathing-circle mx-auto flex h-80 w-80 items-center justify-center rounded-full transition-all duration-1000 ease-in-out ${getCircleScale()} ${getCircleAnimation()}`}
+            className={`breathing-circle flex h-40 w-40 items-center justify-center rounded-full transition-all duration-1000 ease-in-out sm:h-48 sm:w-48 md:h-64 md:w-64 ${getCircleScale()} ${getCircleAnimation()}`}
           >
             <div className="text-center">
-              <div className="mb-2 text-3xl font-light text-wellness-primary md:text-4xl">
+              <div className="mb-1 text-base font-light text-wellness-primary sm:text-lg md:text-xl">
                 {getPhaseText(phase)}
               </div>
               {isActive && (
-                <div className="text-6xl font-light text-wellness-secondary">
+                <div className="text-xl font-light text-wellness-secondary sm:text-2xl md:text-3xl">
                   {timeLeft}
                 </div>
               )}
@@ -305,19 +305,19 @@ export default function Breathing() {
         </div>
 
         {/* Phase description */}
-        <div className="mb-8">
-          <p className="text-lg font-light text-wellness-text">
+        <div className="mb-6 text-center">
+          <p className="text-sm font-light text-wellness-text md:text-base">
             {getPhaseDescription(phase)}
           </p>
           {isActive && (
-            <p className="mt-2 text-wellness-textLight">
+            <p className="mt-1 text-xs text-wellness-textLight md:text-sm">
               サイクル {currentCycle + 1} / {settings.cycles}
             </p>
           )}
         </div>
 
         {/* Controls */}
-        <div className="mb-8 flex flex-wrap items-center justify-center gap-3">
+        <div className="mb-6 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
           {!isActive ? (
             <button
               onClick={startBreathing}
@@ -492,16 +492,16 @@ export default function Breathing() {
 
         {/* Completion message */}
         {!isActive && currentCycle > 0 && phase !== "paused" && (
-          <div className="fade-in rounded-2xl bg-wellness-surface/80 p-6 backdrop-blur-sm">
-            <h3 className="mb-3 text-xl font-medium text-wellness-primary">
+          <div className="fade-in rounded-2xl bg-wellness-surface/80 p-4 backdrop-blur-sm sm:p-6">
+            <h3 className="mb-2 text-lg font-medium text-wellness-primary sm:mb-3 sm:text-xl">
               おつかれさまでした！
             </h3>
-            <p className="mb-3 text-wellness-text">
+            <p className="mb-2 text-sm text-wellness-text sm:mb-3 sm:text-base">
               {userName ? `${userName}さん、` : ""}
               {settings.cycles}
               サイクルの深呼吸が完了しました。心は落ち着きましたか？
             </p>
-            <p className="font-medium text-wellness-secondary">
+            <p className="text-sm font-medium text-wellness-secondary sm:text-base">
               {getTimeBasedMessage()}
             </p>
           </div>

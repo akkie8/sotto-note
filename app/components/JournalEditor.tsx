@@ -175,7 +175,8 @@ export function JournalEditor({
               ) : (
                 <>
                   <span className="text-xs text-wellness-textLight">
-                    {content.length} 文字 • {allCurrentTags.length}/5 タグ
+                    {content.length} 文字 • 手動{manualTags.length}/5 • 自動
+                    {extractHashtags(content).length}
                   </span>
                   <button
                     onClick={handleSave}
@@ -253,9 +254,28 @@ export function JournalEditor({
           </div>
         </div>
 
+        {/* タグ表示エリア（閲覧モード時） */}
+        {isView && allCurrentTags.length > 0 && (
+          <div className="mt-6 border-t border-wellness-primary/10 pt-4">
+            <h3 className="mb-3 text-sm font-medium text-wellness-textLight">
+              タグ
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {allCurrentTags.map((tag, index) => (
+                <span
+                  key={index}
+                  className="rounded-md bg-wellness-primary/10 px-3 py-1.5 text-sm text-wellness-primary"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* AI返答エリア */}
         {aiReply && (
-          <div className="mt-4 rounded-lg bg-wellness-surface p-4">
+          <div className="mt-6 rounded-lg bg-wellness-surface p-4">
             <h3 className="mb-3 text-sm font-medium text-wellness-text">
               AIからの返答
             </h3>

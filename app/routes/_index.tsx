@@ -30,6 +30,7 @@ type JournalEntry = {
   mood: string;
   timestamp: number;
   date: string;
+  tags?: string;
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -1234,6 +1235,17 @@ export default function Index() {
               }
             })()}
           </h1>
+
+          {/* 深呼吸への動線 */}
+          <div className="mt-3">
+            <Link
+              to="/breathing"
+              className="inline-flex items-center gap-2 rounded-full bg-wellness-secondary/10 px-4 py-2 text-sm text-wellness-secondary transition-colors hover:bg-wellness-secondary/20"
+            >
+              <Wind size={16} />
+              心を整える深呼吸
+            </Link>
+          </div>
         </div>
 
         {/* 新規エントリーボタン */}
@@ -1303,6 +1315,21 @@ export default function Index() {
                     <p className="line-clamp-2 text-sm leading-relaxed text-wellness-text">
                       {entry.content}
                     </p>
+                    {entry.tags && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {entry.tags
+                          .split(",")
+                          .filter((tag: string) => tag.trim())
+                          .map((tag: string, index: number) => (
+                            <span
+                              key={index}
+                              className="rounded-md bg-wellness-primary/10 px-2 py-0.5 text-xs text-wellness-primary"
+                            >
+                              {tag.trim()}
+                            </span>
+                          ))}
+                      </div>
+                    )}
                   </Link>
                 </div>
               ))
