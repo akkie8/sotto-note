@@ -11,6 +11,7 @@ export function Header() {
   const [userName, setUserName] = useState<string>("");
   const [userRole, setUserRole] = useState<string>("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [avatarLoading, setAvatarLoading] = useState(true);
 
   const fetchUserProfile = async (userId: string) => {
     // Check cache first
@@ -42,23 +43,98 @@ export function Header() {
   };
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    // 初期ユーザー取得
+    const initializeUser = async () => {
+      // URLパラメータをチェックして OAuth コールバックかどうか確認
+      const urlParams = new URLSearchParams(window.location.search);
+      const isOAuthCallback =
+        urlParams.has("code") || urlParams.has("access_token");
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       setUser(user);
 
       if (user) {
         fetchUserProfile(user.id);
+
+        // OAuth ログイン直後の場合、セッションを再取得して最新のuser_metadataを確保
+        if (!user.user_metadata?.avatar_url) {
+          const {
+            data: { session },
+          } = await supabase.auth.getSession();
+          if (session?.user) {
+            setUser(session.user);
+          }
+
+          // OAuth コールバック直後で avatar_url がない場合、少し待ってリトライ
+          if (isOAuthCallback) {
+            setTimeout(async () => {
+              const {
+                data: { user: retryUser },
+              } = await supabase.auth.getUser();
+              if (retryUser?.user_metadata?.avatar_url) {
+                setUser(retryUser);
+              }
+              setAvatarLoading(false);
+            }, 2000);
+            return; // setAvatarLoading(false) を遅延実行するため早期リターン
+          }
+        }
       }
-    });
+
+      setAvatarLoading(false);
+    };
+
+    initializeUser();
+
     // セッション変化も監視
     const { data: listener } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      async (event, session) => {
         setUser(session?.user ?? null);
 
         if (session?.user) {
           fetchUserProfile(session.user.id);
+
+          // SIGNED_IN イベントの場合、少し待ってから再度ユーザー情報を取得
+          if (
+            event === "SIGNED_IN" &&
+            !session.user.user_metadata?.avatar_url
+          ) {
+            setAvatarLoading(true);
+
+            // 複数回リトライして avatar_url を取得
+            let retryCount = 0;
+            const maxRetries = 3;
+            const retryInterval = 1000;
+
+            const retryGetUser = async () => {
+              const {
+                data: { user: refreshedUser },
+              } = await supabase.auth.getUser();
+
+              if (refreshedUser?.user_metadata?.avatar_url) {
+                setUser(refreshedUser);
+                setAvatarLoading(false);
+                return true;
+              }
+
+              retryCount++;
+              if (retryCount < maxRetries) {
+                setTimeout(retryGetUser, retryInterval * retryCount);
+              } else {
+                setAvatarLoading(false);
+              }
+
+              return false;
+            };
+
+            setTimeout(retryGetUser, retryInterval);
+          }
         } else {
           setUserName("");
           setUserRole("");
+          setAvatarLoading(false);
         }
       }
     );
@@ -130,28 +206,44 @@ export function Header() {
                   onClick={() => setIsMenuOpen(!isMenuOpen)}
                   className="flex min-h-[44px] min-w-[44px] touch-manipulation items-center gap-2 rounded-full p-2 transition-colors hover:bg-wellness-primary/10 active:bg-wellness-primary/20"
                 >
-                  {user.user_metadata?.avatar_url ? (
-                    <img
-                      src={user.user_metadata.avatar_url}
-                      alt="ユーザーアバター"
-                      className="h-9 w-9 rounded-full"
-                    />
-                  ) : (
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-wellness-primary text-white">
-                      <svg
-                        className="h-4 w-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                        />
-                      </svg>
+                  {avatarLoading ? (
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-wellness-primary/20">
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-wellness-primary border-t-transparent"></div>
                     </div>
+                  ) : (
+                    <>
+                      {user.user_metadata?.avatar_url && (
+                        <img
+                          src={user.user_metadata.avatar_url}
+                          alt="ユーザーアバター"
+                          className="h-9 w-9 rounded-full"
+                          onError={(e) => {
+                            // フォールバックとしてデフォルトアバターを表示
+                            e.currentTarget.style.display = "none";
+                            e.currentTarget.nextElementSibling?.classList.remove(
+                              "hidden"
+                            );
+                          }}
+                        />
+                      )}
+                      <div
+                        className={`flex h-9 w-9 items-center justify-center rounded-full bg-wellness-primary text-white ${user.user_metadata?.avatar_url && !avatarLoading ? "hidden" : ""}`}
+                      >
+                        <svg
+                          className="h-4 w-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                          />
+                        </svg>
+                      </div>
+                    </>
                   )}
                 </button>
               </div>
