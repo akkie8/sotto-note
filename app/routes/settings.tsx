@@ -712,6 +712,55 @@ export default function Settings() {
           </button>
         </Form>
       </div>
+
+      {/* 法的情報セクション */}
+      <div className="rounded-md bg-wellness-surface p-4">
+        <h2 className="mb-3 text-xs font-medium uppercase tracking-wide text-wellness-textLight">
+          法的情報
+        </h2>
+        <div className="space-y-2">
+          <a
+            href="https://akiyamada.dev/sotto-note#privacy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block rounded bg-wellness-bg px-3 py-2 text-xs text-wellness-text transition-all hover:bg-wellness-primary/10"
+          >
+            プライバシーポリシー
+          </a>
+          <a
+            href="https://akiyamada.dev/sotto-note#terms"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block rounded bg-wellness-bg px-3 py-2 text-xs text-wellness-text transition-all hover:bg-wellness-primary/10"
+          >
+            利用規約
+          </a>
+          <a
+            href="https://akiyamada.dev/sotto-note#tokusho"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block rounded bg-wellness-bg px-3 py-2 text-xs text-wellness-text transition-all hover:bg-wellness-primary/10"
+          >
+            特定商取引法に基づく表記
+          </a>
+          <a
+            href="https://akiyamada.dev/sotto-note"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block rounded bg-wellness-bg px-3 py-2 text-xs text-wellness-text transition-all hover:bg-wellness-primary/10"
+          >
+            サービス詳細
+          </a>
+          <a
+            href="https://akiyamada.dev/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block rounded bg-wellness-bg px-3 py-2 text-xs text-wellness-text transition-all hover:bg-wellness-primary/10"
+          >
+            運営者について
+          </a>
+        </div>
+      </div>
     </div>
   );
 }
