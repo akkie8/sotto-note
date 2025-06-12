@@ -21,7 +21,7 @@ export const meta: MetaFunction = () => {
     },
     {
       rel: "canonical",
-      href: "https://sotto-note.com/about",
+      href: "https://www.sottonote.com/about",
     },
   ];
 };

@@ -10,4 +10,4 @@ Allow: /
 Allow: /breathing
 Allow: /about
 
-Sitemap: https://sotto-note.com/sitemap.xml
+Sitemap: https://www.sottonote.com/sitemap.xml

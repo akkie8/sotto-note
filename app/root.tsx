@@ -143,7 +143,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               "@type": "WebApplication",
               "name": "そっとノート",
               "description": "心の記録と整理ができるメンタルヘルス対応のジャーナリングアプリ。そっとさんAIが感情に寄り添い、深呼吸ガイドで心を整えます。",
-              "url": "https://sotto-note.com",
+              "url": "https://www.sottonote.com",
               "applicationCategory": "HealthApplication",
               "operatingSystem": "Web",
               "softwareVersion": "1.0.0",

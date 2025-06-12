@@ -38,7 +38,7 @@ export const meta: MetaFunction = () => {
     },
     {
       rel: "canonical",
-      href: "https://sotto-note.com/breathing",
+      href: "https://www.sottonote.com/breathing",
     },
   ];
 };

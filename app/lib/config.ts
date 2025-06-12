@@ -44,11 +44,9 @@ export const getOAuthRedirectUrl = () => {
     case "development":
       return "http://localhost:5173/";
     case "staging":
-      // ステージング環境のURLに置き換えてください
-      return "https://staging.sotto-note.com/";
+      return "https://staging.sottonote.com/";
     case "production":
-      // 本番環境のURLに置き換えてください
-      return "https://sotto-note.com/";
+      return "https://www.sottonote.com/";
     default:
       return "http://localhost:5173/";
   }

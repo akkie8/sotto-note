@@ -24,6 +24,7 @@ import { Loading } from "~/components/Loading";
 import { ThreeDotsMenu } from "~/components/ThreeDotsMenu";
 import { getOptionalUser } from "~/lib/auth.server";
 import { cache, CACHE_KEYS } from "~/lib/cache.client";
+import { config } from "~/lib/config";
 import { supabase } from "../lib/supabase.client";
 
 // ジャーナルエントリー型
@@ -83,11 +84,11 @@ export const meta: MetaFunction = () => {
     },
     {
       property: "og:url",
-      content: "https://sotto-note.com",
+      content: "https://www.sottonote.com",
     },
     {
       property: "og:image",
-      content: "https://sotto-note.com/og-image.jpg",
+      content: "https://www.sottonote.com/og-image.jpg",
     },
     {
       property: "og:site_name",
@@ -111,11 +112,11 @@ export const meta: MetaFunction = () => {
     },
     {
       name: "twitter:image",
-      content: "https://sotto-note.com/og-image.jpg",
+      content: "https://www.sottonote.com/og-image.jpg",
     },
     {
       rel: "canonical",
-      href: "https://sotto-note.com",
+      href: "https://www.sottonote.com",
     },
     {
       name: "google-site-verification",
@@ -461,7 +462,7 @@ export default function Index() {
         const { error } = await supabase.auth.signInWithOAuth({
           provider: "google",
           options: {
-            redirectTo: window.location.origin,
+            redirectTo: config.oauthRedirectUrl,
           },
         });
 
@@ -484,7 +485,7 @@ export default function Index() {
           const { error } = await supabase.auth.signInWithOAuth({
             provider: "google",
             options: {
-              redirectTo: window.location.origin,
+              redirectTo: config.oauthRedirectUrl,
             },
           });
 
