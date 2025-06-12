@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import type { MetaFunction } from "@remix-run/node";
 import { Link } from "@remix-run/react";
 import { Pause, Play, RotateCcw, Settings } from "lucide-react";
 
@@ -15,6 +16,32 @@ interface BreathingSettings {
   holdOutTime: number;
   cycles: number;
 }
+
+export const meta: MetaFunction = () => {
+  return [
+    { title: "深呼吸ガイド - そっとノート" },
+    {
+      name: "description",
+      content: "カスタマイズ可能な深呼吸ガイドで心を整える。ストレス軽減と リラクゼーションのための呼吸法をサポートします。",
+    },
+    {
+      name: "keywords",
+      content: "深呼吸,ストレス軽減,リラクゼーション,呼吸法,瞑想,心を整える,そっとノート",
+    },
+    {
+      property: "og:title",
+      content: "深呼吸ガイド - そっとノート",
+    },
+    {
+      property: "og:description",
+      content: "カスタマイズ可能な深呼吸ガイドで心を整える。ストレス軽減とリラクゼーションのための呼吸法をサポートします。",
+    },
+    {
+      rel: "canonical",
+      href: "https://sotto-note.com/breathing",
+    },
+  ];
+};
 
 export default function Breathing() {
   const [isActive, setIsActive] = useState(false);

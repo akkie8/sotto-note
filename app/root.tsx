@@ -135,6 +135,32 @@ export function Layout({ children }: { children: React.ReactNode }) {
           href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap"
           rel="stylesheet"
         />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebApplication",
+              "name": "そっとノート",
+              "description": "心の記録と整理ができるメンタルヘルス対応のジャーナリングアプリ。そっとさんAIが感情に寄り添い、深呼吸ガイドで心を整えます。",
+              "url": "https://sotto-note.com",
+              "applicationCategory": "HealthApplication",
+              "operatingSystem": "Web",
+              "softwareVersion": "1.0.0",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "JPY"
+              },
+              "author": {
+                "@type": "Organization",
+                "name": "そっとノート"
+              },
+              "keywords": "ジャーナリング,メンタルヘルス,心の整理,AI,深呼吸,ストレス軽減",
+              "inLanguage": "ja-JP"
+            })
+          }}
+        />
       </head>
       <body className="min-h-screen overscroll-none scroll-smooth bg-white">
         <div className="flex min-h-screen justify-center">

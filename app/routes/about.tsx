@@ -1,4 +1,4 @@
-import type { LoaderFunctionArgs } from "@remix-run/node";
+import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -7,6 +7,24 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   return Response.json({ error });
 }
+
+export const meta: MetaFunction = () => {
+  return [
+    { title: "アクセス情報 - そっとノート" },
+    {
+      name: "description",
+      content: "そっとノートのアクセス情報とサービス準備状況についてご案内いたします。",
+    },
+    {
+      name: "robots",
+      content: "noindex,nofollow",
+    },
+    {
+      rel: "canonical",
+      href: "https://sotto-note.com/about",
+    },
+  ];
+};
 
 export default function About() {
   const { error } = useLoaderData<typeof loader>();

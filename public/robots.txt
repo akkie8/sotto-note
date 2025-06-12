@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /journal/
+Disallow: /settings
+Disallow: /tags
+
+# Allow important pages for SEO
+Allow: /
+Allow: /breathing
+Allow: /about
+
+Sitemap: https://sotto-note.com/sitemap.xml

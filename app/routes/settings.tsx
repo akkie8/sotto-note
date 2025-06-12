@@ -654,40 +654,42 @@ export default function Settings() {
         </div>
       )}
 
-      {/* 開発者サポートセクション */}
-      <div className="rounded-md bg-wellness-surface p-4">
-        <h2 className="mb-3 text-xs font-medium uppercase tracking-wide text-wellness-textLight">
-          サポート
-        </h2>
-        <p className="mb-4 text-xs leading-relaxed text-wellness-textLight">
-          このアプリを気に入っていただけましたら、ぜひ開発者をサポートしてください
-        </p>
-        <div className="grid grid-cols-3 gap-2">
-          <a
-            href="https://buy.stripe.com/test_eVq4gBc6R2eHdQr4JD67S00"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group rounded bg-amber-50 p-3 text-center transition-colors hover:bg-amber-100"
-          >
-            <div className="mb-1 text-lg transition-transform group-hover:scale-110">
-              ☕
-            </div>
-            <div className="text-xs font-medium text-amber-800">¥500</div>
-          </a>
-          <button className="group rounded bg-green-50 p-3 text-center transition-colors hover:bg-green-100">
-            <div className="mb-1 text-lg transition-transform group-hover:scale-110">
-              🍱
-            </div>
-            <div className="text-xs font-medium text-green-800">¥1,500</div>
-          </button>
-          <button className="group rounded bg-purple-50 p-3 text-center transition-colors hover:bg-purple-100">
-            <div className="mb-1 text-lg transition-transform group-hover:scale-110">
-              🍽️
-            </div>
-            <div className="text-xs font-medium text-purple-800">¥3,000</div>
-          </button>
+      {/* 開発者サポートセクション - Stripe未登録のため一時非表示 */}
+      {false && (
+        <div className="rounded-md bg-wellness-surface p-4">
+          <h2 className="mb-3 text-xs font-medium uppercase tracking-wide text-wellness-textLight">
+            サポート
+          </h2>
+          <p className="mb-4 text-xs leading-relaxed text-wellness-textLight">
+            このアプリを気に入っていただけましたら、ぜひ開発者をサポートしてください
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            <a
+              href="https://buy.stripe.com/test_eVq4gBc6R2eHdQr4JD67S00"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group rounded bg-amber-50 p-3 text-center transition-colors hover:bg-amber-100"
+            >
+              <div className="mb-1 text-lg transition-transform group-hover:scale-110">
+                ☕
+              </div>
+              <div className="text-xs font-medium text-amber-800">¥500</div>
+            </a>
+            <button className="group rounded bg-green-50 p-3 text-center transition-colors hover:bg-green-100">
+              <div className="mb-1 text-lg transition-transform group-hover:scale-110">
+                🍱
+              </div>
+              <div className="text-xs font-medium text-green-800">¥1,500</div>
+            </button>
+            <button className="group rounded bg-purple-50 p-3 text-center transition-colors hover:bg-purple-100">
+              <div className="mb-1 text-lg transition-transform group-hover:scale-110">
+                🍽️
+              </div>
+              <div className="text-xs font-medium text-purple-800">¥3,000</div>
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* フィードバックセクション */}
       <div className="rounded-md bg-wellness-surface p-4">

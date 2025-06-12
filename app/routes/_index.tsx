@@ -48,10 +48,82 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export const meta: MetaFunction = () => {
   return [
-    { title: "そっとノート" },
+    { title: "そっとノート - メンタルヘルス対応ジャーナリングアプリ" },
     {
       name: "description",
-      content: "あなたの思考を整理するためのノートアプリ",
+      content: "心の記録と整理ができるメンタルヘルス対応のジャーナリングアプリ。そっとさんAIが感情に寄り添い、深呼吸ガイドで心を整えます。無料でご利用いただけます。",
+    },
+    {
+      name: "keywords",
+      content: "ジャーナリング,メンタルヘルス,心の整理,AI,深呼吸,ストレス軽減,感情記録,無料,そっとノート",
+    },
+    {
+      name: "robots",
+      content: "index,follow",
+    },
+    {
+      name: "author",
+      content: "そっとノート",
+    },
+    {
+      name: "viewport",
+      content: "width=device-width, initial-scale=1.0",
+    },
+    {
+      property: "og:title",
+      content: "そっとノート - メンタルヘルス対応ジャーナリングアプリ",
+    },
+    {
+      property: "og:description",
+      content: "心の記録と整理ができるメンタルヘルス対応のジャーナリングアプリ。そっとさんAIが感情に寄り添い、深呼吸ガイドで心を整えます。",
+    },
+    {
+      property: "og:type",
+      content: "website",
+    },
+    {
+      property: "og:url",
+      content: "https://sotto-note.com",
+    },
+    {
+      property: "og:image",
+      content: "https://sotto-note.com/og-image.jpg",
+    },
+    {
+      property: "og:site_name",
+      content: "そっとノート",
+    },
+    {
+      property: "og:locale",
+      content: "ja_JP",
+    },
+    {
+      name: "twitter:card",
+      content: "summary_large_image",
+    },
+    {
+      name: "twitter:title",
+      content: "そっとノート - メンタルヘルス対応ジャーナリングアプリ",
+    },
+    {
+      name: "twitter:description",
+      content: "心の記録と整理ができるメンタルヘルス対応のジャーナリングアプリ。そっとさんAIが感情に寄り添い、深呼吸ガイドで心を整えます。",
+    },
+    {
+      name: "twitter:image",
+      content: "https://sotto-note.com/og-image.jpg",
+    },
+    {
+      rel: "canonical",
+      href: "https://sotto-note.com",
+    },
+    {
+      name: "google-site-verification",
+      content: "YOUR_GOOGLE_VERIFICATION_CODE_HERE",
+    },
+    {
+      name: "msvalidate.01",
+      content: "YOUR_BING_VERIFICATION_CODE_HERE",
     },
   ];
 };
@@ -428,7 +500,8 @@ export default function Index() {
     return (
       <div className="min-h-screen bg-white">
         {/* ヒーローセクション */}
-        <section className="relative flex min-h-screen items-center py-12 sm:py-16 lg:py-20">
+        <header>
+          <section className="relative flex min-h-screen items-center py-12 sm:py-16 lg:py-20">
           <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8">
             <div className="text-center">
               {/* サービス名 */}
@@ -477,8 +550,10 @@ export default function Index() {
             </div>
           </div>
         </section>
+        </header>
 
         {/* サービス概要 */}
+        <main>
         <section
           id="about"
           className="bg-wellness-surface/30 py-12 sm:py-16 lg:py-20"
@@ -970,6 +1045,15 @@ export default function Index() {
             </p>
           </div>
         </section>
+        </main>
+
+        <footer className="bg-wellness-surface/30 py-8 text-center">
+          <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+            <p className="text-sm text-wellness-textLight">
+              © 2025 そっとノート. All rights reserved.
+            </p>
+          </div>
+        </footer>
       </div>
     );
   }
