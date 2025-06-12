@@ -1,166 +1,28 @@
 import { useEffect, useState } from "react";
 import { Link } from "@remix-run/react";
-import type { User } from "@supabase/supabase-js";
 import { toast } from "sonner";
 
-import { cache, CACHE_KEYS } from "../lib/cache.client";
+import { useUserStore, selectUser, selectUserName, selectUserRole, selectAiUsageInfo } from "../stores/userStore";
 import { supabase } from "../lib/supabase.client";
 
 export function Header() {
-  const [user, setUser] = useState<User | null>(null);
-  const [userName, setUserName] = useState<string>("");
-  const [userRole, setUserRole] = useState<string>("");
+  const user = useUserStore(selectUser);
+  const userName = useUserStore(selectUserName);
+  const userRole = useUserStore(selectUserRole);
+  const aiUsageInfo = useUserStore(selectAiUsageInfo);
+  
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [avatarLoading, setAvatarLoading] = useState(true);
 
-  const fetchUserProfile = async (userId: string) => {
-    // Check cache first
-    const cachedProfile = cache.get<{ name: string; role: string }>(
-      CACHE_KEYS.USER_PROFILE(userId)
-    );
-
-    if (cachedProfile?.name) {
-      setUserName(cachedProfile.name);
-      setUserRole(cachedProfile.role || "");
-    } else {
-      // Fetch user profile
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("name, role")
-        .eq("user_id", userId)
-        .single();
-
-      if (profile) {
-        setUserName(profile.name || "ユーザー");
-        setUserRole(profile.role || "");
-        // Cache the profile
-        cache.set(CACHE_KEYS.USER_PROFILE(userId), profile, 10 * 60 * 1000);
-      } else {
-        setUserName("ユーザー");
-        setUserRole("");
-      }
-    }
-  };
-
+  // Handle avatar loading state
   useEffect(() => {
-    // 初期ユーザー取得
-    const initializeUser = async () => {
-      // URLパラメータをチェックして OAuth コールバックかどうか確認
-      const urlParams = new URLSearchParams(window.location.search);
-      const isOAuthCallback =
-        urlParams.has("code") || urlParams.has("access_token");
-
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      setUser(user);
-
-      if (user) {
-        fetchUserProfile(user.id);
-
-        // OAuth ログイン直後の場合、セッションを再取得して最新のuser_metadataを確保
-        if (!user.user_metadata?.avatar_url) {
-          const {
-            data: { session },
-          } = await supabase.auth.getSession();
-          if (session?.user) {
-            setUser(session.user);
-          }
-
-          // OAuth コールバック直後で avatar_url がない場合、少し待ってリトライ
-          if (isOAuthCallback) {
-            setTimeout(async () => {
-              const {
-                data: { user: retryUser },
-              } = await supabase.auth.getUser();
-              if (retryUser?.user_metadata?.avatar_url) {
-                setUser(retryUser);
-              }
-              setAvatarLoading(false);
-            }, 2000);
-            return; // setAvatarLoading(false) を遅延実行するため早期リターン
-          }
-        }
-      }
-
+    if (user) {
       setAvatarLoading(false);
-    };
-
-    initializeUser();
-
-    // セッション変化も監視
-    const { data: listener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setUser(session?.user ?? null);
-
-        if (session?.user) {
-          fetchUserProfile(session.user.id);
-
-          // SIGNED_IN イベントの場合、少し待ってから再度ユーザー情報を取得
-          if (
-            event === "SIGNED_IN" &&
-            !session.user.user_metadata?.avatar_url
-          ) {
-            setAvatarLoading(true);
-
-            // 複数回リトライして avatar_url を取得
-            let retryCount = 0;
-            const maxRetries = 3;
-            const retryInterval = 1000;
-
-            const retryGetUser = async () => {
-              const {
-                data: { user: refreshedUser },
-              } = await supabase.auth.getUser();
-
-              if (refreshedUser?.user_metadata?.avatar_url) {
-                setUser(refreshedUser);
-                setAvatarLoading(false);
-                return true;
-              }
-
-              retryCount++;
-              if (retryCount < maxRetries) {
-                setTimeout(retryGetUser, retryInterval * retryCount);
-              } else {
-                setAvatarLoading(false);
-              }
-
-              return false;
-            };
-
-            setTimeout(retryGetUser, retryInterval);
-          }
-        } else {
-          setUserName("");
-          setUserRole("");
-          setAvatarLoading(false);
-        }
-      }
-    );
-
-    // プロフィール更新イベントをリッスン
-    const handleProfileUpdate = (event: CustomEvent) => {
-      setUserName(event.detail.name);
-    };
-
-    window.addEventListener(
-      "profileUpdated",
-      handleProfileUpdate as EventListener
-    );
-
-    return () => {
-      listener?.subscription.unsubscribe();
-      window.removeEventListener(
-        "profileUpdated",
-        handleProfileUpdate as EventListener
-      );
-    };
-  }, []);
+    }
+  }, [user]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    setUser(null);
     setIsMenuOpen(false);
     toast.success("ログアウトしました");
     window.location.href = "/";
@@ -197,6 +59,14 @@ export function Header() {
           {user ? (
             <div className="user-menu relative">
               <div className="flex items-center gap-2">
+                {aiUsageInfo && !aiUsageInfo.isAdmin && aiUsageInfo.monthlyLimit !== null && (
+                  <div className="flex items-center gap-1 rounded-full bg-wellness-primary/10 px-2 py-1 text-xs font-medium text-wellness-primary">
+                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-3.582 8-8 8a8.955 8.955 0 01-2.993-.523c-.993.266-2.207.423-2.957.423-2.485 0-4.05-1.565-4.05-4.05 0-.75.157-1.964.423-2.957A8.955 8.955 0 013 12a8 8 0 118 8z" />
+                    </svg>
+                    {aiUsageInfo.monthlyLimit - (aiUsageInfo.remainingCount || 0)}/{aiUsageInfo.monthlyLimit}
+                  </div>
+                )}
                 {userRole === "admin" && (
                   <span className="rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-800">
                     admin

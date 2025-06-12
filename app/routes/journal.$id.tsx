@@ -11,6 +11,7 @@ import {
   type JournalEntry,
   type JournalMode,
 } from "~/components/JournalEditor";
+import { Loading } from "~/components/Loading";
 import { getOptionalUser } from "~/lib/auth.server";
 import { cache, CACHE_KEYS } from "~/lib/cache.client";
 import { mergeTags, tagsToString } from "~/lib/hashtag";
@@ -22,9 +23,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
 
   let aiReply = null;
+  const aiUsageInfo = {
+    remainingCount: null as number | null,
+    monthlyLimit: null as number | null,
+    isAdmin: false,
+  };
 
-  // ログインしている場合は既存のAI回答を取得
-  if (user && id) {
+  // ログインしている場合
+  if (user) {
     try {
       const { getSupabase } = await import("~/lib/supabase.server");
       const response = new Response();
@@ -40,16 +46,47 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         });
       }
 
-      const { data } = await supabase
-        .from("ai_replies")
-        .select("content")
-        .eq("journal_id", id)
+      // 既存のジャーナルの場合はAI回答を取得
+      if (id && id !== "new") {
+        const { data } = await supabase
+          .from("ai_replies")
+          .select("content")
+          .eq("journal_id", id)
+          .eq("user_id", user.id)
+          .single();
+
+        aiReply = data?.content || null;
+      }
+
+      // ユーザーのロールと使用状況を取得（新規・既存どちらでも）
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
         .eq("user_id", user.id)
         .single();
 
-      aiReply = data?.content || null;
+      const userRole = profile?.role || "free";
+      aiUsageInfo.isAdmin = userRole === "admin";
+
+      // adminユーザー以外は使用回数を計算
+      if (userRole !== "admin") {
+        aiUsageInfo.monthlyLimit = 5;
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        startOfMonth.setHours(0, 0, 0, 0);
+
+        const { count } = await supabase
+          .from("ai_replies")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", user.id)
+          .gte("created_at", startOfMonth.toISOString());
+
+        const currentCount = count || 0;
+        aiUsageInfo.remainingCount = Math.max(0, aiUsageInfo.monthlyLimit - currentCount);
+      }
     } catch (error) {
-      // Failed to load AI reply
+      // Failed to load AI reply or usage info
+      console.error("Error in loader:", error);
     }
   }
 
@@ -57,6 +94,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     serverUser: user,
     journalId: id,
     aiReply,
+    aiUsageInfo,
   });
 }
 
@@ -183,6 +221,7 @@ export default function JournalPage() {
     serverUser,
     journalId,
     aiReply: initialAiReply,
+    aiUsageInfo,
   } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const fetcher = useFetcher();
@@ -219,6 +258,7 @@ export default function JournalPage() {
     []
   );
   const [baseTags, setBaseTags] = useState<string[]>([]);
+  const [clientAiUsageInfo, setClientAiUsageInfo] = useState(aiUsageInfo);
 
   const isNewEntry = journalId === "new";
 
@@ -236,6 +276,53 @@ export default function JournalPage() {
           data: { user: clientUser },
         } = await supabase.auth.getUser();
         setUser(clientUser);
+
+        // ユーザーがいない場合はホームにリダイレクト
+        if (!clientUser) {
+          navigate("/");
+          return;
+        }
+
+        // AI使用状況を取得
+        try {
+          // ユーザーのロールを取得
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("role")
+            .eq("user_id", clientUser.id)
+            .single();
+
+          const userRole = profile?.role || "free";
+          const isAdmin = userRole === "admin";
+
+          // adminユーザー以外は使用回数を計算
+          if (!isAdmin) {
+            const now = new Date();
+            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+            startOfMonth.setHours(0, 0, 0, 0);
+
+            const { count } = await supabase
+              .from("ai_replies")
+              .select("*", { count: "exact", head: true })
+              .eq("user_id", clientUser.id)
+              .gte("created_at", startOfMonth.toISOString());
+
+            const currentCount = count || 0;
+            setClientAiUsageInfo({
+              remainingCount: Math.max(0, 5 - currentCount),
+              monthlyLimit: 5,
+              isAdmin: false,
+            });
+          } else {
+            setClientAiUsageInfo({
+              remainingCount: null,
+              monthlyLimit: null,
+              isAdmin: true,
+            });
+          }
+        } catch (error) {
+          console.error("Error fetching AI usage info:", error);
+        }
 
         // 新規作成の場合はデータ取得をスキップ
         if (isNewEntry) {
@@ -313,7 +400,7 @@ export default function JournalPage() {
     };
 
     checkAuthAndFetchEntry();
-  }, [journalId, isNewEntry]);
+  }, [journalId, isNewEntry, navigate]);
 
   // ユーザージャーナルとベースタグを取得（タグ推奨のため）
   useEffect(() => {
@@ -575,9 +662,33 @@ export default function JournalPage() {
       if (response.ok) {
         setAiReply(data.reply || "");
         console.log("AI reply set successfully");
+        
+        // 残り回数を表示（adminユーザー以外）
+        if (!data.isAdmin && data.remainingCount !== null) {
+          // clientAiUsageInfoを更新
+          setClientAiUsageInfo({
+            remainingCount: data.remainingCount,
+            monthlyLimit: data.monthlyLimit || 5,
+            isAdmin: false,
+          });
+          
+          if (data.remainingCount === 0) {
+            toast.warning(`今月の回答上限に達しました。来月また利用できます。`);
+          } else {
+            toast.success(`そっとさんの回答が届きました（今月の残り回数: ${data.remainingCount}回）`);
+          }
+          
+          // ヘッダーのAI使用状況を更新
+          window.dispatchEvent(new CustomEvent("aiUsageUpdated"));
+        }
       } else {
         console.error("AI response error:", data.error);
         setError(data.error || "エラーが発生しました");
+        
+        // 429エラー（制限超過）の場合は特別なメッセージを表示
+        if (response.status === 429) {
+          toast.error(data.error);
+        }
       }
     } catch (err) {
       console.error("AI request failed:", err);
@@ -591,16 +702,11 @@ export default function JournalPage() {
 
   // Show loading state
   if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-gray-600">読み込み中...</p>
-      </div>
-    );
+    return <Loading fullScreen />;
   }
 
   // Show login prompt if no user
   if (!user) {
-    navigate("/");
     return null;
   }
 
@@ -627,6 +733,7 @@ export default function JournalPage() {
       error={error}
       userJournals={userJournals}
       baseTags={baseTags}
+      aiUsageInfo={clientAiUsageInfo}
     />
   );
 }

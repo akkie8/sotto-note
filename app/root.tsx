@@ -16,6 +16,7 @@ import { Home, PenTool, Tag } from "lucide-react";
 import { Toaster } from "sonner";
 
 import { Header } from "~/components/Header";
+import { UserProvider } from "~/providers/UserProvider";
 import { supabase } from "~/lib/supabase.client";
 import tailwindStyles from "~/tailwind.css?url";
 
@@ -208,5 +209,9 @@ export default function App() {
     handleOAuthCallback();
   }, [navigate]);
 
-  return <Outlet />;
+  return (
+    <UserProvider>
+      <Outlet />
+    </UserProvider>
+  );
 }

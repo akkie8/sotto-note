@@ -1,0 +1,48 @@
+# .claude-rules
+
+## 🔧 プロジェクト設定
+- docs/claude.mdのルールを常に参照すること
+- docs/内の仕様書も考慮すること
+- パッケージマネージャーはyarn統一
+- UIはTailwind CSS + Framer Motion使用
+- TypeScript必須
+
+## 🏗️ 開発フロー
+- 新規コンポーネント作成時はdocs/の設計仕様を確認
+- 全てのコンポーネントにTypeScript型定義を必須とする
+- エラーハンドリングを必ず含める（try-catch、エラーバウンダリ）
+- レスポンシブデザインを必ず考慮する（mobile-first）
+- Lazy loadingを適切に実装する
+
+## 🎯 品質基準
+- SEOに配慮したメタタグとセマンティックHTMLを使用する
+- 新しいパターンや要件が出た場合、ルール追加を提案する
+- エラーや警告が出た場合は必ず解決策を提示する
+- API仕様変更時はdocs/を更新するよう提案する
+
+## 📁 ファイル命名規則
+- docsディレクトリのファイル名は英語のみを使用
+- ケバブケース（kebab-case）形式で命名
+- 例: portfolio-structure.md, tech-stack.md
+
+## 📝 Git & コメント規則
+### Git Commit Messages (Angular Convention)
+- **必須prefix使用**: feat, fix, docs, style, refactor, perf, test, chore
+- 50文字以内（prefix含む）、命令法、**日本語で記述**
+- フォーマット: `prefix: message`
+
+### Code Comments Language
+- **このプロジェクト**: 日本語コメント
+
+## ✅ コード品質チェック（必須）
+- 作業完了時は必ず以下を実行して問題ないことを確認：
+  1. `yarn lint`
+  2. `yarn format`
+  3. `yarn typecheck`
+  4. `yarn dev` （実際の開発サーバー起動確認）
+- 全てのチェックが通り、実際の動作確認ができた状態でのみ完了報告すること
+
+## 🔧 実行時テスト（必須）
+- TypeScriptチェックだけでなく、実際のアプリケーション起動を確認
+- SSRエラー、Hydrationエラーがないことを検証
+- ブラウザでの動作確認（最低限のページ表示とエラーコンソール確認）

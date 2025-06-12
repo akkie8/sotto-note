@@ -42,6 +42,11 @@ export interface JournalEditorProps {
   userJournals?: Array<{ tags?: string }>; // ユーザーの過去ジャーナル（タグ取得用）
   baseTags?: string[]; // ベースタグ
   userName?: string; // ユーザー名（シェア用）
+  aiUsageInfo?: {
+    remainingCount: number | null;
+    monthlyLimit: number | null;
+    isAdmin: boolean;
+  };
 }
 
 const MAX_CHARACTERS = 1500;
@@ -60,6 +65,7 @@ export function JournalEditor({
   userJournals = [],
   baseTags = [],
   userName,
+  aiUsageInfo,
 }: JournalEditorProps) {
   const [content, setContent] = useState(entry?.content || "");
   const [manualTags, setManualTags] = useState<string[]>([]);
@@ -399,7 +405,7 @@ export function JournalEditor({
             <div className="text-center">
               <button
                 onClick={onAskAI}
-                disabled={aiLoading}
+                disabled={aiLoading || (aiUsageInfo && !aiUsageInfo.isAdmin && aiUsageInfo.remainingCount === 0)}
                 className="inline-flex items-center gap-3 rounded-full bg-wellness-primary px-6 py-3 text-base font-semibold text-white shadow-lg transition-all hover:bg-wellness-primary/90 hover:shadow-xl disabled:opacity-50 disabled:hover:shadow-lg"
               >
                 <svg
@@ -417,6 +423,11 @@ export function JournalEditor({
                 </svg>
                 {aiLoading ? "そっとさん思考中..." : "そっとさんに聞いてもらう"}
               </button>
+              {aiUsageInfo && !aiUsageInfo.isAdmin && aiUsageInfo.monthlyLimit !== null && (
+                <p className="mt-2 text-sm text-wellness-textLight">
+                  今月の利用回数: {aiUsageInfo.monthlyLimit - (aiUsageInfo.remainingCount || 0)} / {aiUsageInfo.monthlyLimit}回
+                </p>
+              )}
             </div>
           </div>
         )}

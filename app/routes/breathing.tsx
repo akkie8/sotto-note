@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "@remix-run/react";
 import { Pause, Play, RotateCcw, Settings } from "lucide-react";
 
+import { Loading } from "~/components/Loading";
 import { cache, CACHE_KEYS } from "~/lib/cache.client";
 import { supabase } from "../lib/supabase.client";
 
@@ -240,16 +241,7 @@ export default function Breathing() {
 
   // Show loading state
   if (loading) {
-    return (
-      <div className="flex min-h-full items-center justify-center bg-wellness-bg p-4">
-        <div className="text-center">
-          <h1 className="mb-6 text-2xl font-bold text-wellness-primary">
-            深呼吸
-          </h1>
-          <p className="text-wellness-textLight">読み込み中...</p>
-        </div>
-      </div>
-    );
+    return <Loading fullScreen />;
   }
 
   // Show login prompt if no user

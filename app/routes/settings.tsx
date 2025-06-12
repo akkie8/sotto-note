@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ActionFunction, LoaderFunctionArgs } from "@remix-run/node";
 import { Form, Link, useActionData, useLoaderData } from "@remix-run/react";
 import { Plus, X } from "lucide-react";
 import { toast } from "sonner";
 
+import { Loading } from "~/components/Loading";
 import { getOptionalUser } from "~/lib/auth.server";
 import { cache, CACHE_KEYS } from "~/lib/cache.client";
 import { supabase } from "../lib/supabase.client";
@@ -209,12 +210,29 @@ export const action: ActionFunction = async ({ request }) => {
         );
       }
       try {
-        // TODO: フィードバック送信処理を実装
+        // フィードバックをデータベースに保存
+        const { error: feedbackError } = await supabase
+          .from("feedback")
+          .insert({
+            user_id: user.id,
+            content: feedback.trim(),
+            created_at: new Date().toISOString(),
+          });
+
+        if (feedbackError) {
+          console.error("Feedback save error:", feedbackError);
+          return Response.json(
+            { error: "フィードバックの保存に失敗しました: " + feedbackError.message },
+            { headers }
+          );
+        }
+
         return Response.json(
           { success: true, action: "feedback" },
           { headers }
         );
       } catch (error) {
+        console.error("Feedback submission error:", error);
         return Response.json(
           {
             error: "フィードバックの送信に失敗しました",
@@ -237,6 +255,7 @@ export default function Settings() {
   const [loading, setLoading] = useState(true);
   const [baseTags, setBaseTags] = useState<string[]>(DEFAULT_BASE_TAGS);
   const [newTag, setNewTag] = useState("");
+  const feedbackFormRef = useRef<HTMLFormElement>(null);
 
   // Check client-side authentication
   useEffect(() => {
@@ -359,6 +378,10 @@ export default function Settings() {
         }
       } else if (actionData.action === "feedback") {
         toast.success("フィードバックを送信しました");
+        // フォームをリセット
+        if (feedbackFormRef.current) {
+          feedbackFormRef.current.reset();
+        }
       }
     } else if (actionData?.error) {
       console.log("Action error received:", actionData.error);
@@ -487,14 +510,7 @@ export default function Settings() {
 
   // Show loading state
   if (loading) {
-    return (
-      <div className="mx-auto min-h-full max-w-md px-4 py-8">
-        <div className="text-center">
-          <h1 className="mb-6 text-2xl font-bold text-wellness-text">設定</h1>
-          <p className="text-wellness-textLight">読み込み中...</p>
-        </div>
-      </div>
-    );
+    return <Loading fullScreen />;
   }
 
   // Show login prompt if no user
@@ -598,43 +614,45 @@ export default function Settings() {
         </button>
       </div>
 
-      {/* データ初期化セクション */}
-      <div className="rounded-md bg-wellness-surface p-4">
-        <h2 className="mb-3 text-xs font-medium uppercase tracking-wide text-wellness-textLight">
-          データ管理
-        </h2>
-        {!showResetConfirm ? (
-          <button
-            onClick={() => setShowResetConfirm(true)}
-            className="rounded bg-red-50 px-3 py-2 text-xs font-medium text-red-600 transition-colors hover:bg-red-100"
-          >
-            全てのノートを削除
-          </button>
-        ) : (
-          <div className="space-y-3">
-            <p className="text-xs text-red-600">
-              本当に全てのデータを削除しますか？この操作は取り消せません。
-            </p>
-            <div className="flex gap-2">
-              <Form method="post" className="inline">
-                <input type="hidden" name="action" value="reset" />
+      {/* データ初期化セクション - 一時的に非表示 */}
+      {false && (
+        <div className="rounded-md bg-wellness-surface p-4">
+          <h2 className="mb-3 text-xs font-medium uppercase tracking-wide text-wellness-textLight">
+            データ管理
+          </h2>
+          {!showResetConfirm ? (
+            <button
+              onClick={() => setShowResetConfirm(true)}
+              className="rounded bg-red-50 px-3 py-2 text-xs font-medium text-red-600 transition-colors hover:bg-red-100"
+            >
+              全てのノートを削除
+            </button>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-xs text-red-600">
+                本当に全てのデータを削除しますか？この操作は取り消せません。
+              </p>
+              <div className="flex gap-2">
+                <Form method="post" className="inline">
+                  <input type="hidden" name="action" value="reset" />
+                  <button
+                    type="submit"
+                    className="rounded bg-red-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-700"
+                  >
+                    削除する
+                  </button>
+                </Form>
                 <button
-                  type="submit"
-                  className="rounded bg-red-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-700"
+                  onClick={() => setShowResetConfirm(false)}
+                  className="rounded bg-wellness-bg px-3 py-1.5 text-xs font-medium text-wellness-text transition-colors hover:bg-wellness-primary/10"
                 >
-                  削除する
+                  キャンセル
                 </button>
-              </Form>
-              <button
-                onClick={() => setShowResetConfirm(false)}
-                className="rounded bg-wellness-bg px-3 py-1.5 text-xs font-medium text-wellness-text transition-colors hover:bg-wellness-primary/10"
-              >
-                キャンセル
-              </button>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       {/* 開発者サポートセクション */}
       <div className="rounded-md bg-wellness-surface p-4">
@@ -676,7 +694,7 @@ export default function Settings() {
         <h2 className="mb-3 text-xs font-medium uppercase tracking-wide text-wellness-textLight">
           フィードバック
         </h2>
-        <Form method="post" className="space-y-3">
+        <Form ref={feedbackFormRef} method="post" className="space-y-3">
           <input type="hidden" name="action" value="feedback" />
           <textarea
             name="feedback"

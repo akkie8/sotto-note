@@ -9,6 +9,7 @@ import { Link, useActionData, useLoaderData } from "@remix-run/react";
 import { Filter, Hash, Plus, Search, Settings, X } from "lucide-react";
 import { toast } from "sonner";
 
+import { Loading } from "~/components/Loading";
 import { getOptionalUser } from "~/lib/auth.server";
 import { cache, CACHE_KEYS } from "~/lib/cache.client";
 import { supabase } from "~/lib/supabase.client";
@@ -406,16 +407,7 @@ export default function Tags() {
 
   // ローディング状態
   if (loading) {
-    return (
-      <div className="flex min-h-full items-center justify-center bg-transparent">
-        <div className="text-center">
-          <h1 className="mb-6 text-2xl font-bold text-wellness-primary">
-            タグ管理
-          </h1>
-          <p className="text-wellness-textLight">読み込み中...</p>
-        </div>
-      </div>
-    );
+    return <Loading fullScreen />;
   }
 
   // ログインプロンプト
