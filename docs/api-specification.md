@@ -195,15 +195,17 @@ console.error('Error saving AI reply:', saveError);
 ### 必須環境変数
 ```bash
 # Supabase設定
-PUBLIC_SUPABASE_URL=https://xxx.supabase.co
-PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+VITE_SUPABASE_URL=your_supabase_project_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+
+# OAuth設定
+VITE_OAUTH_REDIRECT_URL=http://localhost:5173/
 
 # OpenAI設定
-OPENAI_API_KEY=sk-...
+OPENAI_API_KEY=your_openai_api_key
 
 # そっとさんプロンプト
-PROMPT_SOTTO_MESSAGE="あなたは「そっとさん」という..."
+PROMPT_SOTTO_MESSAGE="your_sotto_prompt_here"
 ```
 
 ### プロンプト設定

@@ -202,11 +202,15 @@ export default function Index() {
 
   // Check client-side authentication
   useEffect(() => {
+    let isMounted = true;
+    
     const checkAuth = async () => {
       try {
         const {
           data: { user: clientUser },
         } = await supabase.auth.getUser();
+        
+        if (!isMounted) return;
         
         setUser(clientUser);
 
@@ -217,13 +221,21 @@ export default function Index() {
         }
       } catch (error) {
         console.error("Auth check error:", error);
-        setUser(null);
+        if (isMounted) {
+          setUser(null);
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     checkAuth();
+    
+    return () => {
+      isMounted = false;
+    };
   }, [navigate]);
 
   // 時間帯による挨拶の更新
@@ -378,9 +390,10 @@ export default function Index() {
     setPullDistance(0);
   }, [isPulling, pullDistance, handleRefresh]);
 
-  // リアルタイム更新のサブスクリプション
+  // リアルタイム更新のサブスクリプション（ログイン済みユーザーのみ）
   useEffect(() => {
-    if (!user) return;
+    // LPページではリアルタイム購読しない（ダッシュボードでのみ使用）
+    if (!user || window.location.pathname === "/") return;
 
     const channel = supabase
       .channel("realtime:journals")

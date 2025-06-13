@@ -22,6 +22,39 @@ export function UserProvider({ children, initialUser, initialProfile }: UserProv
     profile,
   } = useUserStore();
 
+  // Create user profile for new users
+  const createUserProfile = useCallback(async (userId: string) => {
+    try {
+      // Get user info from auth
+      const { data: { user } } = await supabase.auth.getUser();
+      const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'ユーザー';
+
+      const newProfile = {
+        user_id: userId,
+        name: displayName,
+        role: 'free',
+        base_tags: '',
+      };
+
+      const { data: createdProfile, error } = await supabase
+        .from('profiles')
+        .insert(newProfile)
+        .select()
+        .single();
+
+      if (createdProfile && !error) {
+        setProfile(createdProfile);
+        // Cache the new profile
+        cache.set(CACHE_KEYS.USER_PROFILE(userId), createdProfile, 10 * 60 * 1000);
+        console.log('Created new profile for user:', userId);
+      } else {
+        console.error('Error creating profile:', error);
+      }
+    } catch (error) {
+      console.error('Error creating user profile:', error);
+    }
+  }, [setProfile]);
+
   // Fetch user profile
   const fetchUserProfile = useCallback(async (userId: string) => {
     setProfileLoading(true);
@@ -45,15 +78,20 @@ export function UserProvider({ children, initialUser, initialProfile }: UserProv
         setProfile(profileData);
         // Cache the profile
         cache.set(CACHE_KEYS.USER_PROFILE(userId), profileData, 10 * 60 * 1000);
+      } else if (error?.code === 'PGRST116' || error?.message?.includes('No rows found')) {
+        // プロフィールが存在しない場合のみ作成
+        console.log('No profile found for user:', userId, '. Creating new profile...');
+        await createUserProfile(userId);
       } else {
-        console.log('No profile found for user:', userId);
+        // その他のエラー（RLS等）は一時的に無視
+        console.warn('Profile fetch error (ignoring):', error);
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
     } finally {
       setProfileLoading(false);
     }
-  }, [setProfile, setProfileLoading]);
+  }, [setProfile, setProfileLoading, createUserProfile]);
 
   // Fetch AI usage info
   const fetchAiUsageInfo = useCallback(async (userId: string) => {

@@ -1,6 +1,7 @@
 import { redirect } from "@remix-run/node";
 
 import { getSupabase } from "./supabase.server";
+import { ensureUserProfile } from "./ensure-profile.server";
 
 export async function requireAuth(request: Request) {
   const response = new Response();
@@ -21,13 +22,13 @@ export async function requireAuth(request: Request) {
 
         if (error) {
           console.error("[requireAuth] Token auth error:", error.message);
-          throw redirect("/about", {
+          throw redirect("/auth-error", {
             headers: response.headers,
           });
         }
 
         if (!user) {
-          throw redirect("/about", {
+          throw redirect("/auth-error", {
             headers: response.headers,
           });
         }
@@ -49,15 +50,23 @@ export async function requireAuth(request: Request) {
 
     if (error) {
       console.error("[requireAuth] Auth error:", error.message);
-      throw redirect("/about", {
+      throw redirect("/auth-error", {
         headers: response.headers,
       });
     }
 
     if (!user) {
-      throw redirect("/about", {
+      throw redirect("/auth-error", {
         headers: response.headers,
       });
+    }
+
+    // プロフィールの存在を保証
+    try {
+      await ensureUserProfile(supabase, user);
+    } catch (profileError) {
+      console.error("[requireAuth] Profile creation error:", profileError);
+      // プロフィール作成に失敗してもログインは継続
     }
 
     return { user, headers: response.headers, supabase };
@@ -66,7 +75,7 @@ export async function requireAuth(request: Request) {
     if (authError instanceof Response) {
       throw authError; // Re-throw redirect responses
     }
-    throw redirect("/about", {
+    throw redirect("/auth-error", {
       headers: response.headers,
     });
   }
@@ -86,6 +95,12 @@ export async function getOptionalUser(request: Request) {
       } = await supabase.auth.getUser(token);
 
       if (user) {
+        // プロフィールの存在を保証
+        try {
+          await ensureUserProfile(supabase, user);
+        } catch (profileError) {
+          console.error("[getOptionalUser] Profile creation error:", profileError);
+        }
         return { user, headers: response.headers, supabase };
       }
     }
@@ -94,6 +109,15 @@ export async function getOptionalUser(request: Request) {
     const {
       data: { user },
     } = await supabase.auth.getUser();
+
+    if (user) {
+      // プロフィールの存在を保証
+      try {
+        await ensureUserProfile(supabase, user);
+      } catch (profileError) {
+        console.error("[getOptionalUser] Profile creation error:", profileError);
+      }
+    }
 
     return { user, headers: response.headers, supabase };
   } catch (error) {
