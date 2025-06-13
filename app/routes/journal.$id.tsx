@@ -647,15 +647,26 @@ export default function JournalPage() {
         }),
       });
 
+      console.log("[handleAskAI] Response status:", response.status);
+      console.log("[handleAskAI] Response headers:", Object.fromEntries(response.headers.entries()));
+
       // レスポンステキストを確認
       const responseText = await response.text();
+      console.log("[handleAskAI] Response text length:", responseText.length);
 
       let data;
       try {
         data = JSON.parse(responseText);
       } catch (jsonError) {
-        console.error("JSON parse error:", jsonError);
-        console.error("Response was not JSON:", responseText.substring(0, 500));
+        console.error("[handleAskAI] JSON parse error:", jsonError);
+        console.error("[handleAskAI] Response was not JSON:", responseText.substring(0, 500));
+        
+        // HTMLレスポンスの場合は、サーバーエラーの可能性が高い
+        if (responseText.includes("<!DOCTYPE") || responseText.includes("<html")) {
+          console.error("[handleAskAI] Received HTML response instead of JSON");
+          throw new Error("サーバーエラーが発生しました。しばらく経ってから再度お試しください。");
+        }
+        
         throw new Error("Invalid JSON response");
       }
 
@@ -691,10 +702,16 @@ export default function JournalPage() {
         }
       }
     } catch (err) {
-      console.error("AI request failed:", err);
-      console.error("Error type:", (err as Error).constructor.name);
-      console.error("Error message:", (err as Error).message);
-      setError("ネットワークエラーが発生しました");
+      console.error("[handleAskAI] AI request failed:", err);
+      console.error("[handleAskAI] Error type:", (err as Error).constructor.name);
+      console.error("[handleAskAI] Error message:", (err as Error).message);
+      
+      // エラーメッセージをより具体的に設定
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("ネットワークエラーが発生しました");
+      }
     } finally {
       setAiLoading(false);
     }

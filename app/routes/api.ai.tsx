@@ -6,6 +6,10 @@ import { getUserProfile } from "~/lib/userUtils.server";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   try {
+    // 環境情報をログ出力（デバッグ用）
+    console.log("[API/AI] Environment:", process.env.NODE_ENV);
+    console.log("[API/AI] Request URL:", request.url);
+    
     if (request.method !== "POST") {
       return new Response(JSON.stringify({ error: "Method not allowed" }), {
         status: 405,
@@ -128,7 +132,21 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       }
     }
 
-    const { openai } = await import("~/lib/openai.server");
+    // OpenAI APIキーの確認
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error("OpenAI APIキーが設定されていません");
+    }
+
+    let openai;
+    try {
+      console.log("[API/AI] Importing OpenAI module...");
+      const openaiModule = await import("~/lib/openai.server");
+      openai = openaiModule.openai;
+      console.log("[API/AI] OpenAI module imported successfully");
+    } catch (importError) {
+      console.error("[API/AI] Failed to import OpenAI module:", importError);
+      throw new Error("OpenAIモジュールの読み込みに失敗しました");
+    }
 
     // プロンプトを環境変数から取得
     const baseSystemPrompt = process.env.PROMPT_SOTTO_MESSAGE;
@@ -142,6 +160,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
 今回あなたが返答する相手は「${userName}」さんです。返答の際は自然に「${userName}さん」として呼びかけてください。ただし、冒頭で「そっとさんですね。」のような不自然な表現は避け、直接的で温かい言葉をかけてください。`;
 
+    console.log("[API/AI] Calling OpenAI API...");
+    const startTime = Date.now();
+    
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
@@ -158,9 +179,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       temperature: 0.7,
     });
 
+    const responseTime = Date.now() - startTime;
+    console.log(`[API/AI] OpenAI API responded in ${responseTime}ms`);
+
     const reply =
       completion.choices[0]?.message?.content ||
       "申し訳ありません。返答を生成できませんでした。";
+    
+    if (!completion.choices[0]?.message?.content) {
+      console.warn("[API/AI] OpenAI returned empty response");
+    }
 
     // AI回答をデータベースに保存
     // adminの場合は既存の回答を更新、それ以外は新規作成
@@ -258,10 +286,41 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       }
     );
   } catch (error) {
+    // エラーの詳細をログに記録
+    console.error("[API/AI] Error occurred:", error);
+    
+    // エラーの種類を判別してより具体的なメッセージを返す
+    let errorMessage = "AI返答の生成中にエラーが発生しました。";
+    let statusCode = 500;
+    
+    if (error instanceof Error) {
+      console.error("[API/AI] Error message:", error.message);
+      console.error("[API/AI] Error stack:", error.stack);
+      
+      // OpenAI APIキーのエラー
+      if (error.message.includes("apiKey") || error.message.includes("API key")) {
+        errorMessage = "APIキーが設定されていません。管理者に連絡してください。";
+        console.error("[API/AI] OpenAI API key is missing or invalid");
+      }
+      // プロンプト設定のエラー
+      else if (error.message.includes("プロンプト")) {
+        errorMessage = error.message;
+      }
+      // OpenAI APIのレート制限
+      else if (error.message.includes("rate limit") || error.message.includes("429")) {
+        errorMessage = "AIサービスの利用制限に達しました。しばらく待ってから再度お試しください。";
+        statusCode = 429;
+      }
+      // ネットワークエラー
+      else if (error.message.includes("fetch") || error.message.includes("network")) {
+        errorMessage = "ネットワークエラーが発生しました。インターネット接続を確認してください。";
+      }
+    }
+    
     return new Response(
-      JSON.stringify({ error: "AI返答の生成中にエラーが発生しました。" }),
+      JSON.stringify({ error: errorMessage }),
       {
-        status: 500,
+        status: statusCode,
         headers: { "Content-Type": "application/json" },
       }
     );
