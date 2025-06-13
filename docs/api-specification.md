@@ -17,9 +17,27 @@
 const { data, error } = await supabase.auth.signInWithOAuth({
   provider: 'google',
   options: {
-    redirectTo: window.location.origin
+    redirectTo: window.location.origin + '/auth/callback',
   }
 });
+```
+
+### 認証コールバック処理
+OAuth認証後は `/auth/callback` ルートで処理されます：
+
+1. **成功時**: `/dashboard` にリダイレクト
+2. **エラー時**: `/auth-error` にリダイレクト
+
+```typescript
+// /auth/callback での処理例
+const { data, error } = await supabase.auth.getSession();
+if (data.session?.user) {
+  // 認証成功 → ダッシュボードへ
+  navigate("/dashboard");
+} else {
+  // 認証失敗 → エラーページへ
+  navigate("/auth-error");
+}
 ```
 
 ## 📚 API エンドポイント
@@ -146,8 +164,8 @@ CREATE POLICY "Users can insert own feedback" ON feedback
 CREATE POLICY "Admins can view all feedback" ON feedback
   FOR SELECT USING (
     EXISTS (
-      SELECT 1 FROM profiles 
-      WHERE profiles.user_id = auth.uid() 
+      SELECT 1 FROM profiles
+      WHERE profiles.user_id = auth.uid()
       AND profiles.role = 'admin'
     )
   );
@@ -199,7 +217,7 @@ VITE_SUPABASE_URL=your_supabase_project_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 # OAuth設定
-VITE_OAUTH_REDIRECT_URL=http://localhost:5173/
+VITE_OAUTH_REDIRECT_URL=http://localhost:5173/auth/callback
 
 # OpenAI設定
 OPENAI_API_KEY=your_openai_api_key
@@ -253,7 +271,7 @@ describe('AI API', () => {
         content: 'テスト内容',
         journalId: 'test-journal-id'
       });
-    
+
     expect(response.status).toBe(200);
     expect(response.body.reply).toBeDefined();
   });
@@ -284,7 +302,7 @@ describe('AI API', () => {
 ```
 **解決策**: 有効なBearerトークンをリクエストヘッダーに含める
 
-#### 429 Too Many Requests  
+#### 429 Too Many Requests
 ```json
 {
   "error": "今月のそっとさんの回答は上限（5回）に達しました。次回は2025年7月1日からご利用いただけます。",
@@ -311,5 +329,5 @@ yarn dev
 
 ---
 
-**そっとノート API v1.0.0**  
+**そっとノート API v1.0.0**
 © 2025 そっとノート開発チーム

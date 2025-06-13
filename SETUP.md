@@ -114,7 +114,7 @@ CREATE OR REPLACE TRIGGER on_auth_user_created
 
 2. **Configure Redirect URLs:**
    - Add your application URL to the list of allowed redirect URLs
-   - For local development: `http://localhost:3000`
+   - For local development: `http://localhost:5173`
    - For production: your deployed URL
 
 ## Installation Steps

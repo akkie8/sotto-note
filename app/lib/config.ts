@@ -19,7 +19,7 @@ const getEnvironment = () => {
   if (hostname.includes("staging") || hostname.includes("stg")) {
     return "staging";
   }
-  
+
   if (hostname.includes("vercel.app")) {
     return "staging";
   }
@@ -41,7 +41,7 @@ export const getOAuthRedirectUrl = () => {
   }
 
   // サーバーサイドのフォールバック
-  return "http://localhost:5173/";
+  return "http://localhost:5173/auth/callback";
 };
 
 // その他の環境設定
