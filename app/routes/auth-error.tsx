@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { useLoaderData, useNavigate } from "@remix-run/react";
+
 import { supabase } from "~/lib/supabase.client";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -35,7 +36,9 @@ export default function AuthError() {
     const handleLogout = async () => {
       try {
         // 現在のセッション状態を確認
-        const { data: { session } } = await supabase.auth.getSession();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         if (session) {
           await supabase.auth.signOut();
           console.log("Logged out due to authentication error");
@@ -44,7 +47,7 @@ export default function AuthError() {
         console.error("Error during logout:", logoutError);
       }
     };
-    
+
     // アクセス拒否以外の場合のみログアウト
     if (!isAccessDenied) {
       handleLogout();
@@ -62,13 +65,13 @@ export default function AuthError() {
   };
 
   return (
-    <div className="min-h-screen bg-wellness-surface/30 flex items-center justify-center px-4">
+    <div className="flex min-h-screen items-center justify-center bg-wellness-surface/30 px-4">
       <div className="w-full max-w-md">
-        <div className="rounded-2xl bg-white p-8 shadow-soft text-center">
+        <div className="rounded-2xl bg-white p-8 text-center shadow-soft">
           <h1 className="mb-6 text-2xl font-bold text-wellness-text">
             {isAccessDenied ? "ログインがキャンセルされました" : "認証エラー"}
           </h1>
-          
+
           <div className="mb-6">
             {isAccessDenied ? (
               <>
@@ -98,7 +101,7 @@ export default function AuthError() {
             >
               ホームに戻る
             </button>
-            
+
             <button
               onClick={() => navigate("/login")}
               className="w-full rounded-xl border border-wellness-primary bg-white px-6 py-3 font-medium text-wellness-primary transition-all hover:bg-wellness-surface"

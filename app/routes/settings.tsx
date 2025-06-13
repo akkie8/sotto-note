@@ -222,7 +222,10 @@ export const action: ActionFunction = async ({ request }) => {
         if (feedbackError) {
           console.error("Feedback save error:", feedbackError);
           return Response.json(
-            { error: "フィードバックの保存に失敗しました: " + feedbackError.message },
+            {
+              error:
+                "フィードバックの保存に失敗しました: " + feedbackError.message,
+            },
             { headers }
           );
         }

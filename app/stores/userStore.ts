@@ -1,13 +1,13 @@
-import { create } from 'zustand';
-import { immer } from 'zustand/middleware/immer';
-import { subscribeWithSelector } from 'zustand/middleware';
-import type { User } from '@supabase/supabase-js';
+import type { User } from "@supabase/supabase-js";
+import { create } from "zustand";
+import { subscribeWithSelector } from "zustand/middleware";
+import { immer } from "zustand/middleware/immer";
 
 export interface UserProfile {
   id: string;
   user_id: string;
   name: string;
-  role: 'free' | 'admin';
+  role: "free" | "admin";
   created_at?: string;
   updated_at?: string;
 }
@@ -22,26 +22,26 @@ interface UserState {
   // User auth state
   user: User | null;
   isLoading: boolean;
-  
+
   // Profile state
   profile: UserProfile | null;
   profileLoading: boolean;
-  
+
   // AI usage state
   aiUsageInfo: AIUsageInfo | null;
-  
+
   // Actions
   setUser: (user: User | null) => void;
   setProfile: (profile: UserProfile | null) => void;
   setProfileLoading: (loading: boolean) => void;
   setAiUsageInfo: (info: AIUsageInfo | null) => void;
   setLoading: (loading: boolean) => void;
-  
+
   // Computed getters
   isAdmin: () => boolean;
   getUserName: () => string;
-  getUserRole: () => 'free' | 'admin';
-  
+  getUserRole: () => "free" | "admin";
+
   // Reset function
   reset: () => void;
 }
@@ -85,7 +85,10 @@ export const useUserStore = create<UserState>()(
       // Computed getters
       isAdmin: () => {
         const state = get();
-        return state.profile?.role === 'admin' || state.user?.id === '6571ae84-507f-42cb-94d3-5b23e444be71';
+        return (
+          state.profile?.role === "admin" ||
+          state.user?.id === "6571ae84-507f-42cb-94d3-5b23e444be71"
+        );
       },
 
       getUserName: () => {
@@ -94,16 +97,16 @@ export const useUserStore = create<UserState>()(
           state.profile?.name ||
           state.user?.user_metadata?.name ||
           state.user?.user_metadata?.full_name ||
-          'ユーザー'
+          "ユーザー"
         );
       },
 
       getUserRole: () => {
         const state = get();
-        if (state.user?.id === '6571ae84-507f-42cb-94d3-5b23e444be71') {
-          return 'admin';
+        if (state.user?.id === "6571ae84-507f-42cb-94d3-5b23e444be71") {
+          return "admin";
         }
-        return state.profile?.role || 'free';
+        return state.profile?.role || "free";
       },
 
       // Reset function

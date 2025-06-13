@@ -34,7 +34,9 @@ export function Loading({
           aria-label="Loading"
         />
         {text && (
-          <p className="text-sm text-wellness-textLight animate-pulse">{text}</p>
+          <p className="animate-pulse text-sm text-wellness-textLight">
+            {text}
+          </p>
         )}
       </div>
     </div>

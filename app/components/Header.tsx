@@ -2,15 +2,21 @@ import { useEffect, useState } from "react";
 import { Link } from "@remix-run/react";
 import { toast } from "sonner";
 
-import { useUserStore, selectUser, selectUserName, selectUserRole, selectAiUsageInfo } from "../stores/userStore";
 import { supabase } from "../lib/supabase.client";
+import {
+  selectAiUsageInfo,
+  selectUser,
+  selectUserName,
+  selectUserRole,
+  useUserStore,
+} from "../stores/userStore";
 
 export function Header() {
   const user = useUserStore(selectUser);
   const userName = useUserStore(selectUserName);
   const userRole = useUserStore(selectUserRole);
   const aiUsageInfo = useUserStore(selectAiUsageInfo);
-  
+
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [avatarLoading, setAvatarLoading] = useState(true);
 
@@ -59,14 +65,28 @@ export function Header() {
           {user ? (
             <div className="user-menu relative">
               <div className="flex items-center gap-2">
-                {aiUsageInfo && !aiUsageInfo.isAdmin && aiUsageInfo.monthlyLimit !== null && (
-                  <div className="flex items-center gap-1 rounded-full bg-wellness-primary/10 px-2 py-1 text-xs font-medium text-wellness-primary">
-                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-3.582 8-8 8a8.955 8.955 0 01-2.993-.523c-.993.266-2.207.423-2.957.423-2.485 0-4.05-1.565-4.05-4.05 0-.75.157-1.964.423-2.957A8.955 8.955 0 013 12a8 8 0 118 8z" />
-                    </svg>
-                    {aiUsageInfo.monthlyLimit - (aiUsageInfo.remainingCount || 0)}/{aiUsageInfo.monthlyLimit}
-                  </div>
-                )}
+                {aiUsageInfo &&
+                  !aiUsageInfo.isAdmin &&
+                  aiUsageInfo.monthlyLimit !== null && (
+                    <div className="flex items-center gap-1 rounded-full bg-wellness-primary/10 px-2 py-1 text-xs font-medium text-wellness-primary">
+                      <svg
+                        className="h-3 w-3"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-3.582 8-8 8a8.955 8.955 0 01-2.993-.523c-.993.266-2.207.423-2.957.423-2.485 0-4.05-1.565-4.05-4.05 0-.75.157-1.964.423-2.957A8.955 8.955 0 013 12a8 8 0 118 8z"
+                        />
+                      </svg>
+                      {aiUsageInfo.monthlyLimit -
+                        (aiUsageInfo.remainingCount || 0)}
+                      /{aiUsageInfo.monthlyLimit}
+                    </div>
+                  )}
                 {userRole === "admin" && (
                   <span className="rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-800">
                     admin

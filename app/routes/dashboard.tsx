@@ -5,13 +5,7 @@ import {
   type MetaFunction,
 } from "@remix-run/node";
 import { Link, useLoaderData, useNavigate } from "@remix-run/react";
-import {
-  Moon,
-  RefreshCw,
-  Sun,
-  Sunrise,
-  Wind,
-} from "lucide-react";
+import { Moon, RefreshCw, Sun, Sunrise, Wind } from "lucide-react";
 import { toast } from "sonner";
 
 import { DeleteConfirmModal } from "~/components/DeleteConfirmModal";
@@ -129,7 +123,7 @@ export default function Dashboard() {
         const {
           data: { user: clientUser },
         } = await supabase.auth.getUser();
-        
+
         setUser(clientUser);
 
         if (clientUser) {

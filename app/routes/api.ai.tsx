@@ -9,7 +9,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     // 環境情報をログ出力（デバッグ用）
     console.log("[API/AI] Environment:", process.env.NODE_ENV);
     console.log("[API/AI] Request URL:", request.url);
-    
+
     if (request.method !== "POST") {
       return new Response(JSON.stringify({ error: "Method not allowed" }), {
         status: 405,
@@ -162,7 +162,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     console.log("[API/AI] Calling OpenAI API...");
     const startTime = Date.now();
-    
+
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
@@ -185,7 +185,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const reply =
       completion.choices[0]?.message?.content ||
       "申し訳ありません。返答を生成できませんでした。";
-    
+
     if (!completion.choices[0]?.message?.content) {
       console.warn("[API/AI] OpenAI returned empty response");
     }
@@ -193,7 +193,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     // AI回答をデータベースに保存
     // adminの場合は既存の回答を更新、それ以外は新規作成
     let saveError = null;
-    
+
     if (userRole === "admin") {
       // 既存の回答があれば更新、なければ新規作成
       const { data: existingReply } = await supabase
@@ -214,26 +214,22 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           .eq("id", existingReply.id);
         saveError = error;
       } else {
-        const { error } = await supabase
-          .from("ai_replies")
-          .insert({
-            journal_id: journalId,
-            user_id: user.id,
-            content: reply,
-            model: "gpt-3.5-turbo",
-          });
-        saveError = error;
-      }
-    } else {
-      // 一般ユーザーは新規作成のみ
-      const { error } = await supabase
-        .from("ai_replies")
-        .insert({
+        const { error } = await supabase.from("ai_replies").insert({
           journal_id: journalId,
           user_id: user.id,
           content: reply,
           model: "gpt-3.5-turbo",
         });
+        saveError = error;
+      }
+    } else {
+      // 一般ユーザーは新規作成のみ
+      const { error } = await supabase.from("ai_replies").insert({
+        journal_id: journalId,
+        user_id: user.id,
+        content: reply,
+        model: "gpt-3.5-turbo",
+      });
       saveError = error;
     }
 
@@ -256,7 +252,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     // 残り回数を計算（adminユーザーは無制限）
     let remainingCount = null;
     let monthlyLimit = null;
-    
+
     if (userRole !== "admin") {
       monthlyLimit = 5;
       const now = new Date();
@@ -275,12 +271,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     }
 
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         reply,
         remainingCount,
         monthlyLimit,
-        isAdmin
-      }), 
+        isAdmin,
+      }),
       {
         headers: { "Content-Type": "application/json" },
       }
@@ -288,18 +284,22 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   } catch (error) {
     // エラーの詳細をログに記録
     console.error("[API/AI] Error occurred:", error);
-    
+
     // エラーの種類を判別してより具体的なメッセージを返す
     let errorMessage = "AI返答の生成中にエラーが発生しました。";
     let statusCode = 500;
-    
+
     if (error instanceof Error) {
       console.error("[API/AI] Error message:", error.message);
       console.error("[API/AI] Error stack:", error.stack);
-      
+
       // OpenAI APIキーのエラー
-      if (error.message.includes("apiKey") || error.message.includes("API key")) {
-        errorMessage = "APIキーが設定されていません。管理者に連絡してください。";
+      if (
+        error.message.includes("apiKey") ||
+        error.message.includes("API key")
+      ) {
+        errorMessage =
+          "APIキーが設定されていません。管理者に連絡してください。";
         console.error("[API/AI] OpenAI API key is missing or invalid");
       }
       // プロンプト設定のエラー
@@ -307,22 +307,27 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         errorMessage = error.message;
       }
       // OpenAI APIのレート制限
-      else if (error.message.includes("rate limit") || error.message.includes("429")) {
-        errorMessage = "AIサービスの利用制限に達しました。しばらく待ってから再度お試しください。";
+      else if (
+        error.message.includes("rate limit") ||
+        error.message.includes("429")
+      ) {
+        errorMessage =
+          "AIサービスの利用制限に達しました。しばらく待ってから再度お試しください。";
         statusCode = 429;
       }
       // ネットワークエラー
-      else if (error.message.includes("fetch") || error.message.includes("network")) {
-        errorMessage = "ネットワークエラーが発生しました。インターネット接続を確認してください。";
+      else if (
+        error.message.includes("fetch") ||
+        error.message.includes("network")
+      ) {
+        errorMessage =
+          "ネットワークエラーが発生しました。インターネット接続を確認してください。";
       }
     }
-    
-    return new Response(
-      JSON.stringify({ error: errorMessage }),
-      {
-        status: statusCode,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
+
+    return new Response(JSON.stringify({ error: errorMessage }), {
+      status: statusCode,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 };

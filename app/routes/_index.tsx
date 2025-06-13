@@ -51,11 +51,13 @@ export const meta: MetaFunction = () => {
     { title: "そっとノート - メンタルヘルス対応ジャーナリングアプリ" },
     {
       name: "description",
-      content: "心の記録と整理ができるメンタルヘルス対応のジャーナリングアプリ。そっとさんAIが感情に寄り添い、深呼吸ガイドで心を整えます。無料でご利用いただけます。",
+      content:
+        "心の記録と整理ができるメンタルヘルス対応のジャーナリングアプリ。そっとさんAIが感情に寄り添い、深呼吸ガイドで心を整えます。無料でご利用いただけます。",
     },
     {
       name: "keywords",
-      content: "ジャーナリング,メンタルヘルス,心の整理,AI,深呼吸,ストレス軽減,感情記録,無料,そっとノート",
+      content:
+        "ジャーナリング,メンタルヘルス,心の整理,AI,深呼吸,ストレス軽減,感情記録,無料,そっとノート",
     },
     {
       name: "robots",
@@ -75,7 +77,8 @@ export const meta: MetaFunction = () => {
     },
     {
       property: "og:description",
-      content: "心の記録と整理ができるメンタルヘルス対応のジャーナリングアプリ。そっとさんAIが感情に寄り添い、深呼吸ガイドで心を整えます。",
+      content:
+        "心の記録と整理ができるメンタルヘルス対応のジャーナリングアプリ。そっとさんAIが感情に寄り添い、深呼吸ガイドで心を整えます。",
     },
     {
       property: "og:type",
@@ -107,7 +110,8 @@ export const meta: MetaFunction = () => {
     },
     {
       name: "twitter:description",
-      content: "心の記録と整理ができるメンタルヘルス対応のジャーナリングアプリ。そっとさんAIが感情に寄り添い、深呼吸ガイドで心を整えます。",
+      content:
+        "心の記録と整理ができるメンタルヘルス対応のジャーナリングアプリ。そっとさんAIが感情に寄り添い、深呼吸ガイドで心を整えます。",
     },
     {
       name: "twitter:image",
@@ -203,15 +207,15 @@ export default function Index() {
   // Check client-side authentication
   useEffect(() => {
     let isMounted = true;
-    
+
     const checkAuth = async () => {
       try {
         const {
           data: { user: clientUser },
         } = await supabase.auth.getUser();
-        
+
         if (!isMounted) return;
-        
+
         setUser(clientUser);
 
         if (clientUser) {
@@ -232,7 +236,7 @@ export default function Index() {
     };
 
     checkAuth();
-    
+
     return () => {
       isMounted = false;
     };
@@ -486,549 +490,551 @@ export default function Index() {
         {/* ヒーローセクション */}
         <header>
           <section className="relative flex min-h-screen items-center py-12 sm:py-16 lg:py-20">
-          <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8">
-            <div className="text-center">
-              {/* サービス名 */}
-              <div className="mb-6 sm:mb-8">
-                <h2 className="text-lg font-medium text-wellness-primary sm:text-xl lg:text-2xl">
-                  そっとノート
-                </h2>
-                <div className="mx-auto mt-2 h-1 w-16 rounded-full bg-wellness-primary/30"></div>
-              </div>
+            <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8">
+              <div className="text-center">
+                {/* サービス名 */}
+                <div className="mb-6 sm:mb-8">
+                  <h2 className="text-lg font-medium text-wellness-primary sm:text-xl lg:text-2xl">
+                    そっとノート
+                  </h2>
+                  <div className="mx-auto mt-2 h-1 w-16 rounded-full bg-wellness-primary/30"></div>
+                </div>
 
-              <h1 className="mb-4 text-3xl font-bold tracking-tight text-wellness-text sm:mb-6 sm:text-4xl lg:text-5xl xl:text-6xl">
-                その気持ち、
-                <span className="block text-wellness-secondary">
-                  そっとさんに
-                </span>
-                聞かせて。
-              </h1>
-              {/* イラスト */}
-              <div className="mb-6 flex justify-center sm:mb-8">
-                <img
-                  src="/laying.svg"
-                  alt="リラックスしている人のイラスト"
-                  className="h-auto w-full max-w-[200px] sm:max-w-[250px] lg:max-w-[300px]"
-                />
-              </div>
-              <p className="mb-6 text-base leading-relaxed text-wellness-textLight sm:mb-8 sm:text-lg lg:text-xl">
-                書くだけで、心が少し軽くなる。
-                <br />
-                感情を否定しない、あなた専用の心のノート。
-              </p>
-              <div className="flex flex-col gap-3 sm:flex-row sm:justify-center sm:gap-4">
-                <button
-                  onClick={handleJournalClick}
-                  className="inline-flex items-center justify-center rounded-2xl bg-wellness-primary px-6 py-3 text-base font-semibold text-white shadow-soft transition-all hover:scale-105 hover:bg-wellness-secondary hover:shadow-gentle"
-                >
-                  今すぐ書いてみる
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </button>
-                <a
-                  href="#about"
-                  className="inline-flex items-center justify-center rounded-2xl border-2 border-wellness-primary/20 bg-white px-6 py-3 text-base font-semibold text-wellness-primary transition-all hover:bg-wellness-surface hover:shadow-soft"
-                >
-                  サービスについて知る
-                </a>
+                <h1 className="mb-4 text-3xl font-bold tracking-tight text-wellness-text sm:mb-6 sm:text-4xl lg:text-5xl xl:text-6xl">
+                  その気持ち、
+                  <span className="block text-wellness-secondary">
+                    そっとさんに
+                  </span>
+                  聞かせて。
+                </h1>
+                {/* イラスト */}
+                <div className="mb-6 flex justify-center sm:mb-8">
+                  <img
+                    src="/laying.svg"
+                    alt="リラックスしている人のイラスト"
+                    className="h-auto w-full max-w-[200px] sm:max-w-[250px] lg:max-w-[300px]"
+                  />
+                </div>
+                <p className="mb-6 text-base leading-relaxed text-wellness-textLight sm:mb-8 sm:text-lg lg:text-xl">
+                  書くだけで、心が少し軽くなる。
+                  <br />
+                  感情を否定しない、あなた専用の心のノート。
+                </p>
+                <div className="flex flex-col gap-3 sm:flex-row sm:justify-center sm:gap-4">
+                  <button
+                    onClick={handleJournalClick}
+                    className="inline-flex items-center justify-center rounded-2xl bg-wellness-primary px-6 py-3 text-base font-semibold text-white shadow-soft transition-all hover:scale-105 hover:bg-wellness-secondary hover:shadow-gentle"
+                  >
+                    今すぐ書いてみる
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </button>
+                  <a
+                    href="#about"
+                    className="inline-flex items-center justify-center rounded-2xl border-2 border-wellness-primary/20 bg-white px-6 py-3 text-base font-semibold text-wellness-primary transition-all hover:bg-wellness-surface hover:shadow-soft"
+                  >
+                    サービスについて知る
+                  </a>
+                </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
         </header>
 
         {/* サービス概要 */}
         <main>
-        <section
-          id="about"
-          className="bg-wellness-surface/30 py-12 sm:py-16 lg:py-20"
-        >
-          <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
-            <h2 className="mb-4 text-2xl font-bold text-wellness-text sm:mb-6 sm:text-3xl lg:text-4xl">
-              感情の&ldquo;置き場所&rdquo;、
-              <br />
-              ちゃんと持ってる？
-            </h2>
-            <p className="mx-auto mb-8 max-w-2xl text-base leading-relaxed text-wellness-textLight sm:mb-12 sm:text-lg lg:text-xl">
-              そっとノートは、日々のモヤモヤやイライラをやさしく受け止めてくれる、書くセラピー体験。
-            </p>
-            <div className="grid gap-4 text-left sm:grid-cols-2 md:grid-cols-3 lg:gap-6">
-              <div className="rounded-2xl bg-white p-4 shadow-soft">
-                <h3 className="mb-2 font-semibold text-wellness-primary">
-                  ジャーナリング
-                </h3>
-                <p className="text-sm text-wellness-textLight">
-                  日々の気持ちを自由に記録し、心の動きを可視化
-                </p>
-              </div>
-              <div className="rounded-2xl bg-white p-4 shadow-soft">
-                <h3 className="mb-2 font-semibold text-wellness-primary">
-                  深呼吸ガイド
-                </h3>
-                <p className="text-sm text-wellness-textLight">
-                  カスタマイズ可能な呼吸法でストレス軽減をサポート
-                </p>
-              </div>
-              <div className="rounded-2xl bg-white p-4 shadow-soft">
-                <h3 className="mb-2 font-semibold text-wellness-primary">
-                  そっとさん（AI）
-                </h3>
-                <p className="text-sm text-wellness-textLight">
-                  あなたの気持ちに寄り添う優しいAI返信（月5回）
-                </p>
-              </div>
-              <div className="rounded-2xl bg-white p-4 shadow-soft">
-                <h3 className="mb-2 font-semibold text-wellness-primary">
-                  タグ管理
-                </h3>
-                <p className="text-sm text-wellness-textLight">
-                  エントリーの分類と感情パターンの整理
-                </p>
-              </div>
-              <div className="rounded-2xl bg-white p-4 shadow-soft">
-                <h3 className="mb-2 font-semibold text-wellness-primary">
-                  アクティビティ表示
-                </h3>
-                <p className="text-sm text-wellness-textLight">
-                  4週間の記録継続状況を視覚的に確認
-                </p>
-              </div>
-              <div className="rounded-2xl bg-white p-4 shadow-soft">
-                <h3 className="mb-2 font-semibold text-wellness-primary">
-                  シェア機能
-                </h3>
-                <p className="text-sm text-wellness-textLight">
-                  そっとさんの返信を美しい画像でSNSシェア
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* そっとさんの特徴・差別化 */}
-        <section className="bg-white py-12 sm:py-16 lg:py-20">
-          <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-            <div className="text-center">
+          <section
+            id="about"
+            className="bg-wellness-surface/30 py-12 sm:py-16 lg:py-20"
+          >
+            <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
               <h2 className="mb-4 text-2xl font-bold text-wellness-text sm:mb-6 sm:text-3xl lg:text-4xl">
-                絶対的に肯定してくれる
+                感情の&ldquo;置き場所&rdquo;、
                 <br />
-                AI「そっとさん」
+                ちゃんと持ってる？
               </h2>
-              <p className="mx-auto mb-8 max-w-2xl text-base leading-relaxed text-wellness-textLight sm:mb-12 sm:text-lg">
-                そっとさんは、あなたの気持ちをそのまま受け止めて、やさしく寄り添います。
+              <p className="mx-auto mb-8 max-w-2xl text-base leading-relaxed text-wellness-textLight sm:mb-12 sm:text-lg lg:text-xl">
+                そっとノートは、日々のモヤモヤやイライラをやさしく受け止めてくれる、書くセラピー体験。
               </p>
-            </div>
-            <div className="mx-auto max-w-3xl">
-              <div className="rounded-2xl bg-wellness-surface/50 p-6 sm:p-8">
-                <h3 className="mb-4 text-lg font-semibold text-wellness-primary">
-                  ChatGPTとの違い
-                </h3>
-                <div className="space-y-4">
-                  <div className="flex items-start gap-3">
-                    <div className="mt-1 h-5 w-5 flex-shrink-0 rounded-full bg-wellness-primary/20 p-1">
-                      <div className="h-full w-full rounded-full bg-wellness-primary"></div>
-                    </div>
-                    <div>
-                      <h4 className="mb-1 font-medium text-wellness-text">
-                        汎用AIではなく&ldquo;あなたの味方&rdquo;として設計
-                      </h4>
-                      <p className="text-sm text-wellness-textLight">
-                        そっとさんは、あなたの感情に寄り添うことに特化したAIです
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="mt-1 h-5 w-5 flex-shrink-0 rounded-full bg-wellness-primary/20 p-1">
-                      <div className="h-full w-full rounded-full bg-wellness-primary"></div>
-                    </div>
-                    <div>
-                      <h4 className="mb-1 font-medium text-wellness-text">
-                        共感・承認・やさしい言葉だけ
-                      </h4>
-                      <p className="text-sm text-wellness-textLight">
-                        批判や否定はせず、あなたの気持ちを受け止めます
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="mt-1 h-5 w-5 flex-shrink-0 rounded-full bg-wellness-primary/20 p-1">
-                      <div className="h-full w-full rounded-full bg-wellness-primary"></div>
-                    </div>
-                    <div>
-                      <h4 className="mb-1 font-medium text-wellness-text">
-                        感情ログと連動したパーソナライズ
-                      </h4>
-                      <p className="text-sm text-wellness-textLight">
-                        あなたの日々の記録を理解して、より深い共感を示します
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="mt-1 h-5 w-5 flex-shrink-0 rounded-full bg-wellness-primary/20 p-1">
-                      <div className="h-full w-full rounded-full bg-wellness-primary"></div>
-                    </div>
-                    <div>
-                      <h4 className="mb-1 font-medium text-wellness-text">
-                        人格・世界観・トーンガイドあり
-                      </h4>
-                      <p className="text-sm text-wellness-textLight">
-                        そっとさんには、一貫性のある優しい人格があります
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-6 rounded-xl bg-wellness-primary/10 p-4">
-                  <p className="text-center text-sm italic text-wellness-primary">
-                    &ldquo;そっとさんに聞いてもらう&rdquo;体験
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* 機能紹介セクション */}
-        <section className="bg-wellness-surface/30 py-12 sm:py-16 lg:py-20">
-          <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-            <div className="mb-12 text-center sm:mb-16">
-              <h2 className="mb-4 text-2xl font-bold text-wellness-text sm:text-3xl lg:text-4xl">
-                あなたの心に寄り添う
-                <br />
-                3つの機能
-              </h2>
-              <p className="text-base text-wellness-textLight sm:text-lg lg:text-xl">
-                書く、呼吸する、対話する。心を整えるための優しいツールたち。
-              </p>
-            </div>
-            <div className="grid gap-6 sm:gap-8 md:grid-cols-3">
-              {/* ジャーナル */}
-              <div className="card-soft group transition-all duration-300 hover:scale-105">
-                <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-wellness-primary/10 text-wellness-primary transition-all group-hover:bg-wellness-primary group-hover:text-white">
-                  <BookHeart className="h-8 w-8" />
-                </div>
-                <h3 className="mb-4 text-lg font-semibold text-wellness-text sm:text-xl lg:text-2xl">
-                  ジャーナリング
-                </h3>
-                <p className="text-sm leading-relaxed text-wellness-textLight sm:text-base">
-                  1500文字以内で自由に書く。タグ機能で感情パターンを整理し、記録の継続状況を視覚的に確認できます。
-                </p>
-              </div>
-
-              {/* 深呼吸ガイド */}
-              <div className="card-soft group transition-all duration-300 hover:scale-105">
-                <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-wellness-secondary/10 text-wellness-secondary transition-all group-hover:bg-wellness-secondary group-hover:text-white">
-                  <Wind className="h-8 w-8" />
-                </div>
-                <h3 className="mb-4 text-lg font-semibold text-wellness-text sm:text-xl lg:text-2xl">
-                  深呼吸ガイド
-                </h3>
-                <p className="text-sm leading-relaxed text-wellness-textLight sm:text-base">
-                  呼吸時間やサイクル数をカスタマイズ。視覚的なアニメーションで心を落ち着かせる呼吸法をサポートします。
-                </p>
-              </div>
-
-              {/* そっとさん */}
-              <div className="card-soft group transition-all duration-300 hover:scale-105">
-                <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-wellness-tertiary/10 text-wellness-tertiary transition-all group-hover:bg-wellness-tertiary group-hover:text-white">
-                  <Bot className="h-8 w-8" />
-                </div>
-                <h3 className="mb-4 text-lg font-semibold text-wellness-text sm:text-xl lg:text-2xl">
-                  そっとさん
-                </h3>
-                <p className="text-sm leading-relaxed text-wellness-textLight sm:text-base">
-                  月5回まで利用可能なAI相談相手。あなたの名前を覚えて、感情に寄り添う優しい返信をしてくれます。
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* プロダクト体験（画面イメージ） */}
-        <section className="bg-white py-12 sm:py-16 lg:py-20">
-          <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-            <div className="mb-12 text-center sm:mb-16">
-              <h2 className="mb-4 text-2xl font-bold text-wellness-text sm:text-3xl lg:text-4xl">
-                実際の体験
-              </h2>
-              <p className="text-base text-wellness-textLight sm:text-lg lg:text-xl">
-                そっとノートでできること
-              </p>
-            </div>
-            <div className="grid gap-8 md:grid-cols-2">
-              {/* 書く */}
-              <div className="rounded-2xl bg-wellness-surface/30 p-6 shadow-soft">
-                <div className="mb-4 flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-wellness-primary/10">
-                    <PenTool className="h-6 w-6 text-wellness-primary" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-wellness-text">
-                    書く（ジャーナル）
+              <div className="grid gap-4 text-left sm:grid-cols-2 md:grid-cols-3 lg:gap-6">
+                <div className="rounded-2xl bg-white p-4 shadow-soft">
+                  <h3 className="mb-2 font-semibold text-wellness-primary">
+                    ジャーナリング
                   </h3>
-                </div>
-                <div className="rounded-xl bg-white p-4">
-                  <p className="mb-2 text-sm text-wellness-textLight">
-                    今日の気分：もやもや
-                  </p>
-                  <p className="text-base text-wellness-text">
-                    今日は仕事でミスをしてしまった。みんなに迷惑をかけてしまって申し訳ない気持ちでいっぱい...
-                  </p>
-                  <div className="mt-4 flex gap-2">
-                    <span className="rounded-full bg-wellness-primary/10 px-3 py-1 text-xs text-wellness-primary">
-                      そっとさんに聞いてもらう
-                    </span>
-                    <span className="rounded-full bg-wellness-secondary/10 px-3 py-1 text-xs text-wellness-secondary">
-                      保存する
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* 呼吸する */}
-              <div className="rounded-2xl bg-wellness-surface/30 p-6 shadow-soft">
-                <div className="mb-4 flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-wellness-secondary/10">
-                    <Wind className="h-6 w-6 text-wellness-secondary" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-wellness-text">
-                    呼吸する（深呼吸ガイド）
-                  </h3>
-                </div>
-                <div className="rounded-xl bg-white p-4 text-center">
-                  <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-wellness-secondary/20">
-                    <Wind className="h-12 w-12 text-wellness-secondary" />
-                  </div>
-                  <p className="mb-2 text-base font-medium text-wellness-text">
-                    4秒吸って、7秒止めて、8秒吐く
-                  </p>
                   <p className="text-sm text-wellness-textLight">
-                    心を落ち着かせる478呼吸法
+                    日々の気持ちを自由に記録し、心の動きを可視化
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-white p-4 shadow-soft">
+                  <h3 className="mb-2 font-semibold text-wellness-primary">
+                    深呼吸ガイド
+                  </h3>
+                  <p className="text-sm text-wellness-textLight">
+                    カスタマイズ可能な呼吸法でストレス軽減をサポート
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-white p-4 shadow-soft">
+                  <h3 className="mb-2 font-semibold text-wellness-primary">
+                    そっとさん（AI）
+                  </h3>
+                  <p className="text-sm text-wellness-textLight">
+                    あなたの気持ちに寄り添う優しいAI返信（月5回）
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-white p-4 shadow-soft">
+                  <h3 className="mb-2 font-semibold text-wellness-primary">
+                    タグ管理
+                  </h3>
+                  <p className="text-sm text-wellness-textLight">
+                    エントリーの分類と感情パターンの整理
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-white p-4 shadow-soft">
+                  <h3 className="mb-2 font-semibold text-wellness-primary">
+                    アクティビティ表示
+                  </h3>
+                  <p className="text-sm text-wellness-textLight">
+                    4週間の記録継続状況を視覚的に確認
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-white p-4 shadow-soft">
+                  <h3 className="mb-2 font-semibold text-wellness-primary">
+                    シェア機能
+                  </h3>
+                  <p className="text-sm text-wellness-textLight">
+                    そっとさんの返信を美しい画像でSNSシェア
                   </p>
                 </div>
               </div>
+            </div>
+          </section>
 
-              {/* そっとさんと対話 */}
-              <div className="rounded-2xl bg-wellness-surface/30 p-6 shadow-soft">
-                <div className="mb-4 flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-wellness-tertiary/10">
-                    <Bot className="h-6 w-6 text-wellness-tertiary" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-wellness-text">
-                    そっとさんと対話（返信例）
+          {/* そっとさんの特徴・差別化 */}
+          <section className="bg-white py-12 sm:py-16 lg:py-20">
+            <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+              <div className="text-center">
+                <h2 className="mb-4 text-2xl font-bold text-wellness-text sm:mb-6 sm:text-3xl lg:text-4xl">
+                  絶対的に肯定してくれる
+                  <br />
+                  AI「そっとさん」
+                </h2>
+                <p className="mx-auto mb-8 max-w-2xl text-base leading-relaxed text-wellness-textLight sm:mb-12 sm:text-lg">
+                  そっとさんは、あなたの気持ちをそのまま受け止めて、やさしく寄り添います。
+                </p>
+              </div>
+              <div className="mx-auto max-w-3xl">
+                <div className="rounded-2xl bg-wellness-surface/50 p-6 sm:p-8">
+                  <h3 className="mb-4 text-lg font-semibold text-wellness-primary">
+                    ChatGPTとの違い
                   </h3>
-                </div>
-                <div className="rounded-xl bg-white p-4">
-                  <div className="mb-3 rounded-lg bg-wellness-primary/10 p-3">
-                    <p className="text-sm text-wellness-text">
-                      ミスをしてしまったんですね。申し訳ない気持ちになるのは、あなたが責任感のある優しい人だからです。誰でもミスはありますし、きっと周りの人もそれを理解してくれていますよ。
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-3">
+                      <div className="mt-1 h-5 w-5 flex-shrink-0 rounded-full bg-wellness-primary/20 p-1">
+                        <div className="h-full w-full rounded-full bg-wellness-primary"></div>
+                      </div>
+                      <div>
+                        <h4 className="mb-1 font-medium text-wellness-text">
+                          汎用AIではなく&ldquo;あなたの味方&rdquo;として設計
+                        </h4>
+                        <p className="text-sm text-wellness-textLight">
+                          そっとさんは、あなたの感情に寄り添うことに特化したAIです
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="mt-1 h-5 w-5 flex-shrink-0 rounded-full bg-wellness-primary/20 p-1">
+                        <div className="h-full w-full rounded-full bg-wellness-primary"></div>
+                      </div>
+                      <div>
+                        <h4 className="mb-1 font-medium text-wellness-text">
+                          共感・承認・やさしい言葉だけ
+                        </h4>
+                        <p className="text-sm text-wellness-textLight">
+                          批判や否定はせず、あなたの気持ちを受け止めます
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="mt-1 h-5 w-5 flex-shrink-0 rounded-full bg-wellness-primary/20 p-1">
+                        <div className="h-full w-full rounded-full bg-wellness-primary"></div>
+                      </div>
+                      <div>
+                        <h4 className="mb-1 font-medium text-wellness-text">
+                          感情ログと連動したパーソナライズ
+                        </h4>
+                        <p className="text-sm text-wellness-textLight">
+                          あなたの日々の記録を理解して、より深い共感を示します
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="mt-1 h-5 w-5 flex-shrink-0 rounded-full bg-wellness-primary/20 p-1">
+                        <div className="h-full w-full rounded-full bg-wellness-primary"></div>
+                      </div>
+                      <div>
+                        <h4 className="mb-1 font-medium text-wellness-text">
+                          人格・世界観・トーンガイドあり
+                        </h4>
+                        <p className="text-sm text-wellness-textLight">
+                          そっとさんには、一貫性のある優しい人格があります
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-6 rounded-xl bg-wellness-primary/10 p-4">
+                    <p className="text-center text-sm italic text-wellness-primary">
+                      &ldquo;そっとさんに聞いてもらう&rdquo;体験
                     </p>
                   </div>
-                  <p className="text-right text-xs text-wellness-textLight">
-                    - そっとさん
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* 機能紹介セクション */}
+          <section className="bg-wellness-surface/30 py-12 sm:py-16 lg:py-20">
+            <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+              <div className="mb-12 text-center sm:mb-16">
+                <h2 className="mb-4 text-2xl font-bold text-wellness-text sm:text-3xl lg:text-4xl">
+                  あなたの心に寄り添う
+                  <br />
+                  3つの機能
+                </h2>
+                <p className="text-base text-wellness-textLight sm:text-lg lg:text-xl">
+                  書く、呼吸する、対話する。心を整えるための優しいツールたち。
+                </p>
+              </div>
+              <div className="grid gap-6 sm:gap-8 md:grid-cols-3">
+                {/* ジャーナル */}
+                <div className="card-soft group transition-all duration-300 hover:scale-105">
+                  <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-wellness-primary/10 text-wellness-primary transition-all group-hover:bg-wellness-primary group-hover:text-white">
+                    <BookHeart className="h-8 w-8" />
+                  </div>
+                  <h3 className="mb-4 text-lg font-semibold text-wellness-text sm:text-xl lg:text-2xl">
+                    ジャーナリング
+                  </h3>
+                  <p className="text-sm leading-relaxed text-wellness-textLight sm:text-base">
+                    1500文字以内で自由に書く。タグ機能で感情パターンを整理し、記録の継続状況を視覚的に確認できます。
+                  </p>
+                </div>
+
+                {/* 深呼吸ガイド */}
+                <div className="card-soft group transition-all duration-300 hover:scale-105">
+                  <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-wellness-secondary/10 text-wellness-secondary transition-all group-hover:bg-wellness-secondary group-hover:text-white">
+                    <Wind className="h-8 w-8" />
+                  </div>
+                  <h3 className="mb-4 text-lg font-semibold text-wellness-text sm:text-xl lg:text-2xl">
+                    深呼吸ガイド
+                  </h3>
+                  <p className="text-sm leading-relaxed text-wellness-textLight sm:text-base">
+                    呼吸時間やサイクル数をカスタマイズ。視覚的なアニメーションで心を落ち着かせる呼吸法をサポートします。
+                  </p>
+                </div>
+
+                {/* そっとさん */}
+                <div className="card-soft group transition-all duration-300 hover:scale-105">
+                  <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-wellness-tertiary/10 text-wellness-tertiary transition-all group-hover:bg-wellness-tertiary group-hover:text-white">
+                    <Bot className="h-8 w-8" />
+                  </div>
+                  <h3 className="mb-4 text-lg font-semibold text-wellness-text sm:text-xl lg:text-2xl">
+                    そっとさん
+                  </h3>
+                  <p className="text-sm leading-relaxed text-wellness-textLight sm:text-base">
+                    月5回まで利用可能なAI相談相手。あなたの名前を覚えて、感情に寄り添う優しい返信をしてくれます。
                   </p>
                 </div>
               </div>
+            </div>
+          </section>
 
-              {/* シェア機能 */}
-              <div className="rounded-2xl bg-wellness-surface/30 p-6 shadow-soft">
-                <div className="mb-4 flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-wellness-accent/10">
-                    <Smile className="h-6 w-6 text-wellness-accent" />
+          {/* プロダクト体験（画面イメージ） */}
+          <section className="bg-white py-12 sm:py-16 lg:py-20">
+            <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+              <div className="mb-12 text-center sm:mb-16">
+                <h2 className="mb-4 text-2xl font-bold text-wellness-text sm:text-3xl lg:text-4xl">
+                  実際の体験
+                </h2>
+                <p className="text-base text-wellness-textLight sm:text-lg lg:text-xl">
+                  そっとノートでできること
+                </p>
+              </div>
+              <div className="grid gap-8 md:grid-cols-2">
+                {/* 書く */}
+                <div className="rounded-2xl bg-wellness-surface/30 p-6 shadow-soft">
+                  <div className="mb-4 flex items-center gap-3">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-wellness-primary/10">
+                      <PenTool className="h-6 w-6 text-wellness-primary" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-wellness-text">
+                      書く（ジャーナル）
+                    </h3>
                   </div>
-                  <h3 className="text-lg font-semibold text-wellness-text">
-                    シェア機能（メッセージを画像で共有）
-                  </h3>
-                </div>
-                <div className="rounded-xl bg-white p-4">
-                  <div className="mb-3 rounded-lg bg-wellness-primary/10 p-3">
-                    <p className="text-sm text-wellness-text">
-                      あなたの努力が実を結んだのですね。素晴らしいです。
+                  <div className="rounded-xl bg-white p-4">
+                    <p className="mb-2 text-sm text-wellness-textLight">
+                      今日の気分：もやもや
                     </p>
-                    <p className="mt-2 text-right text-xs text-wellness-textLight">
+                    <p className="text-base text-wellness-text">
+                      今日は仕事でミスをしてしまった。みんなに迷惑をかけてしまって申し訳ない気持ちでいっぱい...
+                    </p>
+                    <div className="mt-4 flex gap-2">
+                      <span className="rounded-full bg-wellness-primary/10 px-3 py-1 text-xs text-wellness-primary">
+                        そっとさんに聞いてもらう
+                      </span>
+                      <span className="rounded-full bg-wellness-secondary/10 px-3 py-1 text-xs text-wellness-secondary">
+                        保存する
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 呼吸する */}
+                <div className="rounded-2xl bg-wellness-surface/30 p-6 shadow-soft">
+                  <div className="mb-4 flex items-center gap-3">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-wellness-secondary/10">
+                      <Wind className="h-6 w-6 text-wellness-secondary" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-wellness-text">
+                      呼吸する（深呼吸ガイド）
+                    </h3>
+                  </div>
+                  <div className="rounded-xl bg-white p-4 text-center">
+                    <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-wellness-secondary/20">
+                      <Wind className="h-12 w-12 text-wellness-secondary" />
+                    </div>
+                    <p className="mb-2 text-base font-medium text-wellness-text">
+                      4秒吸って、7秒止めて、8秒吐く
+                    </p>
+                    <p className="text-sm text-wellness-textLight">
+                      心を落ち着かせる478呼吸法
+                    </p>
+                  </div>
+                </div>
+
+                {/* そっとさんと対話 */}
+                <div className="rounded-2xl bg-wellness-surface/30 p-6 shadow-soft">
+                  <div className="mb-4 flex items-center gap-3">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-wellness-tertiary/10">
+                      <Bot className="h-6 w-6 text-wellness-tertiary" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-wellness-text">
+                      そっとさんと対話（返信例）
+                    </h3>
+                  </div>
+                  <div className="rounded-xl bg-white p-4">
+                    <div className="mb-3 rounded-lg bg-wellness-primary/10 p-3">
+                      <p className="text-sm text-wellness-text">
+                        ミスをしてしまったんですね。申し訳ない気持ちになるのは、あなたが責任感のある優しい人だからです。誰でもミスはありますし、きっと周りの人もそれを理解してくれていますよ。
+                      </p>
+                    </div>
+                    <p className="text-right text-xs text-wellness-textLight">
                       - そっとさん
                     </p>
                   </div>
-                  <div className="mt-4 flex items-center justify-between">
-                    <span className="rounded-full bg-wellness-accent/10 px-3 py-1 text-xs text-wellness-accent">
-                      画像でシェア
-                    </span>
-                    <span className="text-xs text-wellness-textLight">
-                      Twitter・Instagram対応
-                    </span>
+                </div>
+
+                {/* シェア機能 */}
+                <div className="rounded-2xl bg-wellness-surface/30 p-6 shadow-soft">
+                  <div className="mb-4 flex items-center gap-3">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-wellness-accent/10">
+                      <Smile className="h-6 w-6 text-wellness-accent" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-wellness-text">
+                      シェア機能（メッセージを画像で共有）
+                    </h3>
+                  </div>
+                  <div className="rounded-xl bg-white p-4">
+                    <div className="mb-3 rounded-lg bg-wellness-primary/10 p-3">
+                      <p className="text-sm text-wellness-text">
+                        あなたの努力が実を結んだのですね。素晴らしいです。
+                      </p>
+                      <p className="mt-2 text-right text-xs text-wellness-textLight">
+                        - そっとさん
+                      </p>
+                    </div>
+                    <div className="mt-4 flex items-center justify-between">
+                      <span className="rounded-full bg-wellness-accent/10 px-3 py-1 text-xs text-wellness-accent">
+                        画像でシェア
+                      </span>
+                      <span className="text-xs text-wellness-textLight">
+                        Twitter・Instagram対応
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        {/* 開発者の想い */}
-        <section className="bg-white py-12 sm:py-16 lg:py-20">
-          <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-            <div className="text-center">
-              <h2 className="mb-8 text-2xl font-bold text-wellness-text sm:text-3xl lg:text-4xl">
-                開発者の想い
-              </h2>
-              <div className="mx-auto max-w-3xl space-y-4 text-left">
-                <p className="text-base leading-relaxed text-wellness-textLight sm:text-lg">
-                  忙しい毎日の中で、自分の気持ちと向き合う時間を作るのは簡単ではありません。
-                </p>
-                <p className="text-base leading-relaxed text-wellness-textLight sm:text-lg">
-                  そっとノートは、そんなあなたの心に静かに寄り添うためのツールです。
-                </p>
-                <p className="text-base font-medium leading-relaxed text-wellness-primary sm:text-lg">
-                  あなたの毎日に、そっと寄り添えますように。
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* 機能紹介 */}
-        <section className="bg-wellness-surface/30 py-12 sm:py-16 lg:py-20">
-          <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-            <div className="mb-12 text-center sm:mb-16">
-              <h2 className="mb-4 text-2xl font-bold text-wellness-text sm:text-3xl lg:text-4xl">
-                v1.0.0の主な機能
-              </h2>
-              <p className="text-base text-wellness-textLight sm:text-lg lg:text-xl">
-                すべて無料でご利用いただけます
-              </p>
-            </div>
-            <div className="mx-auto max-w-2xl">
-              {/* 現在利用可能な機能 */}
-              <div className="rounded-2xl bg-white p-6 shadow-soft sm:p-8">
-                <div className="mb-4 text-center">
-                  <h3 className="mb-2 text-xl font-bold text-wellness-text sm:text-2xl">
-                    そっとノート v1.0.0
-                  </h3>
-                  <p className="text-3xl font-bold text-wellness-primary">
-                    ¥0<span className="text-base font-normal"> 完全無料</span>
+          {/* 開発者の想い */}
+          <section className="bg-white py-12 sm:py-16 lg:py-20">
+            <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+              <div className="text-center">
+                <h2 className="mb-8 text-2xl font-bold text-wellness-text sm:text-3xl lg:text-4xl">
+                  開発者の想い
+                </h2>
+                <div className="mx-auto max-w-3xl space-y-4 text-left">
+                  <p className="text-base leading-relaxed text-wellness-textLight sm:text-lg">
+                    忙しい毎日の中で、自分の気持ちと向き合う時間を作るのは簡単ではありません。
+                  </p>
+                  <p className="text-base leading-relaxed text-wellness-textLight sm:text-lg">
+                    そっとノートは、そんなあなたの心に静かに寄り添うためのツールです。
+                  </p>
+                  <p className="text-base font-medium leading-relaxed text-wellness-primary sm:text-lg">
+                    あなたの毎日に、そっと寄り添えますように。
                   </p>
                 </div>
-                <ul className="mb-6 space-y-3">
-                  <li className="flex items-start gap-2">
-                    <div className="mt-1 h-5 w-5 rounded-full bg-wellness-primary/20 p-1">
-                      <div className="h-full w-full rounded-full bg-wellness-primary"></div>
-                    </div>
-                    <span className="text-sm text-wellness-textLight">
-                      ジャーナル無制限作成・編集・削除
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <div className="mt-1 h-5 w-5 rounded-full bg-wellness-primary/20 p-1">
-                      <div className="h-full w-full rounded-full bg-wellness-primary"></div>
-                    </div>
-                    <span className="text-sm text-wellness-textLight">
-                      タグ管理とエントリー検索
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <div className="mt-1 h-5 w-5 rounded-full bg-wellness-primary/20 p-1">
-                      <div className="h-full w-full rounded-full bg-wellness-primary"></div>
-                    </div>
-                    <span className="text-sm text-wellness-textLight">
-                      カスタマイズ可能な深呼吸ガイド
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <div className="mt-1 h-5 w-5 rounded-full bg-wellness-primary/20 p-1">
-                      <div className="h-full w-full rounded-full bg-wellness-primary"></div>
-                    </div>
-                    <span className="text-sm text-wellness-textLight">
-                      そっとさんAI相談（月5回）
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <div className="mt-1 h-5 w-5 rounded-full bg-wellness-primary/20 p-1">
-                      <div className="h-full w-full rounded-full bg-wellness-primary"></div>
-                    </div>
-                    <span className="text-sm text-wellness-textLight">
-                      4週間アクティビティ表示
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <div className="mt-1 h-5 w-5 rounded-full bg-wellness-primary/20 p-1">
-                      <div className="h-full w-full rounded-full bg-wellness-primary"></div>
-                    </div>
-                    <span className="text-sm text-wellness-textLight">
-                      メッセージシェア機能
-                    </span>
-                  </li>
-                </ul>
-                <button
-                  onClick={handleJournalClick}
-                  className="w-full rounded-xl bg-wellness-primary py-3 text-center font-medium text-white transition-all hover:bg-wellness-secondary"
-                >
-                  今すぐ始める
-                </button>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        {/* プライバシーセクション */}
-        <section className="bg-white py-12 sm:py-16 lg:py-20">
-          <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-            <div className="text-center">
-              <h2 className="mb-4 text-2xl font-bold text-wellness-text sm:mb-6 sm:text-3xl lg:text-4xl">
-                プライバシー・<br />安心設計
+          {/* 機能紹介 */}
+          <section className="bg-wellness-surface/30 py-12 sm:py-16 lg:py-20">
+            <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+              <div className="mb-12 text-center sm:mb-16">
+                <h2 className="mb-4 text-2xl font-bold text-wellness-text sm:text-3xl lg:text-4xl">
+                  v1.0.0の主な機能
+                </h2>
+                <p className="text-base text-wellness-textLight sm:text-lg lg:text-xl">
+                  すべて無料でご利用いただけます
+                </p>
+              </div>
+              <div className="mx-auto max-w-2xl">
+                {/* 現在利用可能な機能 */}
+                <div className="rounded-2xl bg-white p-6 shadow-soft sm:p-8">
+                  <div className="mb-4 text-center">
+                    <h3 className="mb-2 text-xl font-bold text-wellness-text sm:text-2xl">
+                      そっとノート v1.0.0
+                    </h3>
+                    <p className="text-3xl font-bold text-wellness-primary">
+                      ¥0<span className="text-base font-normal"> 完全無料</span>
+                    </p>
+                  </div>
+                  <ul className="mb-6 space-y-3">
+                    <li className="flex items-start gap-2">
+                      <div className="mt-1 h-5 w-5 rounded-full bg-wellness-primary/20 p-1">
+                        <div className="h-full w-full rounded-full bg-wellness-primary"></div>
+                      </div>
+                      <span className="text-sm text-wellness-textLight">
+                        ジャーナル無制限作成・編集・削除
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <div className="mt-1 h-5 w-5 rounded-full bg-wellness-primary/20 p-1">
+                        <div className="h-full w-full rounded-full bg-wellness-primary"></div>
+                      </div>
+                      <span className="text-sm text-wellness-textLight">
+                        タグ管理とエントリー検索
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <div className="mt-1 h-5 w-5 rounded-full bg-wellness-primary/20 p-1">
+                        <div className="h-full w-full rounded-full bg-wellness-primary"></div>
+                      </div>
+                      <span className="text-sm text-wellness-textLight">
+                        カスタマイズ可能な深呼吸ガイド
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <div className="mt-1 h-5 w-5 rounded-full bg-wellness-primary/20 p-1">
+                        <div className="h-full w-full rounded-full bg-wellness-primary"></div>
+                      </div>
+                      <span className="text-sm text-wellness-textLight">
+                        そっとさんAI相談（月5回）
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <div className="mt-1 h-5 w-5 rounded-full bg-wellness-primary/20 p-1">
+                        <div className="h-full w-full rounded-full bg-wellness-primary"></div>
+                      </div>
+                      <span className="text-sm text-wellness-textLight">
+                        4週間アクティビティ表示
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <div className="mt-1 h-5 w-5 rounded-full bg-wellness-primary/20 p-1">
+                        <div className="h-full w-full rounded-full bg-wellness-primary"></div>
+                      </div>
+                      <span className="text-sm text-wellness-textLight">
+                        メッセージシェア機能
+                      </span>
+                    </li>
+                  </ul>
+                  <button
+                    onClick={handleJournalClick}
+                    className="w-full rounded-xl bg-wellness-primary py-3 text-center font-medium text-white transition-all hover:bg-wellness-secondary"
+                  >
+                    今すぐ始める
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* プライバシーセクション */}
+          <section className="bg-white py-12 sm:py-16 lg:py-20">
+            <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+              <div className="text-center">
+                <h2 className="mb-4 text-2xl font-bold text-wellness-text sm:mb-6 sm:text-3xl lg:text-4xl">
+                  プライバシー・
+                  <br />
+                  安心設計
+                </h2>
+                <p className="mb-8 text-base text-wellness-textLight sm:mb-12 sm:text-lg lg:text-xl">
+                  あなたの大切な思いを、安全に守ります
+                </p>
+                <div className="mx-auto max-w-3xl space-y-4">
+                  <div className="rounded-2xl bg-wellness-surface p-6 shadow-soft">
+                    <p className="text-center text-base font-medium text-wellness-text">
+                      そっとノートは、投稿内容を勝手に公開・販売・AI学習に利用しません
+                    </p>
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="rounded-xl bg-white p-4 shadow-soft">
+                      <h3 className="mb-2 font-medium text-wellness-primary">
+                        データの扱い
+                      </h3>
+                      <p className="text-sm text-wellness-textLight">
+                        AI返信に使われる文章は第三者に共有されません
+                      </p>
+                    </div>
+                    <div className="rounded-xl bg-white p-4 shadow-soft">
+                      <h3 className="mb-2 font-medium text-wellness-primary">
+                        免責事項
+                      </h3>
+                      <p className="text-sm text-wellness-textLight">
+                        医療行為ではなく、診断・治療は行いません
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-center text-sm text-wellness-textLight">
+                    年齢制限・利用規約・免責事項を明記
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* 最後のCTAセクション */}
+          <section className="bg-white py-16 sm:py-20 lg:py-24">
+            <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
+              <h2 className="mb-4 text-3xl font-bold text-wellness-text sm:mb-6 sm:text-4xl lg:text-5xl">
+                そっと、
+                <br />
+                始めてみませんか？
               </h2>
               <p className="mb-8 text-base text-wellness-textLight sm:mb-12 sm:text-lg lg:text-xl">
-                あなたの大切な思いを、安全に守ります
+                あなたの心の声に耳を傾ける時間を作りましょう
               </p>
-              <div className="mx-auto max-w-3xl space-y-4">
-                <div className="rounded-2xl bg-wellness-surface p-6 shadow-soft">
-                  <p className="text-center text-base font-medium text-wellness-text">
-                    そっとノートは、投稿内容を勝手に公開・販売・AI学習に利用しません
-                  </p>
-                </div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="rounded-xl bg-white p-4 shadow-soft">
-                    <h3 className="mb-2 font-medium text-wellness-primary">
-                      データの扱い
-                    </h3>
-                    <p className="text-sm text-wellness-textLight">
-                      AI返信に使われる文章は第三者に共有されません
-                    </p>
-                  </div>
-                  <div className="rounded-xl bg-white p-4 shadow-soft">
-                    <h3 className="mb-2 font-medium text-wellness-primary">
-                      免責事項
-                    </h3>
-                    <p className="text-sm text-wellness-textLight">
-                      医療行為ではなく、診断・治療は行いません
-                    </p>
-                  </div>
-                </div>
-                <p className="text-center text-sm text-wellness-textLight">
-                  年齢制限・利用規約・免責事項を明記
-                </p>
-              </div>
+              <Link
+                to="/login"
+                className="btn-wellness inline-block rounded-2xl px-8 py-3 text-base sm:px-12 sm:py-4 sm:text-lg"
+              >
+                無料で始める
+              </Link>
+              <p className="mt-6 text-sm text-wellness-textLight/70">
+                無料でご利用いただけます
+              </p>
             </div>
-          </div>
-        </section>
-
-        {/* 最後のCTAセクション */}
-        <section className="bg-white py-16 sm:py-20 lg:py-24">
-          <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
-            <h2 className="mb-4 text-3xl font-bold text-wellness-text sm:mb-6 sm:text-4xl lg:text-5xl">
-              そっと、
-              <br />
-              始めてみませんか？
-            </h2>
-            <p className="mb-8 text-base text-wellness-textLight sm:mb-12 sm:text-lg lg:text-xl">
-              あなたの心の声に耳を傾ける時間を作りましょう
-            </p>
-            <Link
-              to="/login"
-              className="btn-wellness rounded-2xl px-8 py-3 text-base sm:px-12 sm:py-4 sm:text-lg inline-block"
-            >
-              無料で始める
-            </Link>
-            <p className="mt-6 text-sm text-wellness-textLight/70">
-              無料でご利用いただけます
-            </p>
-          </div>
-        </section>
+          </section>
         </main>
 
         <footer className="bg-wellness-surface/30 py-8 text-center">

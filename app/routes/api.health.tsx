@@ -35,8 +35,8 @@ export const loader = async () => {
       debug: {
         openai_key_length: process.env.OPENAI_API_KEY?.length || 0,
         prompt_length: process.env.PROMPT_SOTTO_MESSAGE?.length || 0,
-      }
-    })
+      },
+    }),
   };
 
   // Test OpenAI module import

@@ -1,7 +1,7 @@
 import { redirect } from "@remix-run/node";
 
-import { getSupabase } from "./supabase.server";
 import { ensureUserProfile } from "./ensure-profile.server";
+import { getSupabase } from "./supabase.server";
 
 export async function requireAuth(request: Request) {
   const response = new Response();
@@ -99,7 +99,10 @@ export async function getOptionalUser(request: Request) {
         try {
           await ensureUserProfile(supabase, user);
         } catch (profileError) {
-          console.error("[getOptionalUser] Profile creation error:", profileError);
+          console.error(
+            "[getOptionalUser] Profile creation error:",
+            profileError
+          );
         }
         return { user, headers: response.headers, supabase };
       }
@@ -115,7 +118,10 @@ export async function getOptionalUser(request: Request) {
       try {
         await ensureUserProfile(supabase, user);
       } catch (profileError) {
-        console.error("[getOptionalUser] Profile creation error:", profileError);
+        console.error(
+          "[getOptionalUser] Profile creation error:",
+          profileError
+        );
       }
     }
 

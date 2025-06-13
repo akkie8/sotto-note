@@ -8,30 +8,28 @@ export const loader: LoaderFunction = async () => {
 
 export default function Maintenance() {
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
-      <div className="max-w-2xl w-full">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-4">
+      <div className="w-full max-w-2xl">
         {/* メインコンテンツ */}
-        <div className="bg-white rounded-lg shadow-lg p-8 mb-6">
-          <div className="flex items-center justify-center mb-6">
-            <div className="bg-yellow-100 p-4 rounded-full">
-              <AlertCircle className="w-12 h-12 text-yellow-600" />
+        <div className="mb-6 rounded-lg bg-white p-8 shadow-lg">
+          <div className="mb-6 flex items-center justify-center">
+            <div className="rounded-full bg-yellow-100 p-4">
+              <AlertCircle className="h-12 w-12 text-yellow-600" />
             </div>
           </div>
-          
-          <h1 className="text-2xl font-bold text-center mb-4 text-gray-800">
+
+          <h1 className="mb-4 text-center text-2xl font-bold text-gray-800">
             メンテナンス中
           </h1>
-          
-          <p className="text-gray-600 text-center mb-6 leading-relaxed">
+
+          <p className="mb-6 text-center leading-relaxed text-gray-600">
             ただいまメンテナンス中です。しばらくお待ちください。
           </p>
         </div>
 
         {/* Twitter埋め込みセクション */}
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <h2 className="text-lg font-semibold mb-4 text-gray-800">
-            最新情報
-          </h2>
+        <div className="rounded-lg bg-white p-6 shadow-lg">
+          <h2 className="mb-4 text-lg font-semibold text-gray-800">最新情報</h2>
           <div className="text-center text-gray-500">
             <p className="mb-4">
               メンテナンスの最新情報は公式X（Twitter）でお知らせしています
@@ -40,12 +38,12 @@ export default function Maintenance() {
               href="https://x.com/sottonote"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center text-blue-500 hover:text-blue-600 transition-colors"
+              className="inline-flex items-center text-blue-500 transition-colors hover:text-blue-600"
             >
               @sottonote をフォロー
             </a>
           </div>
-          
+
           {/* Twitter Timeline Widget */}
           <div className="mt-6 overflow-hidden rounded-lg">
             <a

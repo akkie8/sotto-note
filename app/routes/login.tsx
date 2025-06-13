@@ -75,6 +75,10 @@ export default function Login() {
 
     setLoading(true);
     try {
+      console.log(
+        "[Login] Redirect URL:",
+        window.location.origin + "/auth/callback"
+      );
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {

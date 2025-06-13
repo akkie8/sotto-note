@@ -405,7 +405,12 @@ export function JournalEditor({
             <div className="text-center">
               <button
                 onClick={onAskAI}
-                disabled={aiLoading || (aiUsageInfo && !aiUsageInfo.isAdmin && aiUsageInfo.remainingCount === 0)}
+                disabled={
+                  aiLoading ||
+                  (aiUsageInfo &&
+                    !aiUsageInfo.isAdmin &&
+                    aiUsageInfo.remainingCount === 0)
+                }
                 className="inline-flex items-center gap-3 rounded-full bg-wellness-primary px-6 py-3 text-base font-semibold text-white shadow-lg transition-all hover:bg-wellness-primary/90 hover:shadow-xl disabled:opacity-50 disabled:hover:shadow-lg"
               >
                 <svg
@@ -423,11 +428,16 @@ export function JournalEditor({
                 </svg>
                 {aiLoading ? "そっとさん思考中..." : "そっとさんに聞いてもらう"}
               </button>
-              {aiUsageInfo && !aiUsageInfo.isAdmin && aiUsageInfo.monthlyLimit !== null && (
-                <p className="mt-2 text-sm text-wellness-textLight">
-                  今月の利用回数: {aiUsageInfo.monthlyLimit - (aiUsageInfo.remainingCount || 0)} / {aiUsageInfo.monthlyLimit}回
-                </p>
-              )}
+              {aiUsageInfo &&
+                !aiUsageInfo.isAdmin &&
+                aiUsageInfo.monthlyLimit !== null && (
+                  <p className="mt-2 text-sm text-wellness-textLight">
+                    今月の利用回数:{" "}
+                    {aiUsageInfo.monthlyLimit -
+                      (aiUsageInfo.remainingCount || 0)}{" "}
+                    / {aiUsageInfo.monthlyLimit}回
+                  </p>
+                )}
             </div>
           </div>
         )}

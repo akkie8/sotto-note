@@ -1,35 +1,40 @@
-import type { User } from '@supabase/supabase-js';
-import { getSupabase } from './supabase.server';
+import type { User } from "@supabase/supabase-js";
+
+import { getSupabase } from "./supabase.server";
 
 interface UserProfile {
   id: string;
   user_id: string;
   name: string;
-  role: 'free' | 'admin';
+  role: "free" | "admin";
   created_at?: string;
   updated_at?: string;
 }
 
-export async function getUserProfile(request: Request, user: User): Promise<{
+export async function getUserProfile(
+  request: Request,
+  user: User
+): Promise<{
   profile: UserProfile | null;
   userName: string;
-  userRole: 'free' | 'admin';
+  userRole: "free" | "admin";
   isAdmin: boolean;
 }> {
   const response = new Response();
   const supabase = getSupabase(request, response);
 
   // Default values from user metadata
-  const defaultUserName = user.user_metadata?.name || user.user_metadata?.full_name || 'ユーザー';
-  
+  const defaultUserName =
+    user.user_metadata?.name || user.user_metadata?.full_name || "ユーザー";
+
   // Special admin user check
-  const isAdminUserId = user.id === '6571ae84-507f-42cb-94d3-5b23e444be71';
-  
+  const isAdminUserId = user.id === "6571ae84-507f-42cb-94d3-5b23e444be71";
+
   if (isAdminUserId) {
     return {
       profile: null,
       userName: defaultUserName,
-      userRole: 'admin',
+      userRole: "admin",
       isAdmin: true,
     };
   }
@@ -46,39 +51,43 @@ export async function getUserProfile(request: Request, user: User): Promise<{
     }
 
     const { data: profile, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('user_id', user.id)
+      .from("profiles")
+      .select("*")
+      .eq("user_id", user.id)
       .single();
 
     if (profile && !error) {
       return {
         profile,
         userName: profile.name || defaultUserName,
-        userRole: profile.role || 'free',
-        isAdmin: profile.role === 'admin',
+        userRole: profile.role || "free",
+        isAdmin: profile.role === "admin",
       };
     }
 
     return {
       profile: null,
       userName: defaultUserName,
-      userRole: 'free',
+      userRole: "free",
       isAdmin: false,
     };
   } catch (error) {
-    console.error('Error fetching user profile:', error);
+    console.error("Error fetching user profile:", error);
     return {
       profile: null,
       userName: defaultUserName,
-      userRole: 'free',
+      userRole: "free",
       isAdmin: false,
     };
   }
 }
 
-export async function getAiUsageInfo(request: Request, userId: string, userRole: 'free' | 'admin') {
-  if (userRole === 'admin') {
+export async function getAiUsageInfo(
+  request: Request,
+  userId: string,
+  userRole: "free" | "admin"
+) {
+  if (userRole === "admin") {
     return {
       remainingCount: null,
       monthlyLimit: null,
@@ -105,10 +114,10 @@ export async function getAiUsageInfo(request: Request, userId: string, userRole:
     startOfMonth.setHours(0, 0, 0, 0);
 
     const { count } = await supabase
-      .from('ai_replies')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .gte('created_at', startOfMonth.toISOString());
+      .from("ai_replies")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .gte("created_at", startOfMonth.toISOString());
 
     const currentCount = count || 0;
     return {
@@ -117,7 +126,7 @@ export async function getAiUsageInfo(request: Request, userId: string, userRole:
       isAdmin: false,
     };
   } catch (error) {
-    console.error('Error fetching AI usage info:', error);
+    console.error("Error fetching AI usage info:", error);
     return {
       remainingCount: 0,
       monthlyLimit: 5,

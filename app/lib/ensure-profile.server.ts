@@ -3,10 +3,7 @@ import type { SupabaseClient, User } from "@supabase/supabase-js";
 /**
  * ユーザーのプロフィールが存在することを保証し、存在しない場合は作成する
  */
-export async function ensureUserProfile(
-  supabase: SupabaseClient,
-  user: User
-) {
+export async function ensureUserProfile(supabase: SupabaseClient, user: User) {
   try {
     // プロフィールの存在確認
     const { data: existingProfile, error: fetchError } = await supabase
@@ -21,11 +18,9 @@ export async function ensureUserProfile(
 
     // プロフィールが存在しない場合は作成
     console.log("Creating profile for user:", user.id);
-    
-    const displayName = 
-      user.user_metadata?.full_name || 
-      user.email?.split("@")[0] || 
-      "ユーザー";
+
+    const displayName =
+      user.user_metadata?.full_name || user.email?.split("@")[0] || "ユーザー";
 
     const newProfile = {
       user_id: user.id,

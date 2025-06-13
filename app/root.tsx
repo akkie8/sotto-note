@@ -12,12 +12,13 @@ import {
   useLocation,
   useNavigate,
 } from "@remix-run/react";
+import { Analytics } from "@vercel/analytics/remix";
 import { Home, PenTool, Tag } from "lucide-react";
 import { Toaster } from "sonner";
 
 import { Header } from "~/components/Header";
-import { UserProvider } from "~/providers/UserProvider";
 import { supabase } from "~/lib/supabase.client";
+import { UserProvider } from "~/providers/UserProvider";
 import tailwindStyles from "~/tailwind.css?url";
 
 export const links: LinksFunction = () => [
@@ -141,24 +142,26 @@ export function Layout({ children }: { children: React.ReactNode }) {
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "WebApplication",
-              "name": "そっとノート",
-              "description": "心の記録と整理ができるメンタルヘルス対応のジャーナリングアプリ。そっとさんAIが感情に寄り添い、深呼吸ガイドで心を整えます。",
-              "url": "https://www.sottonote.com",
-              "applicationCategory": "HealthApplication",
-              "operatingSystem": "Web",
-              "softwareVersion": "1.0.0",
-              "offers": {
+              name: "そっとノート",
+              description:
+                "心の記録と整理ができるメンタルヘルス対応のジャーナリングアプリ。そっとさんAIが感情に寄り添い、深呼吸ガイドで心を整えます。",
+              url: "https://www.sottonote.com",
+              applicationCategory: "HealthApplication",
+              operatingSystem: "Web",
+              softwareVersion: "1.0.0",
+              offers: {
                 "@type": "Offer",
-                "price": "0",
-                "priceCurrency": "JPY"
+                price: "0",
+                priceCurrency: "JPY",
               },
-              "author": {
+              author: {
                 "@type": "Organization",
-                "name": "そっとノート"
+                name: "そっとノート",
               },
-              "keywords": "ジャーナリング,メンタルヘルス,心の整理,AI,深呼吸,ストレス軽減",
-              "inLanguage": "ja-JP"
-            })
+              keywords:
+                "ジャーナリング,メンタルヘルス,心の整理,AI,深呼吸,ストレス軽減",
+              inLanguage: "ja-JP",
+            }),
           }}
         />
       </head>
@@ -197,6 +200,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <ScrollRestoration />
         <Scripts />
         {/* <LiveReload /> */}
+        <Analytics />
       </body>
     </html>
   );

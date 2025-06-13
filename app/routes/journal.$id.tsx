@@ -82,7 +82,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           .gte("created_at", startOfMonth.toISOString());
 
         const currentCount = count || 0;
-        aiUsageInfo.remainingCount = Math.max(0, aiUsageInfo.monthlyLimit - currentCount);
+        aiUsageInfo.remainingCount = Math.max(
+          0,
+          aiUsageInfo.monthlyLimit - currentCount
+        );
       }
     } catch (error) {
       // Failed to load AI reply or usage info
@@ -648,7 +651,10 @@ export default function JournalPage() {
       });
 
       console.log("[handleAskAI] Response status:", response.status);
-      console.log("[handleAskAI] Response headers:", Object.fromEntries(response.headers.entries()));
+      console.log(
+        "[handleAskAI] Response headers:",
+        Object.fromEntries(response.headers.entries())
+      );
 
       // レスポンステキストを確認
       const responseText = await response.text();
@@ -659,21 +665,29 @@ export default function JournalPage() {
         data = JSON.parse(responseText);
       } catch (jsonError) {
         console.error("[handleAskAI] JSON parse error:", jsonError);
-        console.error("[handleAskAI] Response was not JSON:", responseText.substring(0, 500));
-        
+        console.error(
+          "[handleAskAI] Response was not JSON:",
+          responseText.substring(0, 500)
+        );
+
         // HTMLレスポンスの場合は、サーバーエラーの可能性が高い
-        if (responseText.includes("<!DOCTYPE") || responseText.includes("<html")) {
+        if (
+          responseText.includes("<!DOCTYPE") ||
+          responseText.includes("<html")
+        ) {
           console.error("[handleAskAI] Received HTML response instead of JSON");
-          throw new Error("サーバーエラーが発生しました。しばらく経ってから再度お試しください。");
+          throw new Error(
+            "サーバーエラーが発生しました。しばらく経ってから再度お試しください。"
+          );
         }
-        
+
         throw new Error("Invalid JSON response");
       }
 
       if (response.ok) {
         setAiReply(data.reply || "");
         console.log("AI reply set successfully");
-        
+
         // 残り回数を表示（adminユーザー以外）
         if (!data.isAdmin && data.remainingCount !== null) {
           // clientAiUsageInfoを更新
@@ -682,20 +696,22 @@ export default function JournalPage() {
             monthlyLimit: data.monthlyLimit || 5,
             isAdmin: false,
           });
-          
+
           if (data.remainingCount === 0) {
             toast.warning(`今月の回答上限に達しました。来月また利用できます。`);
           } else {
-            toast.success(`そっとさんの回答が届きました（今月の残り回数: ${data.remainingCount}回）`);
+            toast.success(
+              `そっとさんの回答が届きました（今月の残り回数: ${data.remainingCount}回）`
+            );
           }
-          
+
           // ヘッダーのAI使用状況を更新
           window.dispatchEvent(new CustomEvent("aiUsageUpdated"));
         }
       } else {
         console.error("AI response error:", data.error);
         setError(data.error || "エラーが発生しました");
-        
+
         // 429エラー（制限超過）の場合は特別なメッセージを表示
         if (response.status === 429) {
           toast.error(data.error);
@@ -703,9 +719,12 @@ export default function JournalPage() {
       }
     } catch (err) {
       console.error("[handleAskAI] AI request failed:", err);
-      console.error("[handleAskAI] Error type:", (err as Error).constructor.name);
+      console.error(
+        "[handleAskAI] Error type:",
+        (err as Error).constructor.name
+      );
       console.error("[handleAskAI] Error message:", (err as Error).message);
-      
+
       // エラーメッセージをより具体的に設定
       if (err instanceof Error) {
         setError(err.message);

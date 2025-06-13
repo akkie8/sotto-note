@@ -4,9 +4,12 @@
  */
 export function getMaintenanceStatus(): boolean {
   const isMaintenanceEnv = process.env.IS_MAINTENANCE;
-  const isMaintenanceMode = isMaintenanceEnv === "true" || isMaintenanceEnv === "1";
-  
-  console.log(`[Maintenance] IS_MAINTENANCE=${isMaintenanceEnv}, mode=${isMaintenanceMode}`);
-  
+  const isMaintenanceMode =
+    isMaintenanceEnv === "true" || isMaintenanceEnv === "1";
+
+  console.log(
+    `[Maintenance] IS_MAINTENANCE=${isMaintenanceEnv}, mode=${isMaintenanceMode}`
+  );
+
   return isMaintenanceMode;
 }

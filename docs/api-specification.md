@@ -7,22 +7,25 @@
 ## 🔐 認証
 
 ### 認証方式
+
 - **プロバイダー**: Supabase Auth + Google OAuth
 - **トークン形式**: Bearer Token
 - **ヘッダー**: `Authorization: Bearer <access_token>`
 
 ### 認証フロー
+
 ```javascript
 // クライアントサイド認証
 const { data, error } = await supabase.auth.signInWithOAuth({
-  provider: 'google',
+  provider: "google",
   options: {
-    redirectTo: window.location.origin + '/auth/callback',
-  }
+    redirectTo: window.location.origin + "/auth/callback",
+  },
 });
 ```
 
 ### 認証コールバック処理
+
 OAuth認証後は `/auth/callback` ルートで処理されます：
 
 1. **成功時**: `/dashboard` にリダイレクト
@@ -49,24 +52,27 @@ if (data.session?.user) {
 そっとさんからのAI返信を生成します。
 
 **リクエスト**
+
 ```typescript
 {
-  content: string;      // ジャーナル内容（必須）
-  journalId: string;    // ジャーナルID（必須）
+  content: string; // ジャーナル内容（必須）
+  journalId: string; // ジャーナルID（必須）
 }
 ```
 
 **レスポンス**
+
 ```typescript
 {
-  reply: string;               // AI返信内容
-  remainingCount: number | null;  // 残り利用回数（管理者の場合はnull）
-  monthlyLimit: number | null;    // 月間制限数（管理者の場合はnull）
-  isAdmin: boolean;            // 管理者フラグ
+  reply: string; // AI返信内容
+  remainingCount: number | null; // 残り利用回数（管理者の場合はnull）
+  monthlyLimit: number | null; // 月間制限数（管理者の場合はnull）
+  isAdmin: boolean; // 管理者フラグ
 }
 ```
 
 **エラーレスポンス**
+
 ```typescript
 {
   error: string;               // エラーメッセージ
@@ -76,6 +82,7 @@ if (data.session?.user) {
 ```
 
 **制限・仕様**
+
 - **一般ユーザー**: 月5回まで
 - **管理者**: 無制限
 - **重複防止**: 同一ジャーナルに対して一般ユーザーは1回のみ（管理者は更新可能）
@@ -84,17 +91,18 @@ if (data.session?.user) {
 - **温度設定**: 0.7
 
 **使用例**
+
 ```javascript
-const response = await fetch('/api/ai', {
-  method: 'POST',
+const response = await fetch("/api/ai", {
+  method: "POST",
   headers: {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${accessToken}`
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${accessToken}`,
   },
   body: JSON.stringify({
-    content: '今日は仕事で失敗してしまって落ち込んでいます...',
-    journalId: 'uuid-here'
-  })
+    content: "今日は仕事で失敗してしまって落ち込んでいます...",
+    journalId: "uuid-here",
+  }),
 });
 
 const data = await response.json();
@@ -104,6 +112,7 @@ console.log(data.reply); // そっとさんの返信
 ## 🗄️ データベーススキーマ
 
 ### profiles テーブル
+
 ```sql
 CREATE TABLE profiles (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -117,6 +126,7 @@ CREATE TABLE profiles (
 ```
 
 ### journals テーブル
+
 ```sql
 CREATE TABLE journals (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -132,6 +142,7 @@ CREATE TABLE journals (
 ```
 
 ### ai_replies テーブル
+
 ```sql
 CREATE TABLE ai_replies (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -145,6 +156,7 @@ CREATE TABLE ai_replies (
 ```
 
 ### feedback テーブル
+
 ```sql
 CREATE TABLE feedback (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -174,9 +186,11 @@ CREATE POLICY "Admins can view all feedback" ON feedback
 ## 🔒 セキュリティ
 
 ### Row Level Security (RLS)
+
 すべてのテーブルでRLSが有効化されており、ユーザーは自分のデータのみアクセス可能です。
 
 **profiles テーブルのRLSポリシー例**
+
 ```sql
 CREATE POLICY "Users can view own profile" ON profiles
   FOR SELECT USING (auth.uid() = user_id);
@@ -186,24 +200,28 @@ CREATE POLICY "Users can update own profile" ON profiles
 ```
 
 ### 入力検証
+
 - **必須フィールド**: content, journalId
 - **文字数制限**: content は1500文字以内（クライアントサイドで制御）
 - **型チェック**: TypeScriptによる型安全性確保
 
 ### レート制限
+
 - **AI API**: 一般ユーザーは月5回まで
 - **制限リセット**: 毎月1日0:00に自動リセット
 
 ## 📊 モニタリング・ログ
 
 ### エラーログ
+
 ```javascript
 // サーバーサイドログ例
-console.error('Error fetching user profile:', error);
-console.error('Error saving AI reply:', saveError);
+console.error("Error fetching user profile:", error);
+console.error("Error saving AI reply:", saveError);
 ```
 
 ### 使用統計
+
 - AI返信生成回数
 - ユーザー別使用状況
 - エラー発生率
@@ -211,6 +229,7 @@ console.error('Error saving AI reply:', saveError);
 ## ⚙️ 設定・環境変数
 
 ### 必須環境変数
+
 ```bash
 # Supabase設定
 VITE_SUPABASE_URL=your_supabase_project_url
@@ -227,6 +246,7 @@ PROMPT_SOTTO_MESSAGE="your_sotto_prompt_here"
 ```
 
 ### プロンプト設定
+
 環境変数 `PROMPT_SOTTO_MESSAGE` でそっとさんの基本プロンプトを設定。ユーザー名が動的に挿入されます。
 
 ```javascript
@@ -238,16 +258,19 @@ const systemPrompt = `${baseSystemPrompt}
 ## 🚀 パフォーマンス
 
 ### レスポンス時間目標
+
 - **AI返信生成**: 10秒以内
 - **データベースクエリ**: 1秒以内
 
 ### キャッシュ戦略
+
 - **ユーザープロフィール**: 10分間キャッシュ
 - **ジャーナルエントリー**: 5分間キャッシュ
 
 ## 🔧 開発・テスト
 
 ### ローカル開発
+
 ```bash
 # 開発サーバー起動
 yarn dev
@@ -260,16 +283,17 @@ yarn lint
 ```
 
 ### API テスト例
+
 ```javascript
 // Jest/Vitest テスト例
-describe('AI API', () => {
-  test('should generate AI reply', async () => {
+describe("AI API", () => {
+  test("should generate AI reply", async () => {
     const response = await request(app)
-      .post('/api/ai')
-      .set('Authorization', `Bearer ${testToken}`)
+      .post("/api/ai")
+      .set("Authorization", `Bearer ${testToken}`)
       .send({
-        content: 'テスト内容',
-        journalId: 'test-journal-id'
+        content: "テスト内容",
+        journalId: "test-journal-id",
       });
 
     expect(response.status).toBe(200);
@@ -281,11 +305,13 @@ describe('AI API', () => {
 ## 📋 今後の拡張予定
 
 ### v1.1.0 予定機能
+
 - **プレミアムプラン**: 無制限AI返信
 - **データエクスポート**: JSON/CSV形式
 - **週次レポート**: 自動生成API
 
 ### v1.2.0 予定機能
+
 - **Webhook**: リアルタイム通知
 - **バッチ処理**: 一括データ処理
 - **分析API**: 感情分析エンドポイント
@@ -295,14 +321,17 @@ describe('AI API', () => {
 ### よくあるエラー
 
 #### 401 Unauthorized
+
 ```json
 {
   "error": "認証が必要です"
 }
 ```
+
 **解決策**: 有効なBearerトークンをリクエストヘッダーに含める
 
 #### 429 Too Many Requests
+
 ```json
 {
   "error": "今月のそっとさんの回答は上限（5回）に達しました。次回は2025年7月1日からご利用いただけます。",
@@ -310,17 +339,21 @@ describe('AI API', () => {
   "monthlyLimit": 5
 }
 ```
+
 **解決策**: 月末まで待つか、管理者権限を付与
 
 #### 400 Bad Request
+
 ```json
 {
   "error": "内容を入力してください"
 }
 ```
+
 **解決策**: 必須フィールドを正しく送信
 
 ### ログ確認
+
 ```bash
 # 開発環境でのログ確認
 yarn dev
