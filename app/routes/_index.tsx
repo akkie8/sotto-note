@@ -164,25 +164,29 @@ export default function Index() {
         }
 
         // Fetch user profile
-        const { data: profile } = await supabase
+        const { data: profile, error: profileError } = await supabase
           .from("profiles")
           .select("name")
           .eq("user_id", userId)
           .single();
 
-        if (profile) {
+        if (profileError) {
+          console.error("Error fetching profile:", profileError);
+        } else if (profile) {
           cache.set(CACHE_KEYS.USER_PROFILE(userId), profile, 10 * 60 * 1000); // 10 minutes
           setUserName((profile as { name?: string }).name || "");
         }
 
         // Fetch journals
-        const { data: journals } = await supabase
+        const { data: journals, error: journalsError } = await supabase
           .from("journals")
           .select("*")
           .eq("user_id", userId)
           .order("timestamp", { ascending: false });
 
-        if (journals) {
+        if (journalsError) {
+          console.error("Error fetching journals:", journalsError);
+        } else if (journals) {
           cache.set(
             CACHE_KEYS.JOURNAL_ENTRIES(userId),
             journals,
@@ -204,13 +208,19 @@ export default function Index() {
         const {
           data: { user: clientUser },
         } = await supabase.auth.getUser();
+        
         setUser(clientUser);
 
         if (clientUser) {
-          await fetchUserData(clientUser.id);
+          try {
+            await fetchUserData(clientUser.id);
+          } catch (fetchError) {
+            console.error("Error fetching user data:", fetchError);
+          }
         }
       } catch (error) {
         console.error("Auth check error:", error);
+        setUser(null);
       } finally {
         setLoading(false);
       }
@@ -459,10 +469,21 @@ export default function Index() {
   if (!user) {
     const handleLogin = async () => {
       try {
+        // デバッグ用：画面にアラート表示
+        const debugInfo = `OAuth Debug:
+config.oauthRedirectUrl: ${config.oauthRedirectUrl}
+VITE_OAUTH_REDIRECT_URL: ${import.meta.env.VITE_OAUTH_REDIRECT_URL}
+window.location.origin: ${window.location.origin}`;
+        
+        alert(debugInfo);
+        
         const { error } = await supabase.auth.signInWithOAuth({
           provider: "google",
           options: {
-            redirectTo: config.oauthRedirectUrl,
+            redirectTo: "http://localhost:5173/",
+            queryParams: {
+              redirect_to: "http://localhost:5173/"
+            }
           },
         });
 
