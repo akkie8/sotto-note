@@ -37,7 +37,7 @@ export const getOAuthRedirectUrl = () => {
   // クライアントサイドでは常に現在のオリジンを使用
   if (typeof window !== "undefined") {
     const currentOrigin = window.location.origin;
-    return `${currentOrigin}/`;
+    return `${currentOrigin}/auth/callback`;
   }
 
   // サーバーサイドのフォールバック
