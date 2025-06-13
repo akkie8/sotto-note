@@ -10,6 +10,5 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     detectSessionInUrl: true,
     flowType: "pkce",
-    redirectTo: import.meta.env.VITE_OAUTH_REDIRECT_URL || "http://localhost:5173/",
   },
 });

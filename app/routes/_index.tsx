@@ -24,7 +24,6 @@ import { Loading } from "~/components/Loading";
 import { ThreeDotsMenu } from "~/components/ThreeDotsMenu";
 import { getOptionalUser } from "~/lib/auth.server";
 import { cache, CACHE_KEYS } from "~/lib/cache.client";
-import { config } from "~/lib/config";
 import { supabase } from "../lib/supabase.client";
 
 // ジャーナルエントリー型
@@ -212,11 +211,9 @@ export default function Index() {
         setUser(clientUser);
 
         if (clientUser) {
-          try {
-            await fetchUserData(clientUser.id);
-          } catch (fetchError) {
-            console.error("Error fetching user data:", fetchError);
-          }
+          // ログイン済みユーザーはダッシュボードにリダイレクト
+          navigate("/dashboard");
+          return;
         }
       } catch (error) {
         console.error("Auth check error:", error);
@@ -227,7 +224,7 @@ export default function Index() {
     };
 
     checkAuth();
-  }, [fetchUserData]);
+  }, [navigate]);
 
   // 時間帯による挨拶の更新
   useEffect(() => {
@@ -467,56 +464,8 @@ export default function Index() {
 
   // Show login prompt if no user - full landing page
   if (!user) {
-    const handleLogin = async () => {
-      try {
-        // デバッグ用：画面にアラート表示
-        const debugInfo = `OAuth Debug:
-config.oauthRedirectUrl: ${config.oauthRedirectUrl}
-VITE_OAUTH_REDIRECT_URL: ${import.meta.env.VITE_OAUTH_REDIRECT_URL}
-window.location.origin: ${window.location.origin}`;
-        
-        alert(debugInfo);
-        
-        const { error } = await supabase.auth.signInWithOAuth({
-          provider: "google",
-          options: {
-            redirectTo: "http://localhost:5173/",
-            queryParams: {
-              redirect_to: "http://localhost:5173/"
-            }
-          },
-        });
-
-        if (error) {
-          console.error("[Index] handleLogin error:", error);
-        }
-      } catch (e) {
-        console.error("[Index] handleLogin error:", e);
-      }
-    };
-
-    const handleJournalClick = async () => {
-      try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (user) {
-          navigate("/journal/new");
-        } else {
-          const { error } = await supabase.auth.signInWithOAuth({
-            provider: "google",
-            options: {
-              redirectTo: config.oauthRedirectUrl,
-            },
-          });
-
-          if (error) {
-            console.error("[Index] handleJournalClick error:", error);
-          }
-        }
-      } catch (e) {
-        console.error("[Index] handleJournalClick error:", e);
-      }
+    const handleJournalClick = () => {
+      navigate("/login");
     };
 
     return (
@@ -1056,12 +1005,12 @@ window.location.origin: ${window.location.origin}`;
             <p className="mb-8 text-base text-wellness-textLight sm:mb-12 sm:text-lg lg:text-xl">
               あなたの心の声に耳を傾ける時間を作りましょう
             </p>
-            <button
-              onClick={handleLogin}
-              className="btn-wellness rounded-2xl px-8 py-3 text-base sm:px-12 sm:py-4 sm:text-lg"
+            <Link
+              to="/login"
+              className="btn-wellness rounded-2xl px-8 py-3 text-base sm:px-12 sm:py-4 sm:text-lg inline-block"
             >
-              Googleアカウントで始める
-            </button>
+              無料で始める
+            </Link>
             <p className="mt-6 text-sm text-wellness-textLight/70">
               無料でご利用いただけます
             </p>

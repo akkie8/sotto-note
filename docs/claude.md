@@ -29,7 +29,21 @@ yarn dev    # 実際の開発サーバー起動確認
 - ブラウザコンソールにエラーがないこと
 - 基本的なページ遷移が動作すること
 
-全てのチェックと実際の動作確認が完了した状態でのみ完了報告を行う。
+**完了報告のテンプレート：**
+
+```
+✅ **作業完了**
+- [実装内容の簡潔な説明]
+
+✅ **コード品質チェック完了**
+- `yarn lint`: ✅ エラーなし
+- `yarn typecheck`: ✅ エラーなし  
+- `yarn dev`: ✅ 正常起動
+
+[その他の追加情報があれば記載]
+```
+
+**重要**: 全てのチェックと実際の動作確認が完了した状態でのみ完了報告を行う。エラーがある場合は必ず修正してから報告すること。
 
 ## 🏗️ 開発ルール
 
@@ -194,9 +208,9 @@ yarn format:check
 
 必要な環境変数：
 
-- `PUBLIC_SUPABASE_URL` - Supabase プロジェクトURL
-- `PUBLIC_SUPABASE_ANON_KEY` - Supabase 公開キー
-- `SUPABASE_SERVICE_ROLE_KEY` - Supabase サービスロールキー
+- `VITE_SUPABASE_URL` - Supabase プロジェクトURL
+- `VITE_SUPABASE_ANON_KEY` - Supabase 公開キー
+- `VITE_OAUTH_REDIRECT_URL` - OAuth リダイレクトURL
 - `OPENAI_API_KEY` - OpenAI APIキー
 - `PROMPT_SOTTO_MESSAGE` - そっとさんのシステムプロンプト
 
