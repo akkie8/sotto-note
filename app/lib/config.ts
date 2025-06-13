@@ -19,6 +19,10 @@ const getEnvironment = () => {
   if (hostname.includes("staging") || hostname.includes("stg")) {
     return "staging";
   }
+  
+  if (hostname.includes("vercel.app")) {
+    return "staging";
+  }
 
   return "production";
 };
@@ -44,7 +48,7 @@ export const getOAuthRedirectUrl = () => {
     case "development":
       return "http://localhost:5173/";
     case "staging":
-      return "https://staging.sottonote.com/";
+      return "https://sotto-note.vercel.app/";
     case "production":
       return "https://www.sottonote.com/";
     default:
