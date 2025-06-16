@@ -5,6 +5,7 @@ node_modules
 
 # Package manager
 package-lock.json
+# Note: yarn.lock should be committed for reproducible builds
 
 # Documentation
 /docs
@@ -39,3 +40,15 @@ yarn-error.log*
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Build cache
+.vite/
+.turbo/
+.vercel/
+
+# Backup and temporary files
+*.orig
+*.bak
+*.tmp
+*.swp
+*.swo
