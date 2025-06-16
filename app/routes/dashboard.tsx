@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { DeleteConfirmModal } from "~/components/DeleteConfirmModal";
 import { Loading } from "~/components/Loading";
 import { ThreeDotsMenu } from "~/components/ThreeDotsMenu";
-import { requireAuth } from "~/lib/auth.server";
+import { requireAuth } from "~/utils/auth.server";
 import { cache, CACHE_KEYS } from "~/lib/cache.client";
 import { supabase } from "../lib/supabase.client";
 
@@ -27,10 +27,12 @@ type JournalEntry = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { user } = await requireAuth(request);
+  const { user, headers } = await requireAuth(request);
 
   return json({
     user,
+  }, {
+    headers: headers || {},
   });
 }
 

@@ -1,13 +1,12 @@
 import { useEffect } from "react";
-import type { LoaderFunctionArgs } from "@remix-run/node";
-import { redirect } from "@remix-run/node";
-import { useNavigate } from "@remix-run/react";
+import type { LoaderFunctionArgs, ActionFunctionArgs } from "@remix-run/node";
+import { redirect, json } from "@remix-run/node";
+import { useNavigate, useFetcher } from "@remix-run/react";
 
 import { Loading } from "~/components/Loading";
-import { supabase } from "~/lib/supabase.client";
+import { createUserSession, ensureUserProfile, createSupabaseServerClient } from "~/utils/auth.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  // サーバーサイドではURLパラメータをチェックしてエラーがあればauth-errorにリダイレクト
   const url = new URL(request.url);
   const error = url.searchParams.get("error");
 
@@ -15,67 +14,121 @@ export async function loader({ request }: LoaderFunctionArgs) {
     throw redirect(`/auth-error?error=${error}`);
   }
 
-  // 正常なコールバックの場合はクライアントサイドで処理
+  // コードパラメータがある場合（サーバーサイドで処理）
+  const code = url.searchParams.get("code");
+  
+  if (code) {
+    try {
+      const supabase = createSupabaseServerClient();
+      
+      // 認証コードをセッションに交換
+      const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+      
+      if (exchangeError) {
+        console.error("[AuthCallback] Code exchange error:", exchangeError);
+        throw redirect(`/auth-error?error=${encodeURIComponent(exchangeError.message)}`);
+      }
+
+      if (data.session && data.user) {
+        // プロフィール作成/確認
+        await ensureUserProfile(supabase, data.user);
+        
+        // セッション作成とリダイレクト
+        return await createUserSession(data.user, data.session, "/dashboard");
+      }
+    } catch (error) {
+      console.error("[AuthCallback] Server processing error:", error);
+      throw redirect("/auth-error?error=callback_processing_failed");
+    }
+  }
+
   return null;
+}
+
+export async function action({ request }: ActionFunctionArgs) {
+  const formData = await request.formData();
+  const accessToken = formData.get("access_token") as string;
+  const refreshToken = formData.get("refresh_token") as string;
+  const action = formData.get("action") as string;
+
+  if (action === "create_session" && accessToken && refreshToken) {
+    try {
+      const supabase = createSupabaseServerClient(accessToken);
+      
+      // ユーザー情報を取得
+      const { data: { user }, error: userError } = await supabase.auth.getUser(accessToken);
+      
+      if (userError || !user) {
+        return json({ success: false, error: "Failed to get user" }, { status: 401 });
+      }
+
+      // プロフィール作成/確認
+      await ensureUserProfile(supabase, user);
+      
+      // セッション作成
+      const session = { access_token: accessToken, refresh_token: refreshToken };
+      return await createUserSession(user, session, "/dashboard");
+    } catch (error) {
+      console.error("[AuthCallback] Action error:", error);
+      return json({ success: false, error: "Session creation failed" }, { status: 500 });
+    }
+  }
+
+  return json({ success: false, error: "Invalid action" }, { status: 400 });
 }
 
 export default function AuthCallback() {
   const navigate = useNavigate();
+  const fetcher = useFetcher();
 
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        // まず現在のURLから認証情報を取得して処理
+        // URLハッシュからアクセストークンを取得（クライアントサイド認証用）
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         const accessToken = hashParams.get("access_token");
         const refreshToken = hashParams.get("refresh_token");
 
         if (accessToken && refreshToken) {
-          // トークンがある場合はセッションを設定
-          const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          });
-
-          if (sessionError) {
-            console.error("[AuthCallback] Session set error:", sessionError);
-            navigate("/auth-error?error=" + encodeURIComponent(sessionError.message));
-            return;
-          }
-
-          if (sessionData.session?.user) {
-            console.log("[AuthCallback] Authentication successful");
-            // 認証成功時はダッシュボードにリダイレクト
-            navigate("/dashboard");
-            return;
-          }
-        }
-
-        // トークンがない場合は既存のセッションを確認
-        const { data, error } = await supabase.auth.getSession();
-
-        if (error) {
-          console.error("[AuthCallback] Session error:", error);
-          navigate("/auth-error?error=" + encodeURIComponent(error.message));
+          console.log("[AuthCallback] Processing tokens from hash...");
+          
+          // サーバーサイドでセッション作成
+          fetcher.submit(
+            {
+              access_token: accessToken,
+              refresh_token: refreshToken,
+              action: "create_session",
+            },
+            {
+              method: "POST",
+              action: "/auth/callback",
+            }
+          );
           return;
         }
 
-        if (data.session?.user) {
-          console.log("[AuthCallback] Authentication successful");
-          // 認証成功時はダッシュボードにリダイレクト
-          navigate("/dashboard");
-        } else {
-          console.log("[AuthCallback] No session found, redirecting to login");
-          navigate("/login");
-        }
-      } catch (authError) {
-        console.error("[AuthCallback] Exception:", authError);
+        // トークンがない場合は認証失敗
+        console.log("[AuthCallback] No tokens found, redirecting to login");
+        navigate("/login");
+      } catch (error) {
+        console.error("[AuthCallback] Exception:", error);
         navigate("/auth-error?error=callback_processing_failed");
       }
     };
 
     handleAuthCallback();
-  }, [navigate]);
+  }, [navigate, fetcher]);
+
+  // フェッチャーの結果を監視
+  useEffect(() => {
+    if (fetcher.state === "idle" && fetcher.data) {
+      if (fetcher.data.success) {
+        navigate("/dashboard");
+      } else {
+        navigate(`/auth-error?error=${encodeURIComponent(fetcher.data.error || "unknown_error")}`);
+      }
+    }
+  }, [fetcher.state, fetcher.data, navigate]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-wellness-surface/30">

@@ -19,6 +19,7 @@ import { Toaster } from "sonner";
 import { Header } from "~/components/Header";
 import { supabase } from "~/lib/supabase.client";
 import { UserProvider } from "~/providers/UserProvider";
+import { useAuthRefresh } from "~/hooks/useAuthRefresh";
 import tailwindStyles from "~/tailwind.css?url";
 
 export const links: LinksFunction = () => [
@@ -83,6 +84,15 @@ function BottomNav() {
 export function Layout({ children }: { children: React.ReactNode }) {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [isHydrated, setIsHydrated] = useState(false);
+  
+  // 認証の自動リフレッシュ（ログインユーザーのみ）
+  useAuthRefresh({
+    enabled: isLoggedIn === true,
+    checkInterval: 30, // 30分ごと
+    onRefreshError: () => {
+      setIsLoggedIn(false);
+    },
+  });
 
   useEffect(() => {
     setIsHydrated(true);
