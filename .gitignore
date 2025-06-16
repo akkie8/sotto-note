@@ -3,6 +3,12 @@ node_modules
 /.cache
 /build
 
+# Package manager
+package-lock.json
+
+# Documentation
+/docs
+
 # 環境設定ファイル（機密情報含む）
 .env
 .env.local
