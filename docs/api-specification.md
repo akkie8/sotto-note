@@ -235,9 +235,6 @@ console.error("Error saving AI reply:", saveError);
 VITE_SUPABASE_URL=your_supabase_project_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 
-# OAuth設定
-VITE_OAUTH_REDIRECT_URL=http://localhost:5173/auth/callback
-
 # OpenAI設定
 OPENAI_API_KEY=your_openai_api_key
 

@@ -210,7 +210,6 @@ yarn format:check
 
 - `VITE_SUPABASE_URL` - Supabase プロジェクトURL
 - `VITE_SUPABASE_ANON_KEY` - Supabase 公開キー
-- `VITE_OAUTH_REDIRECT_URL` - OAuth リダイレクトURL
 - `OPENAI_API_KEY` - OpenAI APIキー
 - `PROMPT_SOTTO_MESSAGE` - そっとさんのシステムプロンプト
 

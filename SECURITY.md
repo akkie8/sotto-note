@@ -14,7 +14,6 @@
 - `OPENAI_API_KEY`: OpenAI APIキー
 - `VITE_SUPABASE_URL`: Supabase プロジェクトURL
 - `VITE_SUPABASE_ANON_KEY`: Supabase匿名キー
-- `VITE_OAUTH_REDIRECT_URL`: OAuth リダイレクトURL
 - `PROMPT_SOTTO_MESSAGE`: そっとさんのプロンプト
 
 ### 重要な注意事項
