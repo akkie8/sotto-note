@@ -1,15 +1,10 @@
-import { useEffect, useState } from "react";
-import { json, type ActionFunctionArgs, type LoaderFunctionArgs } from "@remix-run/node";
-import { Form, useActionData, useNavigation, Link, useNavigate } from "@remix-run/react";
-import { LogIn } from "lucide-react";
-import { toast } from "sonner";
-import { Loading } from "~/components/Loading";
-import { signIn, createUserSession, getOptionalAuth, ensureUserProfile, createSupabaseServerClient } from "~/utils/auth.server";
-import { supabase } from "~/lib/supabase.client";
+import { json, type ActionFunctionArgs, type LoaderFunctionArgs, redirect } from "@remix-run/node";
+import { Form, useActionData, useNavigation, Link } from "@remix-run/react";
+import { auth } from "~/lib/auth";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   // 既にログインしている場合はダッシュボードにリダイレクト
-  const { user, headers } = await getOptionalAuth(request);
+  const { user, headers } = await auth.getOptionalAuth(request);
   
   if (user) {
     throw new Response(null, {
@@ -21,9 +16,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     });
   }
 
-  return json({}, { 
-    headers: headers || {} 
-  });
+  return json({}, { headers: headers || {} });
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -40,92 +33,126 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   try {
+    console.log(`[Login] 認証開始: ${email}`);
+    
     // サインイン処理
-    const { user, session, error } = await signIn(email, password);
+    const { user, session, error } = await auth.signIn({ email, password });
 
     if (error) {
-      return json({ error }, { status: 401 });
+      console.error(`[Login] 認証エラー: ${error}`);
+      
+      // Supabaseエラーメッセージを日本語に変換
+      let japaneseError = error;
+      if (error.includes("Invalid login credentials")) {
+        japaneseError = "メールアドレスまたはパスワードが正しくありません";
+      } else if (error.includes("User not found")) {
+        japaneseError = "ユーザーが見つかりません。初回ログインの場合は、正しいメールアドレスとパスワードを入力してください";
+      } else if (error.includes("Too many requests")) {
+        japaneseError = "ログイン試行回数が上限に達しました。しばらく時間をおいてから再度お試しください";
+      } else if (error.includes("Email not confirmed")) {
+        japaneseError = "メールアドレスが確認されていません";
+      } else if (error.includes("Password should be at least")) {
+        japaneseError = "パスワードが短すぎます（6文字以上で入力してください）";
+      } else if (error.includes("User already registered")) {
+        japaneseError = "このメールアドレスは既に登録されています";
+      } else if (error.includes("Signup is disabled")) {
+        japaneseError = "新規登録が無効になっています";
+      } else if (error.includes("A user with this email address has already been registered")) {
+        japaneseError = "このメールアドレスは既に登録されています";
+      }
+      
+      return json({ 
+        error: japaneseError,
+        originalError: error,
+        debugInfo: `認証失敗 - ${email}`
+      }, { status: 401 });
     }
 
     if (!user || !session) {
+      console.error("[Login] ユーザーまたはセッションが取得できませんでした");
       return json(
-        { error: "認証に失敗しました" },
+        { 
+          error: "認証に失敗しました（ユーザー情報の取得エラー）",
+          debugInfo: `user: ${!!user}, session: ${!!session}`
+        },
         { status: 401 }
       );
     }
 
+    console.log(`[Login] 認証成功: ${user.id}`);
+
     // プロフィール作成/確認
-    const supabase = createSupabaseServerClient(session.access_token);
-    await ensureUserProfile(supabase, user);
+    try {
+      console.log(`[Login] プロフィール確認中: ${user.id}`);
+      await auth.ensureUserProfile(user, session.access_token);
+      console.log(`[Login] プロフィール確認完了: ${user.id}`);
+    } catch (profileError) {
+      console.error(`[Login] プロフィールエラー:`, profileError);
+      return json(
+        { 
+          error: "プロフィールの作成または確認に失敗しました",
+          debugInfo: `Profile error for user ${user.id}`
+        },
+        { status: 500 }
+      );
+    }
 
     // セッション作成とリダイレクト
-    return await createUserSession(user, session, redirectTo);
+    console.log(`[Login] セッション作成中: ${user.id} -> ${redirectTo}`);
+    
+    try {
+      // SessionManagerを直接使用してCookieを作成
+      const { SessionManager } = await import("~/lib/auth/session");
+      const sessionCookie = await SessionManager.createSession(session);
+      
+      console.log(`[Login] セッション作成完了: ${user.id}`, { sessionCookie });
+      
+      // 従来通りのredirectレスポンスを返す
+      throw redirect(redirectTo, {
+        headers: {
+          "Set-Cookie": sessionCookie
+        }
+      });
+    } catch (sessionError) {
+      // redirectの場合はそのまま返す
+      if (sessionError instanceof Response && sessionError.status === 302) {
+        return sessionError;
+      }
+      
+      console.error(`[Login] セッション作成エラー:`, sessionError);
+      return json(
+        { 
+          error: "セッション作成に失敗しました",
+          debugInfo: sessionError instanceof Error ? sessionError.message : "Session creation failed"
+        },
+        { status: 500 }
+      );
+    }
   } catch (error) {
-    console.error("[Login] Error:", error);
+    // Remixのredirectレスポンスは正常なので、そのまま返す
+    if (error instanceof Response && error.status === 302) {
+      return error;
+    }
+    
+    console.error("[Login] 予期しないエラー:", error);
     return json(
-      { error: "ログイン処理中にエラーが発生しました" },
+      { 
+        error: "ログイン処理中に予期しないエラーが発生しました",
+        debugInfo: error instanceof Error ? error.message : "Unknown error"
+      },
       { status: 500 }
     );
   }
 }
 
 export default function LoginPage() {
-  const actionData = useActionData<typeof action>();
+  const actionData = useActionData<typeof action>() as {
+    error?: string;
+    debugInfo?: string;
+    originalError?: string;
+  } | undefined;
   const navigation = useNavigation();
-  const navigate = useNavigate();
   const isSubmitting = navigation.state === "submitting";
-  const [loading, setLoading] = useState(false);
-  const [user, setUser] = useState<{ id: string } | null>(null);
-
-  // 認証状態の変更のみを監視（初期チェックはloaderで実施済み）
-  useEffect(() => {
-    // 認証状態の変更を監視
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === "SIGNED_IN" && session?.user) {
-        setUser(session.user);
-        // ログイン成功時のみリダイレクト
-        if (!loading) {
-          navigate("/dashboard");
-        }
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [navigate, loading]);
-
-  const handleGoogleLogin = async () => {
-    if (loading) return;
-
-    setLoading(true);
-    try {
-      console.log(
-        "[Login] Redirect URL:",
-        window.location.origin + "/auth/callback"
-      );
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
-      });
-
-      if (error) {
-        console.error("[Login] handleGoogleLogin error:", error);
-        toast.error("ログインに失敗しました");
-        setLoading(false);
-      }
-    } catch (e) {
-      console.error("[Login] handleGoogleLogin error:", e);
-      toast.error("ログインに失敗しました");
-      setLoading(false);
-    }
-  };
-
-  if (user) {
-    return <Loading fullScreen />;
-  }
 
   return (
     <div className="flex min-h-screen flex-col bg-wellness-surface/30">
@@ -145,24 +172,10 @@ export default function LoginPage() {
               </p>
             </div>
 
-            {/* Google ログイン */}
-            <button
-              onClick={handleGoogleLogin}
-              disabled={loading || isSubmitting}
-              className="mb-4 flex w-full items-center justify-center gap-2 rounded-xl bg-wellness-primary px-4 py-3 font-medium text-white transition-all hover:bg-wellness-secondary disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {loading ? (
-                <>
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-                  <span>ログイン中...</span>
-                </>
-              ) : (
-                <>
-                  <LogIn size={20} />
-                  <span>Googleでログイン</span>
-                </>
-              )}
-            </button>
+            {/* Google ログイン - 一時的に無効化 */}
+            <div className="mb-4 rounded-xl bg-gray-100 px-4 py-3 text-center text-gray-500">
+              <span>Googleログインは準備中です</span>
+            </div>
 
             <div className="mb-4 flex items-center">
               <div className="flex-1 border-t border-wellness-primary/20"></div>
@@ -183,10 +196,11 @@ export default function LoginPage() {
                   id="email"
                   name="email"
                   type="email"
+                  autoComplete="email"
                   required
                   className="mt-1 block w-full rounded-lg border border-wellness-primary/20 px-3 py-2 text-wellness-text placeholder-wellness-textLight focus:border-wellness-primary focus:outline-none focus:ring-1 focus:ring-wellness-primary"
                   placeholder="your@email.com"
-                  disabled={isSubmitting || loading}
+                  disabled={isSubmitting}
                 />
               </div>
 
@@ -201,21 +215,32 @@ export default function LoginPage() {
                   id="password"
                   name="password"
                   type="password"
+                  autoComplete="current-password"
                   required
                   className="mt-1 block w-full rounded-lg border border-wellness-primary/20 px-3 py-2 text-wellness-text placeholder-wellness-textLight focus:border-wellness-primary focus:outline-none focus:ring-1 focus:ring-wellness-primary"
-                  disabled={isSubmitting || loading}
+                  disabled={isSubmitting}
                 />
               </div>
 
               {actionData?.error && (
                 <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
-                  {actionData.error}
+                  <div className="font-medium">{actionData.error}</div>
+                  {actionData.debugInfo && (
+                    <div className="mt-1 text-xs text-red-500 font-mono">
+                      デバッグ情報: {actionData.debugInfo}
+                    </div>
+                  )}
+                  {actionData.originalError && actionData.originalError !== actionData.error && (
+                    <div className="mt-1 text-xs text-red-500 font-mono">
+                      元のエラー: {actionData.originalError}
+                    </div>
+                  )}
                 </div>
               )}
 
               <button
                 type="submit"
-                disabled={isSubmitting || loading}
+                disabled={isSubmitting}
                 className="w-full rounded-lg bg-wellness-secondary px-4 py-2 text-white transition-colors hover:bg-wellness-tertiary disabled:opacity-50"
               >
                 {isSubmitting ? "ログイン中..." : "メールでログイン"}

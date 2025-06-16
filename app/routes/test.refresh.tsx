@@ -26,9 +26,8 @@ export default function TestRefresh() {
     setLogs(prev => [`[${time}] ${message}`, ...prev.slice(0, 19)]);
   };
 
-  const { refreshToken, isRefreshing, lastRefreshError } = useAuthRefresh({
+  const { refreshToken, isRefreshing, lastError } = useAuthRefresh({
     enabled: !!user,
-    checkInterval: 1, // 1分間隔（テスト用）
     onRefreshSuccess: () => {
       setRefreshCount(prev => prev + 1);
       addLog('✅ トークンリフレッシュ成功');
@@ -48,10 +47,10 @@ export default function TestRefresh() {
   }, [user]);
 
   useEffect(() => {
-    if (lastRefreshError) {
-      addLog(`⚠️ 最新エラー: ${lastRefreshError}`);
+    if (lastError) {
+      addLog(`⚠️ 最新エラー: ${lastError}`);
     }
-  }, [lastRefreshError]);
+  }, [lastError]);
 
   const handleManualRefresh = () => {
     addLog('🔄 手動リフレッシュ実行中...');
@@ -90,8 +89,8 @@ export default function TestRefresh() {
 
           <div className="rounded-lg bg-white p-4 shadow">
             <h3 className="text-sm font-medium text-gray-500">最新エラー</h3>
-            <p className={`text-lg font-semibold ${lastRefreshError ? 'text-red-600' : 'text-green-600'}`}>
-              {lastRefreshError || '✅ エラーなし'}
+            <p className={`text-lg font-semibold ${lastError ? 'text-red-600' : 'text-green-600'}`}>
+              {lastError || '✅ エラーなし'}
             </p>
           </div>
         </div>

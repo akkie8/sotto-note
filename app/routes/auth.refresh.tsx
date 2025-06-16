@@ -1,5 +1,5 @@
 import { json, type ActionFunctionArgs } from "@remix-run/node";
-import { validateAndRefreshSession } from "~/utils/auth.server";
+import { auth } from "~/lib/auth";
 
 // トークンリフレッシュ専用エンドポイント
 export async function action({ request }: ActionFunctionArgs) {
@@ -8,11 +8,11 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   try {
-    const result = await validateAndRefreshSession(request);
+    const result = await auth.validateAndRefreshSession(request);
 
     if (!result.user) {
       return json(
-        { error: "Authentication failed", user: null },
+        { error: "Authentication failed" },
         {
           status: 401,
           headers: result.headers || {},
@@ -23,7 +23,6 @@ export async function action({ request }: ActionFunctionArgs) {
     return json(
       {
         user: result.user,
-        session: result.session,
         refreshed: true,
       },
       {

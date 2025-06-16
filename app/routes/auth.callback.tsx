@@ -4,7 +4,7 @@ import { redirect, json } from "@remix-run/node";
 import { useNavigate, useFetcher } from "@remix-run/react";
 
 import { Loading } from "~/components/Loading";
-import { createUserSession, ensureUserProfile, createSupabaseServerClient } from "~/utils/auth.server";
+import { auth, createSupabaseClient } from "~/lib/auth";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
@@ -19,7 +19,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   
   if (code) {
     try {
-      const supabase = createSupabaseServerClient();
+      const supabase = createSupabaseClient();
       
       // 認証コードをセッションに交換
       const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
@@ -30,11 +30,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
       }
 
       if (data.session && data.user) {
+        const authSession = {
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+          expires_at: data.session.expires_at || 0,
+          user: data.user,
+        };
+
         // プロフィール作成/確認
-        await ensureUserProfile(supabase, data.user);
+        await auth.ensureUserProfile(data.user, data.session.access_token);
         
         // セッション作成とリダイレクト
-        return await createUserSession(data.user, data.session, "/dashboard");
+        return await auth.createUserSession(authSession, "/dashboard");
       }
     } catch (error) {
       console.error("[AuthCallback] Server processing error:", error);
@@ -53,7 +60,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (action === "create_session" && accessToken && refreshToken) {
     try {
-      const supabase = createSupabaseServerClient(accessToken);
+      const supabase = createSupabaseClient(accessToken);
       
       // ユーザー情報を取得
       const { data: { user }, error: userError } = await supabase.auth.getUser(accessToken);
@@ -62,12 +69,18 @@ export async function action({ request }: ActionFunctionArgs) {
         return json({ success: false, error: "Failed to get user" }, { status: 401 });
       }
 
+      const authSession = {
+        access_token: accessToken,
+        refresh_token: refreshToken,
+        expires_at: 0, // クライアントサイドコールバックでは不明
+        user,
+      };
+
       // プロフィール作成/確認
-      await ensureUserProfile(supabase, user);
+      await auth.ensureUserProfile(user, accessToken);
       
       // セッション作成
-      const session = { access_token: accessToken, refresh_token: refreshToken };
-      return await createUserSession(user, session, "/dashboard");
+      return await auth.createUserSession(authSession, "/dashboard");
     } catch (error) {
       console.error("[AuthCallback] Action error:", error);
       return json({ success: false, error: "Session creation failed" }, { status: 500 });

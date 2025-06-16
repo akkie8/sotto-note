@@ -27,10 +27,14 @@ type JournalEntry = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { user, headers } = await requireAuth(request);
+  const { user, headers, session } = await requireAuth(request);
+
+  console.log("[Dashboard Loader] User:", user?.id, "Session:", !!session);
 
   return json({
     user,
+    accessToken: session?.access_token || "",
+    refreshToken: session?.refresh_token || "",
   }, {
     headers: headers || {},
   });
@@ -47,7 +51,7 @@ export const meta: MetaFunction = () => {
 };
 
 export default function Dashboard() {
-  const { user: serverUser } = useLoaderData<typeof loader>();
+  const { user: serverUser, accessToken, refreshToken } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const [greeting, setGreeting] = useState("");
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
@@ -91,6 +95,7 @@ export default function Dashboard() {
 
         if (profileError) {
           console.error("Error fetching profile:", profileError);
+          // プロフィール取得エラーでも継続
         } else if (profile) {
           cache.set(CACHE_KEYS.USER_PROFILE(userId), profile, 10 * 60 * 1000); // 10 minutes
           setUserName((profile as { name?: string }).name || "");
@@ -105,6 +110,8 @@ export default function Dashboard() {
 
         if (journalsError) {
           console.error("Error fetching journals:", journalsError);
+          // ジャーナル取得エラーでも空配列で継続
+          setJournalEntries([]);
         } else if (journals) {
           cache.set(
             CACHE_KEYS.JOURNAL_ENTRIES(userId),
@@ -120,13 +127,34 @@ export default function Dashboard() {
     []
   );
 
-  // Check client-side authentication
+  // Check client-side authentication and sync with server session
   useEffect(() => {
-    const checkAuth = async () => {
+    const initAuth = async () => {
       try {
+        // If we have server tokens, set the session
+        if (accessToken && refreshToken) {
+          console.log("[Dashboard] Setting session from server tokens");
+          const { error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+          
+          if (error) {
+            console.error("[Dashboard] Session set error:", error);
+          }
+        }
+
         const {
           data: { user: clientUser },
+          error: getUserError,
         } = await supabase.auth.getUser();
+
+        if (getUserError) {
+          console.error("[Dashboard] Get user error:", getUserError);
+          setUser(null);
+          setLoading(false);
+          return;
+        }
 
         setUser(clientUser);
 
@@ -145,8 +173,8 @@ export default function Dashboard() {
       }
     };
 
-    checkAuth();
-  }, [fetchUserData]);
+    initAuth();
+  }, [fetchUserData, accessToken, refreshToken]);
 
   // 時間帯による挨拶の更新
   useEffect(() => {

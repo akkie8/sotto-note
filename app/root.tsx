@@ -17,7 +17,6 @@ import { Home, PenTool, Tag } from "lucide-react";
 import { Toaster } from "sonner";
 
 import { Header } from "~/components/Header";
-import { supabase } from "~/lib/supabase.client";
 import { UserProvider } from "~/providers/UserProvider";
 import { useAuthRefresh } from "~/hooks/useAuthRefresh";
 import tailwindStyles from "~/tailwind.css?url";
@@ -88,7 +87,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
   // 認証の自動リフレッシュ（ログインユーザーのみ）
   useAuthRefresh({
     enabled: isLoggedIn === true,
-    checkInterval: 30, // 30分ごと
     onRefreshError: () => {
       setIsLoggedIn(false);
     },
@@ -100,20 +98,26 @@ export function Layout({ children }: { children: React.ReactNode }) {
     // 認証状態チェックを1回のみに制限
     let mounted = true;
 
-    import("~/lib/supabase.client").then(({ supabase }) => {
+    const checkAuth = async () => {
+      const { supabase } = await import("~/lib/supabase.client");
       if (!mounted) return;
 
-      supabase.auth.getUser().then(({ data: { user } }) => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
         if (mounted) {
+          console.log("[Root] Initial auth check:", !!user);
           setIsLoggedIn(!!user);
         }
-      });
+      } catch (error) {
+        console.error("[Root] Auth check error:", error);
+      }
 
       // セッション変化監視（デバウンス付き）
       let timeoutId: NodeJS.Timeout;
       const { data: listener } = supabase.auth.onAuthStateChange(
-        (_event, session) => {
+        (event, session) => {
           if (!mounted) return;
+          console.log("[Root] Auth state change:", event, !!session?.user);
           clearTimeout(timeoutId);
           timeoutId = setTimeout(() => {
             if (mounted) {
@@ -128,7 +132,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
         clearTimeout(timeoutId);
         listener?.subscription.unsubscribe();
       };
-    });
+    };
+
+    checkAuth();
 
     return () => {
       mounted = false;
