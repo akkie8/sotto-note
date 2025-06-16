@@ -25,7 +25,33 @@ export default function AuthCallback() {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        // URLのハッシュフラグメントまたはクエリパラメータを処理
+        // まず現在のURLから認証情報を取得して処理
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const accessToken = hashParams.get("access_token");
+        const refreshToken = hashParams.get("refresh_token");
+
+        if (accessToken && refreshToken) {
+          // トークンがある場合はセッションを設定
+          const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+
+          if (sessionError) {
+            console.error("[AuthCallback] Session set error:", sessionError);
+            navigate("/auth-error?error=" + encodeURIComponent(sessionError.message));
+            return;
+          }
+
+          if (sessionData.session?.user) {
+            console.log("[AuthCallback] Authentication successful");
+            // 認証成功時はダッシュボードにリダイレクト
+            navigate("/dashboard");
+            return;
+          }
+        }
+
+        // トークンがない場合は既存のセッションを確認
         const { data, error } = await supabase.auth.getSession();
 
         if (error) {
@@ -48,10 +74,7 @@ export default function AuthCallback() {
       }
     };
 
-    // Supabaseが自動的にセッションを処理するまで少し待つ
-    const timer = setTimeout(handleAuthCallback, 1000);
-
-    return () => clearTimeout(timer);
+    handleAuthCallback();
   }, [navigate]);
 
   return (

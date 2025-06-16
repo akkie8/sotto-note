@@ -8,55 +8,31 @@ export async function requireAuth(request: Request) {
   const supabase = getSupabase(request, response);
 
   try {
-    const authHeader = request.headers.get("authorization");
-
-    // Authorizationヘッダーからトークンを抽出
-    if (authHeader && authHeader.startsWith("Bearer ")) {
-      const token = authHeader.substring(7);
-
-      try {
-        const {
-          data: { user },
-          error,
-        } = await supabase.auth.getUser(token);
-
-        if (error) {
-          console.error("[requireAuth] Token auth error:", error.message);
-          throw redirect("/auth-error", {
-            headers: response.headers,
-          });
-        }
-
-        if (!user) {
-          throw redirect("/auth-error", {
-            headers: response.headers,
-          });
-        }
-
-        return { user, headers: response.headers, supabase };
-      } catch (tokenError) {
-        console.error("[requireAuth] Token processing error:", tokenError);
-        if (tokenError instanceof Response) {
-          throw tokenError;
-        }
-        // Continue to cookie-based auth if token fails
-      }
-    }
-
+    // まずセッションを取得
     const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser();
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession();
 
-    if (error) {
-      console.error("[requireAuth] Auth error:", error.message);
-      throw redirect("/auth-error", {
+    if (sessionError) {
+      console.error("[requireAuth] Session error:", sessionError.message);
+      throw redirect("/login", {
         headers: response.headers,
       });
     }
 
+    if (!session) {
+      console.error("[requireAuth] Auth session missing!");
+      throw redirect("/login", {
+        headers: response.headers,
+      });
+    }
+
+    // セッションからユーザー情報を取得
+    const user = session.user;
+
     if (!user) {
-      throw redirect("/auth-error", {
+      throw redirect("/login", {
         headers: response.headers,
       });
     }
@@ -75,7 +51,7 @@ export async function requireAuth(request: Request) {
     if (authError instanceof Response) {
       throw authError; // Re-throw redirect responses
     }
-    throw redirect("/auth-error", {
+    throw redirect("/login", {
       headers: response.headers,
     });
   }
@@ -86,32 +62,12 @@ export async function getOptionalUser(request: Request) {
   const supabase = getSupabase(request, response);
 
   try {
-    // Authorizationヘッダーからトークンを取得
-    const authHeader = request.headers.get("authorization");
-    if (authHeader?.startsWith("Bearer ")) {
-      const token = authHeader.substring(7);
-      const {
-        data: { user },
-      } = await supabase.auth.getUser(token);
-
-      if (user) {
-        // プロフィールの存在を保証
-        try {
-          await ensureUserProfile(supabase, user);
-        } catch (profileError) {
-          console.error(
-            "[getOptionalUser] Profile creation error:",
-            profileError
-          );
-        }
-        return { user, headers: response.headers, supabase };
-      }
-    }
-
-    // 通常のセッションチェック
+    // セッションを取得
     const {
-      data: { user },
-    } = await supabase.auth.getUser();
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    const user = session?.user || null;
 
     if (user) {
       // プロフィールの存在を保証
