@@ -122,10 +122,11 @@ export default function AuthCallback() {
   // フェッチャーの結果を監視
   useEffect(() => {
     if (fetcher.state === "idle" && fetcher.data) {
-      if (fetcher.data.success) {
+      const data = fetcher.data as { success?: boolean; error?: string };
+      if (data.success) {
         navigate("/dashboard");
       } else {
-        navigate(`/auth-error?error=${encodeURIComponent(fetcher.data.error || "unknown_error")}`);
+        navigate(`/auth-error?error=${encodeURIComponent(data.error || "unknown_error")}`);
       }
     }
   }, [fetcher.state, fetcher.data, navigate]);

@@ -4,7 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { commitSession, destroySession, getSession } from "./session.server";
 
 // Supabaseクライアント（サーバーサイド用）
-function createSupabaseServerClient(accessToken?: string) {
+export function createSupabaseServerClient(accessToken?: string) {
   const supabaseUrl = process.env.VITE_SUPABASE_URL;
   const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
 
@@ -197,10 +197,20 @@ export async function signIn(email: string, password: string) {
   return { user: data.user, session: data.session, error: null };
 }
 
+interface UserData {
+  id: string;
+  email?: string;
+}
+
+interface SessionData {
+  access_token: string;
+  refresh_token: string;
+}
+
 // セッション作成
 export async function createUserSession(
-  user: any,
-  session: any,
+  user: UserData,
+  session: SessionData,
   redirectTo: string = "/dashboard"
 ) {
   const cookieSession = await getSession();
@@ -237,10 +247,13 @@ export async function signOut(request: Request) {
 }
 
 // プロフィール作成/更新
-export async function ensureUserProfile(supabase: any, user: any) {
+export async function ensureUserProfile(
+  supabase: ReturnType<typeof createSupabaseServerClient>, 
+  user: UserData & { user_metadata?: { name?: string } }
+) {
   try {
     // プロフィールの存在確認
-    const { data: profile, error: fetchError } = await supabase
+    const { error: fetchError } = await supabase
       .from("profiles")
       .select("*")
       .eq("user_id", user.id)

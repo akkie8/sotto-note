@@ -8,6 +8,13 @@ interface UseAuthRefreshOptions {
   onRefreshError?: () => void;
 }
 
+interface RefreshResponse {
+  error?: string;
+  refreshed?: boolean;
+  user?: any;
+  session?: any;
+}
+
 export function useAuthRefresh(options: UseAuthRefreshOptions = {}) {
   const {
     enabled = true,
@@ -40,17 +47,18 @@ export function useAuthRefresh(options: UseAuthRefreshOptions = {}) {
   // フェッチャーの状態監視
   useEffect(() => {
     if (fetcher.state === "idle" && fetcher.data) {
+      const data = fetcher.data as RefreshResponse;
       isRefreshingRef.current = false;
 
-      if (fetcher.data.error) {
-        console.error("[AuthRefresh] Refresh failed:", fetcher.data.error);
+      if (data.error) {
+        console.error("[AuthRefresh] Refresh failed:", data.error);
         onRefreshError?.();
         
         // 認証エラーの場合はログインページにリダイレクト
-        if (fetcher.data.error === "Authentication failed") {
+        if (data.error === "Authentication failed") {
           navigate("/login");
         }
-      } else if (fetcher.data.refreshed) {
+      } else if (data.refreshed) {
         console.log("[AuthRefresh] Token refreshed successfully");
         onRefreshSuccess?.();
       }
@@ -110,6 +118,6 @@ export function useAuthRefresh(options: UseAuthRefreshOptions = {}) {
   return {
     refreshToken,
     isRefreshing: fetcher.state === "submitting" || isRefreshingRef.current,
-    lastRefreshError: fetcher.data?.error,
+    lastRefreshError: (fetcher.data as RefreshResponse)?.error,
   };
 }

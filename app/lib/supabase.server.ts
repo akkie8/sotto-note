@@ -12,13 +12,6 @@ export function getSupabase(request: Request, response: Response) {
   return createServerClient(supabaseUrl, supabaseAnonKey, {
     request,
     response,
-    cookieOptions: {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 7, // 1 week
-    },
   });
 }
 

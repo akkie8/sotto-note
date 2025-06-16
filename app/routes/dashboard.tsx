@@ -51,7 +51,9 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [greeting, setGreeting] = useState("");
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
-  const [user, setUser] = useState<{ id: string } | null>(serverUser);
+  const [user, setUser] = useState<{ id: string } | null>(
+    serverUser ? { id: serverUser.id } : null
+  );
   const [userName, setUserName] = useState("");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
