@@ -230,12 +230,27 @@ export default function App() {
   useEffect(() => {
     // OAuth認証後のリダイレクト処理
     const handleOAuthCallback = async () => {
+      // クエリパラメータからcodeを取得
+      const searchParams = new URLSearchParams(window.location.search);
+      const code = searchParams.get("code");
+
+      // ハッシュフラグメントからアクセストークンを取得
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
       const accessToken = hashParams.get("access_token");
-      const error = hashParams.get("error");
+      const error = hashParams.get("error") || searchParams.get("error");
 
       if (error) {
         console.error("[Root] OAuth error:", error);
+        navigate(`/auth-error?error=${encodeURIComponent(error)}`);
+        return;
+      }
+
+      // codeパラメータがある場合は/auth/callbackにリダイレクト
+      if (code && window.location.pathname === "/") {
+        console.log(
+          "[Root] OAuth code detected, redirecting to /auth/callback"
+        );
+        window.location.href = `/auth/callback?code=${code}`;
         return;
       }
 
@@ -250,7 +265,7 @@ export default function App() {
           // ハッシュフラグメントをクリーンアップ
           window.history.replaceState(null, "", window.location.pathname);
           // ホームページにリダイレクト
-          navigate("/");
+          navigate("/dashboard");
         }
       }
     };
