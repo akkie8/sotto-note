@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-env node */
 
 /**
  * 認証システムの動作確認テストスクリプト
@@ -27,7 +28,7 @@ console.log("🧪 認証システム動作確認テスト開始\n");
 async function testSupabaseConnection() {
   console.log("1. Supabase接続テスト");
   try {
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from("profiles")
       .select("count")
       .limit(1);
@@ -49,7 +50,7 @@ async function testServiceRoleKey() {
   }
 
   try {
-    const { data, error } = await supabaseAdmin
+    const { error } = await supabaseAdmin
       .from("profiles")
       .select("count")
       .limit(1);

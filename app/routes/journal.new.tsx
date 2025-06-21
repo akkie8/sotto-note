@@ -10,13 +10,9 @@ import { toast } from "sonner";
 import {
   JournalEditor,
   type JournalEntry,
-  type JournalMode,
 } from "~/components/JournalEditor";
 import { Loading } from "~/components/Loading";
-import { cache, CACHE_KEYS } from "~/lib/cache.client";
-import { mergeTags, tagsToString } from "~/lib/hashtag";
 import { requireAuth } from "~/utils/auth.server";
-import { supabase } from "../lib/supabase.client";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { user, headers } = await requireAuth(request);

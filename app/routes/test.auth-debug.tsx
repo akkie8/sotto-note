@@ -23,7 +23,32 @@ export async function action({ request }: ActionFunctionArgs) {
   const action = formData.get("action") as string;
 
   const supabase = createSupabaseClient();
-  const debugInfo: any = {
+  const debugInfo: {
+    action: string;
+    email: string;
+    timestamp: string;
+    result?: {
+      success: boolean;
+      error?: string;
+      errorCode?: string;
+      errorStatus?: number;
+      hasUser: boolean;
+      hasSession: boolean;
+      userId?: string;
+      userEmail?: string;
+      userConfirmedAt?: string;
+    };
+    profile?: {
+      exists: boolean;
+      error?: string;
+      errorCode?: string;
+      data?: unknown;
+    };
+    exception?: {
+      message: string;
+      stack?: string;
+    };
+  } = {
     action,
     email,
     timestamp: new Date().toISOString(),
