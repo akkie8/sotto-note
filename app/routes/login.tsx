@@ -44,6 +44,11 @@ export async function action({ request }: ActionFunctionArgs) {
         provider: "google",
         options: {
           redirectTo: `${new URL(request.url).origin}/auth/callback?redirectTo=${encodeURIComponent(redirectTo)}`,
+          queryParams: {
+            access_type: "offline",
+            prompt: "consent",
+          },
+          skipBrowserRedirect: false,
         },
       });
 

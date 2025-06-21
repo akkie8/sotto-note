@@ -11,6 +11,7 @@ export function createSupabaseClient(accessToken?: string): SupabaseClient {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
+      flowType: "implicit", // PKCEを無効化
     },
   });
 }

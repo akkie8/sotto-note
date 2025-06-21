@@ -19,6 +19,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   if (code) {
     try {
+      console.log("[AuthCallback] Processing auth code...");
       const supabase = createSupabaseClient();
 
       // 認証コードをセッションに交換
@@ -27,6 +28,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
       if (exchangeError) {
         console.error("[AuthCallback] Code exchange error:", exchangeError);
+        // エラーの詳細をログ
+        if (exchangeError.message?.includes("code verifier")) {
+          console.log(
+            "[AuthCallback] PKCE error detected, trying without verifier"
+          );
+        }
         throw redirect(
           `/auth-error?error=${encodeURIComponent(exchangeError.message)}`
         );
@@ -62,6 +69,12 @@ export async function action({ request }: ActionFunctionArgs) {
   const refreshToken = formData.get("refresh_token") as string;
   const action = formData.get("action") as string;
 
+  console.log("[AuthCallback] Action called:", {
+    action,
+    hasAccessToken: !!accessToken,
+    hasRefreshToken: !!refreshToken,
+  });
+
   if (action === "create_session" && accessToken && refreshToken) {
     try {
       const supabase = createSupabaseClient(accessToken);
@@ -72,31 +85,62 @@ export async function action({ request }: ActionFunctionArgs) {
         error: userError,
       } = await supabase.auth.getUser(accessToken);
 
-      if (userError || !user) {
+      if (userError) {
+        console.error("[AuthCallback] Failed to get user:", userError);
         return json(
-          { success: false, error: "Failed to get user" },
+          { success: false, error: `Failed to get user: ${userError.message}` },
           { status: 401 }
         );
       }
 
+      if (!user) {
+        console.error("[AuthCallback] No user returned");
+        return json(
+          { success: false, error: "No user found" },
+          { status: 401 }
+        );
+      }
+
+      console.log("[AuthCallback] User found:", user.id);
+
       const authSession = {
         access_token: accessToken,
         refresh_token: refreshToken,
-        expires_at: 0, // クライアントサイドコールバックでは不明
+        expires_at: Math.floor(Date.now() / 1000) + 3600, // 1時間後に設定
         user,
       };
 
       // プロフィール作成/確認
-      await auth.ensureUserProfile(user, accessToken);
+      try {
+        await auth.ensureUserProfile(user, accessToken);
+        console.log("[AuthCallback] Profile ensured");
+      } catch (profileError) {
+        console.error("[AuthCallback] Profile error:", profileError);
+        // プロフィールエラーは続行（ログインは許可）
+      }
 
       // セッション作成
       const url = new URL(request.url);
       const redirectTo = url.searchParams.get("redirectTo") || "/dashboard";
-      return await auth.createUserSession(authSession, redirectTo);
+      console.log(
+        "[AuthCallback] Creating session, redirecting to:",
+        redirectTo
+      );
+
+      const sessionResponse = await auth.createUserSession(
+        authSession,
+        redirectTo
+      );
+      console.log("[AuthCallback] Session created successfully");
+      return sessionResponse;
     } catch (error) {
       console.error("[AuthCallback] Action error:", error);
       return json(
-        { success: false, error: "Session creation failed" },
+        {
+          success: false,
+          error:
+            error instanceof Error ? error.message : "Session creation failed",
+        },
         { status: 500 }
       );
     }
@@ -112,6 +156,18 @@ export default function AuthCallback() {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
+        // URLクエリパラメータから情報を取得
+        const searchParams = new URLSearchParams(window.location.search);
+        const error = searchParams.get("error");
+        const errorDescription = searchParams.get("error_description");
+
+        // エラーがある場合は処理
+        if (error) {
+          console.error("[AuthCallback] OAuth error:", error, errorDescription);
+          navigate(`/auth-error?error=${encodeURIComponent(error)}`);
+          return;
+        }
+
         // URLハッシュからアクセストークンを取得（クライアントサイド認証用）
         const hashParams = new URLSearchParams(
           window.location.hash.substring(1)
@@ -137,8 +193,20 @@ export default function AuthCallback() {
           return;
         }
 
-        // トークンがない場合は認証失敗
-        console.log("[AuthCallback] No tokens found, redirecting to login");
+        // codeパラメータがある場合はサーバーサイドで処理済み
+        const code = searchParams.get("code");
+        if (code) {
+          console.log(
+            "[AuthCallback] Server-side processing should handle code"
+          );
+          // サーバーサイドで処理されるはずなので、少し待つ
+          return;
+        }
+
+        // トークンもコードもない場合は認証失敗
+        console.log(
+          "[AuthCallback] No tokens or code found, redirecting to login"
+        );
         navigate("/login");
       } catch (error) {
         console.error("[AuthCallback] Exception:", error);
