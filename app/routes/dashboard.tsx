@@ -14,6 +14,7 @@ import { ThreeDotsMenu } from "~/components/ThreeDotsMenu";
 import { cache, CACHE_KEYS } from "~/lib/cache.client";
 import { requireAuth } from "~/utils/auth.server";
 import { supabase } from "../lib/supabase.client";
+import { useServerSession } from "~/hooks/useServerSession";
 
 // ジャーナルエントリー型
 type JournalEntry = {
@@ -27,29 +28,17 @@ type JournalEntry = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const authResult = await requireAuth(request);
-  console.log("[Dashboard Loader] Auth result keys:", Object.keys(authResult));
-  console.log("[Dashboard Loader] Auth result:", {
-    hasUser: !!authResult.user,
-    hasHeaders: !!authResult.headers,
-    hasSession: !!authResult.session,
-    hasSupabase: !!authResult.supabase,
-  });
-  
-  const { user, headers, session } = authResult;
+  const { user, headers, session } = await requireAuth(request);
 
   console.log("[Dashboard Loader] User:", user?.id, "Session:", !!session);
-  console.log("[Dashboard Loader] Session details:", {
-    hasAccessToken: !!session?.access_token,
-    hasRefreshToken: !!session?.refresh_token,
-    expiresAt: session?.expires_at,
-  });
 
   return json(
     {
       user,
-      accessToken: session?.access_token || "",
-      refreshToken: session?.refresh_token || "",
+      session: session ? {
+        access_token: session.access_token,
+        refresh_token: session.refresh_token,
+      } : null,
     },
     {
       headers: headers || {},
@@ -70,10 +59,12 @@ export const meta: MetaFunction = () => {
 export default function Dashboard() {
   const {
     user: serverUser,
-    accessToken,
-    refreshToken,
+    session: serverSession,
   } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
+  
+  // サーバーセッションをクライアントに設定
+  useServerSession(serverSession);
   const [greeting, setGreeting] = useState("");
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
   const [user, setUser] = useState<{ id: string } | null>(

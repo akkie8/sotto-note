@@ -21,6 +21,7 @@ import { useAuthRefresh } from "~/hooks/useAuthRefresh";
 import { UserProvider } from "~/providers/UserProvider";
 import tailwindStyles from "~/tailwind.css?url";
 
+
 export const links: LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
   {
@@ -103,12 +104,25 @@ export function Layout({ children }: { children: React.ReactNode }) {
       if (!mounted) return;
 
       try {
+        // まずセッションを確認
         const {
-          data: { user },
-        } = await supabase.auth.getUser();
+          data: { session },
+        } = await supabase.auth.getSession();
+        
         if (mounted) {
-          console.log("[Root] Initial auth check:", !!user);
-          setIsLoggedIn(!!user);
+          console.log("[Root] Initial session check:", !!session);
+          setIsLoggedIn(!!session);
+        }
+        
+        // セッションがない場合のみユーザー情報を確認
+        if (!session) {
+          const {
+            data: { user },
+          } = await supabase.auth.getUser();
+          if (mounted) {
+            console.log("[Root] User check (no session):", !!user);
+            setIsLoggedIn(!!user);
+          }
         }
       } catch (error) {
         console.error("[Root] Auth check error:", error);
@@ -120,12 +134,20 @@ export function Layout({ children }: { children: React.ReactNode }) {
         (event, session) => {
           if (!mounted) return;
           console.log("[Root] Auth state change:", event, !!session?.user);
-          clearTimeout(timeoutId);
-          timeoutId = setTimeout(() => {
-            if (mounted) {
-              setIsLoggedIn(!!session?.user);
-            }
-          }, 100);
+          
+          // SIGNED_INイベントの場合は即座に反映
+          if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+            setIsLoggedIn(true);
+          } else if (event === 'SIGNED_OUT') {
+            setIsLoggedIn(false);
+          } else {
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => {
+              if (mounted) {
+                setIsLoggedIn(!!session?.user);
+              }
+            }, 100);
+          }
         }
       );
 
