@@ -39,7 +39,7 @@ export const links: LinksFunction = () => [
 function BottomNav() {
   const location = useLocation();
   const isActive = (path: string) => {
-    if (path === "/journal") {
+    if (path === "/journal.new") {
       return location.pathname.startsWith("/journal");
     }
     return location.pathname === path;
@@ -47,7 +47,7 @@ function BottomNav() {
 
   const navItems = [
     { path: "/", icon: Home, label: "ホーム" },
-    { path: "/journal", icon: PenTool, label: "ノート" },
+    { path: "/journal.new", icon: PenTool, label: "ノート" },
     { path: "/tags", icon: Tag, label: "タグ" },
   ];
 

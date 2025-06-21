@@ -1,188 +1,167 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
-  json,
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
+  type MetaFunction,
 } from "@remix-run/node";
-import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
+import { useActionData, useLoaderData, useNavigate } from "@remix-run/react";
 import { toast } from "sonner";
 
 import { JournalEditor } from "~/components/JournalEditor";
-import { Loading } from "~/components/Loading";
 import { requireAuth } from "~/utils/auth.server";
+import { supabase } from "~/lib/supabase.client";
+import { cache, CACHE_KEYS } from "~/lib/cache.client";
+import { validateMood } from "~/lib/validation";
+
+const BASE_TAGS = ["日常", "仕事", "健康", "趣味", "人間関係", "目標", "感謝"];
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { user, headers } = await requireAuth(request);
-
-  const aiUsageInfo = {
-    remainingCount: null as number | null,
-    monthlyLimit: null as number | null,
-    isAdmin: false,
-  };
-
-  // Check user roles and AI usage
-  if (user) {
-    try {
-      const { createSupabaseAdmin } = await import("~/lib/auth/supabase");
-      const supabaseAdmin = createSupabaseAdmin();
-
-      // Get user profile for admin check
-      const { data: profile } = await supabaseAdmin
-        .from("profiles")
-        .select("user_id, role")
-        .eq("user_id", user.id)
-        .single();
-
-      const isAdmin = profile?.role === "admin";
-      aiUsageInfo.isAdmin = isAdmin;
-
-      // Get AI usage for non-admin users
-      if (!isAdmin) {
-        const { data: usage } = await supabaseAdmin
-          .from("ai_usage")
-          .select("count")
-          .eq("user_id", user.id)
-          .eq("month", new Date().toISOString().slice(0, 7))
-          .single();
-
-        const currentUsage = usage?.count || 0;
-        const monthlyLimit = 100; // デフォルト制限
-        aiUsageInfo.remainingCount = Math.max(0, monthlyLimit - currentUsage);
-        aiUsageInfo.monthlyLimit = monthlyLimit;
-      }
-    } catch (error) {
-      console.error("Error fetching AI usage info:", error);
-    }
-  }
-
-  return json(
-    {
-      journalEntry: null,
-      aiReply: null,
-      user,
-      aiUsageInfo,
-    },
-    {
-      headers: headers || {},
-    }
-  );
+  return Response.json({ user }, { headers: headers || {} });
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  const { user } = await requireAuth(request);
+type ActionData = 
+  | { error: string; success?: never; journalId?: never }
+  | { success: true; journalId: string; error?: never };
 
+export async function action({ request }: ActionFunctionArgs) {
+  const { user, supabase } = await requireAuth(request);
+  
   const formData = await request.formData();
   const content = formData.get("content") as string;
   const mood = formData.get("mood") as string;
   const tags = formData.get("tags") as string;
-  const needsAiReply = formData.get("needsAiReply") === "true";
 
-  if (!content?.trim()) {
-    return json({ error: "内容を入力してください" }, { status: 400 });
+  if (!content || content.trim().length === 0) {
+    return Response.json({ error: "内容を入力してください。" } as ActionData, { status: 400 });
+  }
+
+  if (!mood || !validateMood(mood)) {
+    return Response.json({ error: "気分を選択してください。" } as ActionData, { status: 400 });
   }
 
   try {
-    const { createSupabaseAdmin } = await import("~/lib/auth/supabase");
-    const supabaseAdmin = createSupabaseAdmin();
+    const timestamp = Date.now();
+    const date = new Date(timestamp).toLocaleDateString("ja-JP", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
 
-    // Create journal entry
-    const now = Date.now();
-    const dateStr = new Date(now).toLocaleDateString("ja-JP");
-
-    const { data: newEntry, error: insertError } = await supabaseAdmin
+    const { data, error } = await supabase
       .from("journals")
       .insert({
-        content: content.trim(),
-        mood,
-        timestamp: now,
-        date: dateStr,
         user_id: user.id,
-        tags: tags || "",
-        has_ai_reply: needsAiReply,
+        content,
+        mood,
+        tags,
+        timestamp,
+        date,
       })
       .select()
       .single();
 
-    if (insertError) {
-      console.error("Error creating journal entry:", insertError);
-      return json({ error: "エントリーの作成に失敗しました" }, { status: 500 });
+    if (error) {
+      console.error("Error creating journal:", error);
+      return Response.json({ error: "ジャーナルの作成に失敗しました。" } as ActionData, { status: 500 });
     }
 
-    // Handle AI reply if requested
-    if (needsAiReply) {
-      try {
-        // AI reply logic would go here
-        console.log("AI reply requested for entry:", newEntry.id);
-      } catch (error) {
-        console.error("Error generating AI reply:", error);
-      }
-    }
-
-    return json({
-      success: true,
-      entryId: newEntry.id,
-      message: "エントリーを作成しました",
-    });
+    return Response.json({ success: true, journalId: data.id } as ActionData);
   } catch (error) {
-    console.error("Error in journal action:", error);
-    return json({ error: "エラーが発生しました" }, { status: 500 });
+    console.error("Unexpected error:", error);
+    return Response.json({ error: "予期しないエラーが発生しました。" } as ActionData, { status: 500 });
   }
 }
 
+export const meta: MetaFunction = () => {
+  return [
+    { title: "新しいノート - そっとノート" },
+    { name: "description", content: "今の気持ちを記録しましょう" },
+  ];
+};
+
 export default function JournalNew() {
-  const { user, aiUsageInfo } = useLoaderData<typeof loader>();
+  const { user } = useLoaderData<typeof loader>();
+  const actionData = useActionData<ActionData>();
   const navigate = useNavigate();
-  const fetcher = useFetcher();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [userJournals, setUserJournals] = useState<Array<{ tags?: string }>>([]);
 
-  // Handle form submission result
+  // Fetch user journals for tag suggestions
   useEffect(() => {
-    if (fetcher.data) {
-      const data = fetcher.data as
-        | { success: true; entryId: string; message: string }
-        | { error: string };
-
-      if ("success" in data && data.success) {
-        toast.success(data.message || "エントリーを作成しました");
-        navigate(`/journal/${data.entryId}`);
-      } else if ("error" in data) {
-        toast.error(data.error);
+    const fetchUserJournals = async () => {
+      const { data } = await supabase
+        .from("journals")
+        .select("tags")
+        .eq("user_id", user.id);
+      
+      if (data) {
+        setUserJournals(data);
       }
-      setIsSubmitting(false);
+    };
+
+    fetchUserJournals();
+  }, [user.id]);
+
+  // Handle successful creation
+  useEffect(() => {
+    if (actionData?.success && actionData.journalId) {
+      // Clear journal cache
+      cache.invalidate(CACHE_KEYS.JOURNAL_ENTRIES(user.id));
+      
+      toast.success("ノートを作成しました");
+      navigate("/dashboard");
     }
-  }, [fetcher.data, navigate]);
+  }, [actionData, navigate, user.id]);
 
-  const handleSave = async (
-    content: string,
-    mood: string,
-    manualTags: string[]
-  ) => {
-    setIsSubmitting(true);
+  // Handle errors
+  useEffect(() => {
+    if (actionData?.error) {
+      toast.error(actionData.error);
+    }
+  }, [actionData]);
 
+  const handleSave = useCallback(async (content: string, mood: string, manualTags: string[]) => {
+    setSaving(true);
+    
+    // Create form data and submit
     const formData = new FormData();
     formData.append("content", content);
     formData.append("mood", mood);
     formData.append("tags", manualTags.join(","));
-    formData.append("needsAiReply", "false");
 
-    fetcher.submit(formData, { method: "post" });
-  };
+    // Submit form
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.style.display = "none";
+    
+    for (const [key, value] of formData.entries()) {
+      const input = document.createElement("input");
+      input.type = "hidden";
+      input.name = key;
+      input.value = value as string;
+      form.appendChild(input);
+    }
+    
+    document.body.appendChild(form);
+    form.submit();
+  }, []);
 
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     navigate("/dashboard");
-  };
-
-  if (!user) {
-    return <Loading fullScreen />;
-  }
+  }, [navigate]);
 
   return (
-    <JournalEditor
-      mode="new"
-      onSave={handleSave}
-      onCancel={handleCancel}
-      saving={isSubmitting}
-      aiUsageInfo={aiUsageInfo}
-    />
+    <div className="min-h-screen bg-white">
+      <JournalEditor
+        mode="new"
+        onSave={handleSave}
+        onCancel={handleCancel}
+        saving={saving}
+        error={actionData?.error}
+        userJournals={userJournals}
+        baseTags={BASE_TAGS}
+      />
+    </div>
   );
 }
