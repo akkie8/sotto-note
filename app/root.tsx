@@ -17,8 +17,8 @@ import { Home, PenTool, Tag } from "lucide-react";
 import { Toaster } from "sonner";
 
 import { Header } from "~/components/Header";
-import { UserProvider } from "~/providers/UserProvider";
 import { useAuthRefresh } from "~/hooks/useAuthRefresh";
+import { UserProvider } from "~/providers/UserProvider";
 import tailwindStyles from "~/tailwind.css?url";
 
 export const links: LinksFunction = () => [
@@ -83,7 +83,7 @@ function BottomNav() {
 export function Layout({ children }: { children: React.ReactNode }) {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [isHydrated, setIsHydrated] = useState(false);
-  
+
   // 認証の自動リフレッシュ（ログインユーザーのみ）
   useAuthRefresh({
     enabled: isLoggedIn === true,
@@ -103,7 +103,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
       if (!mounted) return;
 
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
         if (mounted) {
           console.log("[Root] Initial auth check:", !!user);
           setIsLoggedIn(!!user);

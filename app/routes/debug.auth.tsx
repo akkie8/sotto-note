@@ -1,5 +1,6 @@
 import { json, type LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
+
 import { getOptionalAuth } from "~/utils/auth.server";
 import { getSessionData } from "~/utils/session.server";
 
@@ -7,26 +8,29 @@ export async function loader({ request }: LoaderFunctionArgs) {
   try {
     // セッション情報を取得
     const sessionData = await getSessionData(request);
-    
+
     // 認証状態を取得
     const { user, session, headers } = await getOptionalAuth(request);
-    
+
     // Cookie情報を取得
     const cookieHeader = request.headers.get("Cookie");
-    
-    return json({
-      sessionData,
-      user,
-      session,
-      cookieHeader,
-      headers: headers ? Object.fromEntries(Object.entries(headers)) : null,
-      timestamp: new Date().toISOString(),
-    }, {
-      headers: headers || {},
-    });
+
+    return json(
+      {
+        sessionData,
+        user,
+        session,
+        cookieHeader,
+        headers: headers ? Object.fromEntries(Object.entries(headers)) : null,
+        timestamp: new Date().toISOString(),
+      },
+      {
+        headers: headers || {},
+      }
+    );
   } catch (error) {
     return json({
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: error instanceof Error ? error.message : "Unknown error",
       timestamp: new Date().toISOString(),
     });
   }
@@ -153,15 +157,18 @@ export default function DebugAuth() {
           <button
             onClick={async () => {
               try {
-                const { supabase } = await import('~/lib/supabase.client');
-                
-                const { data: { user }, error } = await supabase.auth.getUser();
-                console.log('Client-side user:', user);
-                console.log('Client-side error:', error);
-                
-                alert(`Client User: ${user ? user.id : 'null'}`);
+                const { supabase } = await import("~/lib/supabase.client");
+
+                const {
+                  data: { user },
+                  error,
+                } = await supabase.auth.getUser();
+                console.log("Client-side user:", user);
+                console.log("Client-side error:", error);
+
+                alert(`Client User: ${user ? user.id : "null"}`);
               } catch (error) {
-                console.error('Client auth check error:', error);
+                console.error("Client auth check error:", error);
                 alert(`Error: ${error}`);
               }
             }}

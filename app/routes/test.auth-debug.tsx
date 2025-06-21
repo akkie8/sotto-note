@@ -1,7 +1,8 @@
+import { useState } from "react";
 import { json, type ActionFunctionArgs } from "@remix-run/node";
 import { Form, useActionData, useLoaderData } from "@remix-run/react";
+
 import { createSupabaseClient } from "~/lib/auth/supabase";
-import { useState } from "react";
 
 export async function loader() {
   // 環境変数の確認
@@ -36,7 +37,7 @@ export async function action({ request }: ActionFunctionArgs) {
         password,
         options: {
           emailRedirectTo: undefined,
-        }
+        },
       });
 
       debugInfo.result = {
@@ -69,7 +70,10 @@ export async function action({ request }: ActionFunctionArgs) {
       };
     } else if (action === "check") {
       // ユーザーチェック
-      const { data: { user }, error } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
 
       debugInfo.result = {
         success: !error,
@@ -95,7 +99,6 @@ export async function action({ request }: ActionFunctionArgs) {
         data: profile,
       };
     }
-
   } catch (exception) {
     debugInfo.exception = {
       message: exception instanceof Error ? exception.message : "Unknown error",
@@ -121,7 +124,9 @@ export default function TestAuthDebug() {
         <div className="mb-6 rounded-lg bg-white p-4 shadow">
           <h2 className="mb-3 text-lg font-semibold">環境変数の状態</h2>
           <div className="space-y-1 text-sm">
-            <p>URL: {config.hasUrl ? "✅" : "❌"} {config.url}</p>
+            <p>
+              URL: {config.hasUrl ? "✅" : "❌"} {config.url}
+            </p>
             <p>ANON_KEY: {config.hasAnonKey ? "✅" : "❌"}</p>
             <p>SERVICE_KEY: {config.hasServiceKey ? "✅" : "❌"}</p>
           </div>
@@ -198,23 +203,33 @@ export default function TestAuthDebug() {
 
         {/* クライアントサイドテスト */}
         <div className="mt-6 rounded-lg bg-yellow-50 p-4">
-          <h3 className="mb-2 text-lg font-semibold">クライアントサイドテスト</h3>
+          <h3 className="mb-2 text-lg font-semibold">
+            クライアントサイドテスト
+          </h3>
           <button
             onClick={async () => {
               try {
                 const { supabase } = await import("~/lib/supabase.client");
-                
+
                 // 現在のセッション確認
-                const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+                const {
+                  data: { session },
+                  error: sessionError,
+                } = await supabase.auth.getSession();
                 console.log("Current session:", session);
                 console.log("Session error:", sessionError);
 
                 // ユーザー確認
-                const { data: { user }, error: userError } = await supabase.auth.getUser();
+                const {
+                  data: { user },
+                  error: userError,
+                } = await supabase.auth.getUser();
                 console.log("Current user:", user);
                 console.log("User error:", userError);
 
-                alert(`セッション: ${session ? "あり" : "なし"}\nユーザー: ${user ? user.email : "なし"}`);
+                alert(
+                  `セッション: ${session ? "あり" : "なし"}\nユーザー: ${user ? user.email : "なし"}`
+                );
               } catch (error) {
                 console.error("Client test error:", error);
                 alert(`エラー: ${error}`);
@@ -228,9 +243,15 @@ export default function TestAuthDebug() {
 
         {/* ナビゲーション */}
         <div className="mt-6 flex gap-3">
-          <a href="/" className="text-blue-600 hover:underline">ホーム</a>
-          <a href="/login" className="text-blue-600 hover:underline">ログイン</a>
-          <a href="/debug.auth" className="text-blue-600 hover:underline">認証デバッグ</a>
+          <a href="/" className="text-blue-600 hover:underline">
+            ホーム
+          </a>
+          <a href="/login" className="text-blue-600 hover:underline">
+            ログイン
+          </a>
+          <a href="/debug.auth" className="text-blue-600 hover:underline">
+            認証デバッグ
+          </a>
         </div>
       </div>
     </div>

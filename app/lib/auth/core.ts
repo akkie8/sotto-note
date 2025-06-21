@@ -1,8 +1,14 @@
 import { redirect } from "@remix-run/node";
-import { createSupabaseClient } from "./supabase";
-import { SessionManager } from "./session";
+
 import { AUTH_CONFIG } from "./config";
-import type { AuthSession, AuthUser, LoginCredentials, AuthResult } from "./types";
+import { SessionManager } from "./session";
+import { createSupabaseClient } from "./supabase";
+import type {
+  AuthResult,
+  AuthSession,
+  AuthUser,
+  LoginCredentials,
+} from "./types";
 
 export class AuthCore {
   private static instance: AuthCore;
@@ -26,7 +32,9 @@ export class AuthCore {
   }
 
   // トークンリフレッシュ
-  private async refreshTokens(refreshToken: string): Promise<AuthSession | null> {
+  private async refreshTokens(
+    refreshToken: string
+  ): Promise<AuthSession | null> {
     const supabase = createSupabaseClient();
 
     try {
@@ -89,7 +97,7 @@ export class AuthCore {
     console.log("[Auth] Token refresh successful", {
       hasUser: !!newSession.user,
       userId: newSession.user?.id,
-      userEmail: newSession.user?.email
+      userEmail: newSession.user?.email,
     });
 
     // 新しいセッション情報で更新
@@ -141,10 +149,11 @@ export class AuthCore {
 
     try {
       // まずログインを試行
-      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-        email: credentials.email,
-        password: credentials.password,
-      });
+      const { data: signInData, error: signInError } =
+        await supabase.auth.signInWithPassword({
+          email: credentials.email,
+          password: credentials.password,
+        });
 
       // ログイン成功の場合
       if (!signInError && signInData.user && signInData.session) {
@@ -165,22 +174,25 @@ export class AuthCore {
 
       // ログイン失敗の場合、新規登録を試行
       if (signInError?.message === "Invalid login credentials") {
-        console.log(`[AuthCore] ログイン失敗、新規登録を試行: ${credentials.email}`);
-        
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-          email: credentials.email,
-          password: credentials.password,
-          options: {
-            emailRedirectTo: undefined, // メール確認を無効化
-          }
-        });
+        console.log(
+          `[AuthCore] ログイン失敗、新規登録を試行: ${credentials.email}`
+        );
+
+        const { data: signUpData, error: signUpError } =
+          await supabase.auth.signUp({
+            email: credentials.email,
+            password: credentials.password,
+            options: {
+              emailRedirectTo: undefined, // メール確認を無効化
+            },
+          });
 
         if (signUpError) {
           console.error(`[AuthCore] 新規登録エラー:`, {
             message: signUpError.message,
             status: signUpError.status,
             name: signUpError.name,
-            email: credentials.email
+            email: credentials.email,
           });
           return { user: null, session: null, error: signUpError.message };
         }
@@ -189,7 +201,7 @@ export class AuthCore {
           console.error(`[AuthCore] 新規登録データ不整合:`, {
             hasUser: !!signUpData.user,
             hasSession: !!signUpData.session,
-            email: credentials.email
+            email: credentials.email,
           });
           return { user: null, session: null, error: "新規登録に失敗しました" };
         }
@@ -198,7 +210,7 @@ export class AuthCore {
           userId: signUpData.user.id,
           email: signUpData.user.email,
           hasAccessToken: !!signUpData.session.access_token,
-          hasRefreshToken: !!signUpData.session.refresh_token
+          hasRefreshToken: !!signUpData.session.refresh_token,
         });
 
         const authSession: AuthSession = {
@@ -216,17 +228,25 @@ export class AuthCore {
         message: signInError?.message,
         status: signInError?.status,
         name: signInError?.name,
-        email: credentials.email
+        email: credentials.email,
       });
-      return { user: null, session: null, error: signInError?.message || "認証に失敗しました" };
-
+      return {
+        user: null,
+        session: null,
+        error: signInError?.message || "認証に失敗しました",
+      };
     } catch (exception) {
       console.error(`[AuthCore] 認証処理で例外発生:`, {
         error: exception,
-        message: exception instanceof Error ? exception.message : "Unknown exception",
-        email: credentials.email
+        message:
+          exception instanceof Error ? exception.message : "Unknown exception",
+        email: credentials.email,
       });
-      return { user: null, session: null, error: "認証処理中に例外が発生しました" };
+      return {
+        user: null,
+        session: null,
+        error: "認証処理中に例外が発生しました",
+      };
     }
   }
 
@@ -265,10 +285,12 @@ export class AuthCore {
           name: user.user_metadata?.name || user.email?.split("@")[0] || "",
           role: "free", // デフォルトロール
         };
-        
+
         console.log(`[Auth] Creating profile:`, profileData);
-        
-        const { error: insertError } = await supabase.from("profiles").insert(profileData);
+
+        const { error: insertError } = await supabase
+          .from("profiles")
+          .insert(profileData);
 
         if (insertError) {
           console.error("[Auth] Profile creation error:", insertError);

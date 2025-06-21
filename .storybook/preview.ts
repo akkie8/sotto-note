@@ -1,4 +1,5 @@
-import type { Preview } from '@storybook/react-vite'
+import type { Preview } from "@storybook/react-vite";
+
 import "../app/tailwind.css";
 
 // Mock Supabase client for Storybook
@@ -17,7 +18,7 @@ const mockSupabaseClient = {
 };
 
 // Mock the Supabase client module
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
   (window as any).__MOCK_SUPABASE_CLIENT__ = mockSupabaseClient;
 }
 
@@ -25,8 +26,8 @@ const preview: Preview = {
   parameters: {
     controls: {
       matchers: {
-       color: /(background|color)$/i,
-       date: /Date$/i,
+        color: /(background|color)$/i,
+        date: /Date$/i,
       },
     },
   },

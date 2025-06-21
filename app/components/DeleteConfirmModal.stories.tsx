@@ -1,6 +1,7 @@
-import type { Meta, StoryObj } from "@storybook/react-vite";
-import { DeleteConfirmModal } from "./DeleteConfirmModal";
 import { useState } from "react";
+import type { Meta, StoryObj } from "@storybook/react-vite";
+
+import { DeleteConfirmModal } from "./DeleteConfirmModal";
 
 const meta = {
   title: "Components/DeleteConfirmModal",
@@ -14,14 +15,16 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-const DeleteConfirmModalWithHooks = (args: React.ComponentProps<typeof DeleteConfirmModal>) => {
+const DeleteConfirmModalWithHooks = (
+  args: React.ComponentProps<typeof DeleteConfirmModal>
+) => {
   const [isOpen, setIsOpen] = useState(args.isOpen);
 
   return (
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+        className="rounded bg-red-500 px-4 py-2 text-white hover:bg-red-600"
       >
         削除モーダルを開く
       </button>
@@ -81,7 +84,8 @@ export const CustomTitleAndMessage: Story = {
   args: {
     isOpen: true,
     title: "アカウントを削除",
-    message: "アカウントを削除すると、すべてのデータが失われます。この操作は取り消すことができません。",
+    message:
+      "アカウントを削除すると、すべてのデータが失われます。この操作は取り消すことができません。",
     onClose: () => console.log("Close clicked"),
     onConfirm: () => console.log("Confirm clicked"),
   },

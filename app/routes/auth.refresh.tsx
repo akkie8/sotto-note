@@ -1,4 +1,5 @@
 import { json, type ActionFunctionArgs } from "@remix-run/node";
+
 import { auth } from "~/lib/auth";
 
 // トークンリフレッシュ専用エンドポイント
@@ -31,10 +32,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   } catch (error) {
     console.error("[Auth Refresh] Error:", error);
-    return json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return json({ error: "Internal server error" }, { status: 500 });
   }
 }
 

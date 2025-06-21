@@ -1,6 +1,6 @@
+import path from "path";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
-import path from "path";
 
 // Storybook用のVite設定（Remixプラグインを除外）
 export default defineConfig({
@@ -10,8 +10,14 @@ export default defineConfig({
       "~": path.resolve(__dirname, "../app"),
       "@": path.resolve(__dirname, "../app"),
       // Supabaseクライアントをモックに置き換え
-      "~/lib/supabase.client": path.resolve(__dirname, "./__mocks__/supabase.ts"),
-      "~/lib/supabase.server": path.resolve(__dirname, "./__mocks__/supabase.ts"),
+      "~/lib/supabase.client": path.resolve(
+        __dirname,
+        "./__mocks__/supabase.ts"
+      ),
+      "~/lib/supabase.server": path.resolve(
+        __dirname,
+        "./__mocks__/supabase.ts"
+      ),
       // User storeをモックに置き換え
       "~/stores/userStore": path.resolve(__dirname, "./__mocks__/userStore.ts"),
     },
@@ -22,9 +28,15 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react/jsx-runtime', 'react/jsx-dev-runtime', 'zustand'],
+    include: [
+      "react",
+      "react-dom",
+      "react/jsx-runtime",
+      "react/jsx-dev-runtime",
+      "zustand",
+    ],
   },
   define: {
-    'process.env': {},
+    "process.env": {},
   },
 });

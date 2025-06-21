@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+
 import { JournalEditor } from "./JournalEditor";
 import type { JournalEntry } from "./JournalEditor";
 
@@ -22,7 +23,8 @@ type Story = StoryObj<typeof meta>;
 
 const sampleEntry: JournalEntry = {
   id: "1",
-  content: "今日は素晴らしい一日でした。朝は瞑想から始まり、その後ジョギングで汗を流しました。#運動 #健康",
+  content:
+    "今日は素晴らしい一日でした。朝は瞑想から始まり、その後ジョギングで汗を流しました。#運動 #健康",
   mood: "happy",
   tags: "運動,健康,瞑想",
   timestamp: Date.now(),
@@ -81,7 +83,8 @@ export const WithAIReply: Story = {
     onCancel: () => {},
     onEdit: () => console.log("Edit clicked"),
     onAskAI: () => console.log("Ask AI clicked"),
-    aiReply: "素晴らしい一日を過ごされたようですね！朝の瞑想とジョギングの組み合わせは、心身の健康にとても良い習慣です。このような健康的なルーティンを続けることで、より充実した毎日を送ることができるでしょう。明日も素敵な一日になりますように！",
+    aiReply:
+      "素晴らしい一日を過ごされたようですね！朝の瞑想とジョギングの組み合わせは、心身の健康にとても良い習慣です。このような健康的なルーティンを続けることで、より充実した毎日を送ることができるでしょう。明日も素敵な一日になりますように！",
     userJournals: [],
     baseTags: [],
   },

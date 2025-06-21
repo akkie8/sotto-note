@@ -1,6 +1,7 @@
-import type { Meta, StoryObj } from "@storybook/react-vite";
-import { TagSelector, TagSelectorProps } from "./TagSelector";
 import { useState } from "react";
+import type { Meta, StoryObj } from "@storybook/react-vite";
+
+import { TagSelector, TagSelectorProps } from "./TagSelector";
 
 const meta = {
   title: "Components/TagSelector",
@@ -22,7 +23,9 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 const TagSelectorWithState = (args: TagSelectorProps) => {
-  const [selectedTags, setSelectedTags] = useState<string[]>(args.selectedTags || []);
+  const [selectedTags, setSelectedTags] = useState<string[]>(
+    args.selectedTags || []
+  );
 
   return (
     <TagSelector

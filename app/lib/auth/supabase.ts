@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+
 import { SUPABASE_CONFIG } from "./config";
 
 // 統一されたSupabaseクライアント作成

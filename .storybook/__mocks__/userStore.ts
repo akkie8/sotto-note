@@ -1,5 +1,5 @@
 // Mock user store for Storybook
-import { create } from 'zustand';
+import { create } from "zustand";
 
 interface User {
   id: string;

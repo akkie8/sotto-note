@@ -1,4 +1,5 @@
 import { createCookieSessionStorage } from "@remix-run/node";
+
 import { AUTH_CONFIG } from "./config";
 import type { AuthSession, SessionData } from "./types";
 
@@ -8,17 +9,18 @@ if (!sessionSecret) {
   throw new Error("SESSION_SECRET must be set");
 }
 
-const { getSession, commitSession, destroySession } = createCookieSessionStorage({
-  cookie: {
-    name: AUTH_CONFIG.COOKIE_NAME,
-    httpOnly: true,
-    maxAge: AUTH_CONFIG.SESSION_MAX_AGE,
-    path: "/",
-    sameSite: "lax",
-    secrets: [sessionSecret],
-    secure: process.env.NODE_ENV === "production",
-  },
-});
+const { getSession, commitSession, destroySession } =
+  createCookieSessionStorage({
+    cookie: {
+      name: AUTH_CONFIG.COOKIE_NAME,
+      httpOnly: true,
+      maxAge: AUTH_CONFIG.SESSION_MAX_AGE,
+      path: "/",
+      sameSite: "lax",
+      secrets: [sessionSecret],
+      secure: process.env.NODE_ENV === "production",
+    },
+  });
 
 export class SessionManager {
   // セッション取得
@@ -47,7 +49,7 @@ export class SessionManager {
   // セッション作成（設計書に沿ってRefresh Tokenのみ保存）
   static async createSession(authSession: AuthSession): Promise<string> {
     const session = await getSession();
-    
+
     // 設計書に従い、Refresh TokenのみをCookieに保存
     session.set("refresh_token", authSession.refresh_token);
     session.set("user_id", authSession.user.id);
@@ -58,7 +60,10 @@ export class SessionManager {
   }
 
   // セッション更新（設計書に沿ってRefresh Tokenのみ更新）
-  static async updateSession(request: Request, authSession: AuthSession): Promise<string> {
+  static async updateSession(
+    request: Request,
+    authSession: AuthSession
+  ): Promise<string> {
     const cookie = request.headers.get("Cookie");
     const session = await getSession(cookie);
 

@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import {
+  json,
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
-  json,
 } from "@remix-run/node";
 import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
 import { toast } from "sonner";
@@ -13,9 +13,9 @@ import {
   type JournalMode,
 } from "~/components/JournalEditor";
 import { Loading } from "~/components/Loading";
-import { requireAuth } from "~/utils/auth.server";
 import { cache, CACHE_KEYS } from "~/lib/cache.client";
 import { mergeTags, tagsToString } from "~/lib/hashtag";
+import { requireAuth } from "~/utils/auth.server";
 import { supabase } from "../lib/supabase.client";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -77,7 +77,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   const { user } = await requireAuth(request);
-  
+
   const formData = await request.formData();
   const content = formData.get("content") as string;
   const mood = formData.get("mood") as string;
@@ -125,10 +125,10 @@ export async function action({ request }: ActionFunctionArgs) {
       }
     }
 
-    return json({ 
-      success: true, 
+    return json({
+      success: true,
       entryId: newEntry.id,
-      message: "エントリーを作成しました" 
+      message: "エントリーを作成しました",
     });
   } catch (error) {
     console.error("Error in journal action:", error);
@@ -157,7 +157,7 @@ export default function JournalNew() {
 
   const handleSave = async (entry: JournalEntry, needsAiReply: boolean) => {
     setIsSubmitting(true);
-    
+
     const formData = new FormData();
     formData.append("content", entry.content);
     formData.append("mood", entry.mood);

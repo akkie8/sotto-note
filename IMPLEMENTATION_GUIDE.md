@@ -7,16 +7,19 @@ JWT期限切れによる予期しないログアウト問題を解決するた�
 ## 主な機能
 
 ### 1. 自動トークンリフレッシュ
+
 - JWT期限切れ5分前に自動リフレッシュ
 - サーバーサイドでの期限チェック
 - 失敗時のグレースフルな処理
 
 ### 2. セッション管理
+
 - Remix Cookie Session Storage使用
 - 30日間の長期セッション
 - セキュアなCookie設定
 
 ### 3. 認証状態の維持
+
 - ページフォーカス時の認証チェック
 - ネットワーク復旧時の自動リフレッシュ
 - 定期的な認証状態確認（30分間隔）
@@ -65,10 +68,13 @@ import { requireAuth } from "~/utils/auth.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { user, headers } = await requireAuth(request);
-  
-  return json({ user }, { 
-    headers: headers || {} 
-  });
+
+  return json(
+    { user },
+    {
+      headers: headers || {},
+    }
+  );
 }
 ```
 
@@ -85,13 +91,16 @@ import { requireAuth } from "~/utils/auth.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { user, session, supabase, headers } = await requireAuth(request);
-  
+
   // ユーザーが認証されていることが保証される
   // セッションが期限切れの場合は自動的にリフレッシュ
-  
-  return json({ user }, {
-    headers: headers || {}
-  });
+
+  return json(
+    { user },
+    {
+      headers: headers || {},
+    }
+  );
 }
 ```
 
@@ -102,12 +111,15 @@ import { getOptionalAuth } from "~/utils/auth.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { user, session, supabase, headers } = await getOptionalAuth(request);
-  
+
   // userがnullの場合は未認証
-  
-  return json({ user }, {
-    headers: headers || {}
-  });
+
+  return json(
+    { user },
+    {
+      headers: headers || {},
+    }
+  );
 }
 ```
 
@@ -126,8 +138,8 @@ function MyComponent() {
   });
 
   return (
-    <button 
-      onClick={refreshToken} 
+    <button
+      onClick={refreshToken}
       disabled={isRefreshing}
     >
       {isRefreshing ? "更新中..." : "認証更新"}
@@ -139,17 +151,20 @@ function MyComponent() {
 ## セキュリティ機能
 
 ### 1. Cookie設定
+
 - `httpOnly: true` - XSS攻撃防止
 - `secure: true` - HTTPS必須（本番環境）
 - `sameSite: "lax"` - CSRF攻撃防止
 - `maxAge: 30日` - 長期セッション
 
 ### 2. JWT期限管理
+
 - 5分のバッファ付き期限チェック
 - 自動リフレッシュ機構
 - 失敗時のセッションクリア
 
 ### 3. エラーハンドリング
+
 - ネットワークエラー時の再試行
 - 401エラー時の自動ログアウト
 - ユーザーフレンドリーなエラーメッセージ
@@ -159,15 +174,19 @@ function MyComponent() {
 ### よくある問題
 
 1. **SESSION_SECRETエラー**
+
    ```
    SESSION_SECRET must be set in environment variables
    ```
+
    → `.env`ファイルに32文字以上のランダム文字列を設定
 
 2. **リフレッシュ失敗**
+
    ```
    [Auth] Refresh token error: invalid_grant
    ```
+
    → リフレッシュトークンが期限切れ。ログアウト→再ログインが必要
 
 3. **プロフィール作成エラー**
@@ -190,21 +209,25 @@ console.log("[Auth] Refresh failed, clearing session");
 ## パフォーマンス考慮事項
 
 ### 1. リフレッシュ頻度
+
 - デフォルト30分間隔（調整可能）
 - ページフォーカス時のみ実行
 - ネットワーク復旧時のみ実行
 
 ### 2. Cookie サイズ
+
 - セッションデータは最小限に抑制
 - アクセストークンとユーザーIDのみ保存
 
 ### 3. サーバー負荷
+
 - リフレッシュは非同期処理
 - 同時リフレッシュの防止機構
 
 ## 本番環境での設定
 
 ### 1. 環境変数
+
 ```bash
 NODE_ENV=production
 SESSION_SECRET=your_production_secret
@@ -212,11 +235,14 @@ VITE_SUPABASE_URL=your_production_url
 ```
 
 ### 2. Cookie設定
+
 本番環境では自動的に以下が有効：
+
 - `secure: true`
 - HTTPS必須
 
 ### 3. Supabase設定推奨
+
 - JWT有効期限: 12-24時間（デフォルト1時間から延長推奨）
 - リフレッシュトークン有効期限: 30日
 - セッション単一化: 無効（複数デバイス対応）

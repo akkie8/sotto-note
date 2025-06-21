@@ -1,7 +1,7 @@
 import { useEffect } from "react";
-import type { LoaderFunctionArgs, ActionFunctionArgs } from "@remix-run/node";
-import { redirect, json } from "@remix-run/node";
-import { useNavigate, useFetcher } from "@remix-run/react";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import { json, redirect } from "@remix-run/node";
+import { useFetcher, useNavigate } from "@remix-run/react";
 
 import { Loading } from "~/components/Loading";
 import { auth, createSupabaseClient } from "~/lib/auth";
@@ -16,17 +16,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   // コードパラメータがある場合（サーバーサイドで処理）
   const code = url.searchParams.get("code");
-  
+
   if (code) {
     try {
       const supabase = createSupabaseClient();
-      
+
       // 認証コードをセッションに交換
-      const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-      
+      const { data, error: exchangeError } =
+        await supabase.auth.exchangeCodeForSession(code);
+
       if (exchangeError) {
         console.error("[AuthCallback] Code exchange error:", exchangeError);
-        throw redirect(`/auth-error?error=${encodeURIComponent(exchangeError.message)}`);
+        throw redirect(
+          `/auth-error?error=${encodeURIComponent(exchangeError.message)}`
+        );
       }
 
       if (data.session && data.user) {
@@ -39,7 +42,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
         // プロフィール作成/確認
         await auth.ensureUserProfile(data.user, data.session.access_token);
-        
+
         // セッション作成とリダイレクト
         return await auth.createUserSession(authSession, "/dashboard");
       }
@@ -61,12 +64,18 @@ export async function action({ request }: ActionFunctionArgs) {
   if (action === "create_session" && accessToken && refreshToken) {
     try {
       const supabase = createSupabaseClient(accessToken);
-      
+
       // ユーザー情報を取得
-      const { data: { user }, error: userError } = await supabase.auth.getUser(accessToken);
-      
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser(accessToken);
+
       if (userError || !user) {
-        return json({ success: false, error: "Failed to get user" }, { status: 401 });
+        return json(
+          { success: false, error: "Failed to get user" },
+          { status: 401 }
+        );
       }
 
       const authSession = {
@@ -78,12 +87,15 @@ export async function action({ request }: ActionFunctionArgs) {
 
       // プロフィール作成/確認
       await auth.ensureUserProfile(user, accessToken);
-      
+
       // セッション作成
       return await auth.createUserSession(authSession, "/dashboard");
     } catch (error) {
       console.error("[AuthCallback] Action error:", error);
-      return json({ success: false, error: "Session creation failed" }, { status: 500 });
+      return json(
+        { success: false, error: "Session creation failed" },
+        { status: 500 }
+      );
     }
   }
 
@@ -98,13 +110,15 @@ export default function AuthCallback() {
     const handleAuthCallback = async () => {
       try {
         // URLハッシュからアクセストークンを取得（クライアントサイド認証用）
-        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const hashParams = new URLSearchParams(
+          window.location.hash.substring(1)
+        );
         const accessToken = hashParams.get("access_token");
         const refreshToken = hashParams.get("refresh_token");
 
         if (accessToken && refreshToken) {
           console.log("[AuthCallback] Processing tokens from hash...");
-          
+
           // サーバーサイドでセッション作成
           fetcher.submit(
             {
@@ -139,7 +153,9 @@ export default function AuthCallback() {
       if (data.success) {
         navigate("/dashboard");
       } else {
-        navigate(`/auth-error?error=${encodeURIComponent(data.error || "unknown_error")}`);
+        navigate(
+          `/auth-error?error=${encodeURIComponent(data.error || "unknown_error")}`
+        );
       }
     }
   }, [fetcher.state, fetcher.data, navigate]);

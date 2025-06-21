@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+
 import { SupabaseProvider } from "./SupabaseProvider";
 
 const meta = {
@@ -17,10 +18,11 @@ export const Default: Story = {
   args: {
     children: (
       <div className="p-8">
-        <h1 className="text-2xl font-bold mb-4">Supabase Provider</h1>
+        <h1 className="mb-4 text-2xl font-bold">Supabase Provider</h1>
         <p>
-          This is a provider component that manages Supabase authentication state.
-          It wraps child components and provides them with authentication context.
+          This is a provider component that manages Supabase authentication
+          state. It wraps child components and provides them with authentication
+          context.
         </p>
       </div>
     ),
@@ -28,7 +30,8 @@ export const Default: Story = {
   parameters: {
     docs: {
       description: {
-        story: "SupabaseProvider is a context provider that manages authentication state. It requires Supabase configuration to function properly.",
+        story:
+          "SupabaseProvider is a context provider that manages authentication state. It requires Supabase configuration to function properly.",
       },
     },
   },

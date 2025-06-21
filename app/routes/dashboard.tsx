@@ -11,8 +11,8 @@ import { toast } from "sonner";
 import { DeleteConfirmModal } from "~/components/DeleteConfirmModal";
 import { Loading } from "~/components/Loading";
 import { ThreeDotsMenu } from "~/components/ThreeDotsMenu";
-import { requireAuth } from "~/utils/auth.server";
 import { cache, CACHE_KEYS } from "~/lib/cache.client";
+import { requireAuth } from "~/utils/auth.server";
 import { supabase } from "../lib/supabase.client";
 
 // ジャーナルエントリー型
@@ -31,13 +31,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   console.log("[Dashboard Loader] User:", user?.id, "Session:", !!session);
 
-  return json({
-    user,
-    accessToken: session?.access_token || "",
-    refreshToken: session?.refresh_token || "",
-  }, {
-    headers: headers || {},
-  });
+  return json(
+    {
+      user,
+      accessToken: session?.access_token || "",
+      refreshToken: session?.refresh_token || "",
+    },
+    {
+      headers: headers || {},
+    }
+  );
 }
 
 export const meta: MetaFunction = () => {
@@ -51,7 +54,11 @@ export const meta: MetaFunction = () => {
 };
 
 export default function Dashboard() {
-  const { user: serverUser, accessToken, refreshToken } = useLoaderData<typeof loader>();
+  const {
+    user: serverUser,
+    accessToken,
+    refreshToken,
+  } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const [greeting, setGreeting] = useState("");
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
@@ -138,7 +145,7 @@ export default function Dashboard() {
             access_token: accessToken,
             refresh_token: refreshToken,
           });
-          
+
           if (error) {
             console.error("[Dashboard] Session set error:", error);
           }

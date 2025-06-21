@@ -1,11 +1,17 @@
-import { json, type ActionFunctionArgs, type LoaderFunctionArgs, redirect } from "@remix-run/node";
-import { Form, useActionData, useNavigation, Link } from "@remix-run/react";
+import {
+  json,
+  redirect,
+  type ActionFunctionArgs,
+  type LoaderFunctionArgs,
+} from "@remix-run/node";
+import { Form, Link, useActionData, useNavigation } from "@remix-run/react";
+
 import { auth } from "~/lib/auth";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   // 既にログインしている場合はダッシュボードにリダイレクト
   const { user, headers } = await auth.getOptionalAuth(request);
-  
+
   if (user) {
     throw new Response(null, {
       status: 302,
@@ -23,7 +29,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
-  const redirectTo = formData.get("redirectTo") as string || "/dashboard";
+  const redirectTo = (formData.get("redirectTo") as string) || "/dashboard";
 
   if (!email || !password) {
     return json(
@@ -34,21 +40,23 @@ export async function action({ request }: ActionFunctionArgs) {
 
   try {
     console.log(`[Login] 認証開始: ${email}`);
-    
+
     // サインイン処理
     const { user, session, error } = await auth.signIn({ email, password });
 
     if (error) {
       console.error(`[Login] 認証エラー: ${error}`);
-      
+
       // Supabaseエラーメッセージを日本語に変換
       let japaneseError = error;
       if (error.includes("Invalid login credentials")) {
         japaneseError = "メールアドレスまたはパスワードが正しくありません";
       } else if (error.includes("User not found")) {
-        japaneseError = "ユーザーが見つかりません。初回ログインの場合は、正しいメールアドレスとパスワードを入力してください";
+        japaneseError =
+          "ユーザーが見つかりません。初回ログインの場合は、正しいメールアドレスとパスワードを入力してください";
       } else if (error.includes("Too many requests")) {
-        japaneseError = "ログイン試行回数が上限に達しました。しばらく時間をおいてから再度お試しください";
+        japaneseError =
+          "ログイン試行回数が上限に達しました。しばらく時間をおいてから再度お試しください";
       } else if (error.includes("Email not confirmed")) {
         japaneseError = "メールアドレスが確認されていません";
       } else if (error.includes("Password should be at least")) {
@@ -57,23 +65,30 @@ export async function action({ request }: ActionFunctionArgs) {
         japaneseError = "このメールアドレスは既に登録されています";
       } else if (error.includes("Signup is disabled")) {
         japaneseError = "新規登録が無効になっています";
-      } else if (error.includes("A user with this email address has already been registered")) {
+      } else if (
+        error.includes(
+          "A user with this email address has already been registered"
+        )
+      ) {
         japaneseError = "このメールアドレスは既に登録されています";
       }
-      
-      return json({ 
-        error: japaneseError,
-        originalError: error,
-        debugInfo: `認証失敗 - ${email}`
-      }, { status: 401 });
+
+      return json(
+        {
+          error: japaneseError,
+          originalError: error,
+          debugInfo: `認証失敗 - ${email}`,
+        },
+        { status: 401 }
+      );
     }
 
     if (!user || !session) {
       console.error("[Login] ユーザーまたはセッションが取得できませんでした");
       return json(
-        { 
+        {
           error: "認証に失敗しました（ユーザー情報の取得エラー）",
-          debugInfo: `user: ${!!user}, session: ${!!session}`
+          debugInfo: `user: ${!!user}, session: ${!!session}`,
         },
         { status: 401 }
       );
@@ -89,9 +104,9 @@ export async function action({ request }: ActionFunctionArgs) {
     } catch (profileError) {
       console.error(`[Login] プロフィールエラー:`, profileError);
       return json(
-        { 
+        {
           error: "プロフィールの作成または確認に失敗しました",
-          debugInfo: `Profile error for user ${user.id}`
+          debugInfo: `Profile error for user ${user.id}`,
         },
         { status: 500 }
       );
@@ -99,31 +114,34 @@ export async function action({ request }: ActionFunctionArgs) {
 
     // セッション作成とリダイレクト
     console.log(`[Login] セッション作成中: ${user.id} -> ${redirectTo}`);
-    
+
     try {
       // SessionManagerを直接使用してCookieを作成
       const { SessionManager } = await import("~/lib/auth/session");
       const sessionCookie = await SessionManager.createSession(session);
-      
+
       console.log(`[Login] セッション作成完了: ${user.id}`, { sessionCookie });
-      
+
       // 従来通りのredirectレスポンスを返す
       throw redirect(redirectTo, {
         headers: {
-          "Set-Cookie": sessionCookie
-        }
+          "Set-Cookie": sessionCookie,
+        },
       });
     } catch (sessionError) {
       // redirectの場合はそのまま返す
       if (sessionError instanceof Response && sessionError.status === 302) {
         return sessionError;
       }
-      
+
       console.error(`[Login] セッション作成エラー:`, sessionError);
       return json(
-        { 
+        {
           error: "セッション作成に失敗しました",
-          debugInfo: sessionError instanceof Error ? sessionError.message : "Session creation failed"
+          debugInfo:
+            sessionError instanceof Error
+              ? sessionError.message
+              : "Session creation failed",
         },
         { status: 500 }
       );
@@ -133,12 +151,12 @@ export async function action({ request }: ActionFunctionArgs) {
     if (error instanceof Response && error.status === 302) {
       return error;
     }
-    
+
     console.error("[Login] 予期しないエラー:", error);
     return json(
-      { 
+      {
         error: "ログイン処理中に予期しないエラーが発生しました",
-        debugInfo: error instanceof Error ? error.message : "Unknown error"
+        debugInfo: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
     );
@@ -146,11 +164,13 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function LoginPage() {
-  const actionData = useActionData<typeof action>() as {
-    error?: string;
-    debugInfo?: string;
-    originalError?: string;
-  } | undefined;
+  const actionData = useActionData<typeof action>() as
+    | {
+        error?: string;
+        debugInfo?: string;
+        originalError?: string;
+      }
+    | undefined;
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
 
@@ -179,7 +199,9 @@ export default function LoginPage() {
 
             <div className="mb-4 flex items-center">
               <div className="flex-1 border-t border-wellness-primary/20"></div>
-              <span className="px-3 text-sm text-wellness-textLight">または</span>
+              <span className="px-3 text-sm text-wellness-textLight">
+                または
+              </span>
               <div className="flex-1 border-t border-wellness-primary/20"></div>
             </div>
 
@@ -226,15 +248,16 @@ export default function LoginPage() {
                 <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
                   <div className="font-medium">{actionData.error}</div>
                   {actionData.debugInfo && (
-                    <div className="mt-1 text-xs text-red-500 font-mono">
+                    <div className="mt-1 font-mono text-xs text-red-500">
                       デバッグ情報: {actionData.debugInfo}
                     </div>
                   )}
-                  {actionData.originalError && actionData.originalError !== actionData.error && (
-                    <div className="mt-1 text-xs text-red-500 font-mono">
-                      元のエラー: {actionData.originalError}
-                    </div>
-                  )}
+                  {actionData.originalError &&
+                    actionData.originalError !== actionData.error && (
+                      <div className="mt-1 font-mono text-xs text-red-500">
+                        元のエラー: {actionData.originalError}
+                      </div>
+                    )}
                 </div>
               )}
 

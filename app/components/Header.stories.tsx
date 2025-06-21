@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+
 import { Header } from "./Header";
 
 // Note: This component requires React Router and Zustand store.
@@ -25,7 +26,8 @@ export const Default: Story = {
   parameters: {
     docs: {
       description: {
-        story: "Header component requires React Router and Zustand store setup. This is a placeholder story to show the component exists.",
+        story:
+          "Header component requires React Router and Zustand store setup. This is a placeholder story to show the component exists.",
       },
     },
   },
