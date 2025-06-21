@@ -104,6 +104,7 @@ export async function action({ request }: ActionFunctionArgs) {
         success: !error,
         error: error?.message,
         hasUser: !!user,
+        hasSession: false, // getUser doesn't return session
         userId: user?.id,
         userEmail: user?.email,
       };

@@ -28,10 +28,7 @@ console.log("🧪 認証システム動作確認テスト開始\n");
 async function testSupabaseConnection() {
   console.log("1. Supabase接続テスト");
   try {
-    const { error } = await supabase
-      .from("profiles")
-      .select("count")
-      .limit(1);
+    const { error } = await supabase.from("profiles").select("count").limit(1);
     if (error) {
       console.log(`   ⚠️  プロファイルテーブルへのアクセス: ${error.message}`);
     } else {

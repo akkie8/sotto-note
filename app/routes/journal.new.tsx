@@ -7,10 +7,7 @@ import {
 import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
 import { toast } from "sonner";
 
-import {
-  JournalEditor,
-  type JournalEntry,
-} from "~/components/JournalEditor";
+import { JournalEditor } from "~/components/JournalEditor";
 import { Loading } from "~/components/Loading";
 import { requireAuth } from "~/utils/auth.server";
 
@@ -141,24 +138,32 @@ export default function JournalNew() {
   // Handle form submission result
   useEffect(() => {
     if (fetcher.data) {
-      if (fetcher.data.success) {
-        toast.success(fetcher.data.message || "エントリーを作成しました");
-        navigate(`/journal/${fetcher.data.entryId}`);
-      } else if (fetcher.data.error) {
-        toast.error(fetcher.data.error);
+      const data = fetcher.data as
+        | { success: true; entryId: string; message: string }
+        | { error: string };
+
+      if ("success" in data && data.success) {
+        toast.success(data.message || "エントリーを作成しました");
+        navigate(`/journal/${data.entryId}`);
+      } else if ("error" in data) {
+        toast.error(data.error);
       }
       setIsSubmitting(false);
     }
   }, [fetcher.data, navigate]);
 
-  const handleSave = async (entry: JournalEntry, needsAiReply: boolean) => {
+  const handleSave = async (
+    content: string,
+    mood: string,
+    manualTags: string[]
+  ) => {
     setIsSubmitting(true);
 
     const formData = new FormData();
-    formData.append("content", entry.content);
-    formData.append("mood", entry.mood);
-    formData.append("tags", entry.tags || "");
-    formData.append("needsAiReply", needsAiReply.toString());
+    formData.append("content", content);
+    formData.append("mood", mood);
+    formData.append("tags", manualTags.join(","));
+    formData.append("needsAiReply", "false");
 
     fetcher.submit(formData, { method: "post" });
   };
@@ -173,10 +178,10 @@ export default function JournalNew() {
 
   return (
     <JournalEditor
-      mode="create"
+      mode="new"
       onSave={handleSave}
       onCancel={handleCancel}
-      isLoading={isSubmitting}
+      saving={isSubmitting}
       aiUsageInfo={aiUsageInfo}
     />
   );

@@ -44,7 +44,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
         await auth.ensureUserProfile(data.user, data.session.access_token);
 
         // セッション作成とリダイレクト
-        return await auth.createUserSession(authSession, "/dashboard");
+        const redirectTo = url.searchParams.get("redirectTo") || "/dashboard";
+        return await auth.createUserSession(authSession, redirectTo);
       }
     } catch (error) {
       console.error("[AuthCallback] Server processing error:", error);
@@ -89,7 +90,9 @@ export async function action({ request }: ActionFunctionArgs) {
       await auth.ensureUserProfile(user, accessToken);
 
       // セッション作成
-      return await auth.createUserSession(authSession, "/dashboard");
+      const url = new URL(request.url);
+      const redirectTo = url.searchParams.get("redirectTo") || "/dashboard";
+      return await auth.createUserSession(authSession, redirectTo);
     } catch (error) {
       console.error("[AuthCallback] Action error:", error);
       return json(

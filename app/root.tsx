@@ -241,6 +241,7 @@ export default function App() {
 
       if (accessToken) {
         // Supabaseがセッションを処理するのを待つ
+        const { supabase } = await import("~/lib/supabase.client");
         const {
           data: { user },
         } = await supabase.auth.getUser();
