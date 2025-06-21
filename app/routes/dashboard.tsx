@@ -4,17 +4,17 @@ import {
   type LoaderFunctionArgs,
   type MetaFunction,
 } from "@remix-run/node";
-import { Link, useLoaderData, useNavigate } from "@remix-run/react";
+import { Link, useNavigate } from "@remix-run/react";
 import { Moon, RefreshCw, Sun, Sunrise, Wind } from "lucide-react";
 import { toast } from "sonner";
 
 import { DeleteConfirmModal } from "~/components/DeleteConfirmModal";
 import { Loading } from "~/components/Loading";
 import { ThreeDotsMenu } from "~/components/ThreeDotsMenu";
+import { useAuth } from "~/hooks/useAuth";
+import { useSupabase } from "~/hooks/useSupabase";
 import { cache, CACHE_KEYS } from "~/lib/cache.client";
 import { requireAuth } from "~/utils/auth.server";
-import { supabase } from "../lib/supabase.client";
-import { useServerSession } from "~/hooks/useServerSession";
 
 // ジャーナルエントリー型
 type JournalEntry = {
@@ -35,10 +35,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return json(
     {
       user,
-      session: session ? {
-        access_token: session.access_token,
-        refresh_token: session.refresh_token,
-      } : null,
+      session: session
+        ? {
+            access_token: session.access_token,
+            refresh_token: session.refresh_token,
+          }
+        : null,
     },
     {
       headers: headers || {},
@@ -57,24 +59,16 @@ export const meta: MetaFunction = () => {
 };
 
 export default function Dashboard() {
-  const {
-    user: serverUser,
-    session: serverSession,
-  } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
-  
-  // サーバーセッションをクライアントに設定
-  useServerSession(serverSession);
+
+  // カスタムフックを使用
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { supabase } = useSupabase();
+
   const [greeting, setGreeting] = useState("");
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
-  const [user, setUser] = useState<{ id: string } | null>(
-    serverUser ? { id: serverUser.id } : null
-  );
   const [userName, setUserName] = useState("");
-  const [loading, setLoading] = useState(() => {
-    console.log("[Dashboard] Initializing loading state to true");
-    return true;
-  });
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [startY, setStartY] = useState(0);
   const [pullDistance, setPullDistance] = useState(0);
@@ -141,67 +135,28 @@ export default function Dashboard() {
       }
       console.log("[Dashboard] fetchUserData completed");
     },
-    []
+    [supabase]
   );
 
-  // Check client-side authentication and sync with server session
+  // シンプルな認証初期化
   useEffect(() => {
-    console.log("[Dashboard] useEffect starting for auth initialization");
-    const initAuth = async () => {
-      console.log("[Dashboard] initAuth function called");
-      try {
-        // サーバーからユーザーが渡されている場合は、それを使用
-        if (serverUser) {
-          console.log("[Dashboard] Using server user:", serverUser.id);
-          setUser(serverUser);
-          
-          // ユーザーデータを取得
-          try {
-            await fetchUserData(serverUser.id);
-          } catch (fetchError) {
-            console.error("Error fetching user data:", fetchError);
-          }
-        } else {
-          console.log("[Dashboard] No server user, checking client auth");
-          
-          // クライアント側で認証状態を確認
-          const {
-            data: { user: clientUser },
-            error: getUserError,
-          } = await supabase.auth.getUser();
+    const initData = async () => {
+      if (!user) {
+        setLoading(false);
+        return;
+      }
 
-          if (getUserError) {
-            console.error("[Dashboard] Get user error:", getUserError);
-            setUser(null);
-          } else if (clientUser) {
-            console.log("[Dashboard] Client user found:", clientUser.id);
-            setUser(clientUser);
-            
-            try {
-              await fetchUserData(clientUser.id);
-            } catch (fetchError) {
-              console.error("Error fetching user data:", fetchError);
-            }
-          } else {
-            console.log("[Dashboard] No user found");
-            setUser(null);
-          }
-        }
+      try {
+        await fetchUserData(user.id);
       } catch (error) {
-        console.error("Auth check error:", error);
-        setUser(null);
+        console.error("Error fetching user data:", error);
       } finally {
-        console.log("[Dashboard] Setting loading to false");
         setLoading(false);
       }
     };
 
-    initAuth().catch(error => {
-      console.error("[Dashboard] Unhandled error in initAuth:", error);
-      setLoading(false);
-    });
-    console.log("[Dashboard] useEffect setup complete");
-  }, [fetchUserData, serverUser]);
+    initData();
+  }, [user, fetchUserData]);
 
   // 時間帯による挨拶の更新
   useEffect(() => {
@@ -387,7 +342,7 @@ export default function Dashboard() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, supabase]);
 
   // ノート削除機能
   const handleDeleteEntry = async (entryId: string) => {
@@ -434,12 +389,16 @@ export default function Dashboard() {
     navigate(`/journal/${entryId}?mode=edit`);
   };
 
-  // Show loading state
-  if (loading) {
-    console.log("[Dashboard] Loading state is true, showing Loading component");
+  // ローディング状態の統合
+  if (authLoading || loading) {
     return <Loading fullScreen />;
   }
-  console.log("[Dashboard] Loading state is false, rendering dashboard");
+
+  // 未認証時のリダイレクト
+  if (!isAuthenticated) {
+    navigate("/login");
+    return null;
+  }
 
   return (
     <div

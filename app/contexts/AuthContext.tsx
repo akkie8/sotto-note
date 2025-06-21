@@ -1,27 +1,53 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import type { ReactNode } from 'react';
+import React, { createContext, useContext, useEffect } from "react";
+import type { User } from "@supabase/supabase-js";
 
-interface AuthContextType {
+import { useAuthStore } from "~/stores";
+
+interface AuthContextValue {
+  user: User | null;
   isAuthenticated: boolean;
-  setIsAuthenticated: (value: boolean) => void;
+  isLoading: boolean;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  return (
-    <AuthContext.Provider value={{ isAuthenticated, setIsAuthenticated }}>
-      {children}
-    </AuthContext.Provider>
-  );
+interface AuthProviderProps {
+  children: React.ReactNode;
+  initialUser?: User | null;
 }
 
-export function useAuth() {
+/**
+ * 認証コンテキストプロバイダー
+ * RemixのルートローダーからのデータをZustandストアに同期
+ */
+export function AuthProvider({ children, initialUser }: AuthProviderProps) {
+  const { user, isAuthenticated, isLoading, setUser, setLoading } =
+    useAuthStore();
+
+  useEffect(() => {
+    if (initialUser !== undefined) {
+      setUser(initialUser);
+      setLoading(false);
+    }
+  }, [initialUser, setUser, setLoading]);
+
+  const value: AuthContextValue = {
+    user,
+    isAuthenticated,
+    isLoading,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+/**
+ * AuthContextを使用するフック
+ * @deprecated useAuth, useUser, useSessionフックを直接使用することを推奨
+ */
+export function useAuthContext() {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+  if (!context) {
+    throw new Error("useAuthContext must be used within an AuthProvider");
   }
   return context;
 }

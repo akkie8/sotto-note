@@ -1,32 +1,36 @@
-import { test, expect } from "@playwright/test";
-import dotenv from 'dotenv';
+import { expect, test } from "@playwright/test";
+import dotenv from "dotenv";
 
 // Load environment variables
 dotenv.config();
 
 // テスト用の認証情報を環境変数から取得
-const TEST_EMAIL = process.env.TEST_USER_EMAIL || 'test@example.com';
-const TEST_PASSWORD = process.env.TEST_USER_PASSWORD || 'TestPassword123!';
+const TEST_EMAIL = process.env.TEST_USER_EMAIL || "test@example.com";
+const TEST_PASSWORD = process.env.TEST_USER_PASSWORD || "TestPassword123!";
 
 // ログインヘルパー関数
-async function loginAndGetUser(page: import('@playwright/test').Page) {
-  await page.goto('/login');
-  await page.waitForLoadState('networkidle');
-  
-  const emailInput = page.locator('input[type="email"], input[name="email"], input#email');
-  await emailInput.waitFor({ state: 'visible' });
+async function loginAndGetUser(page: import("@playwright/test").Page) {
+  await page.goto("/login");
+  await page.waitForLoadState("networkidle");
+
+  const emailInput = page.locator(
+    'input[type="email"], input[name="email"], input#email'
+  );
+  await emailInput.waitFor({ state: "visible" });
   await emailInput.fill(TEST_EMAIL);
-  
-  const passwordInput = page.locator('input[type="password"], input[name="password"], input#password');
-  await passwordInput.waitFor({ state: 'visible' });
+
+  const passwordInput = page.locator(
+    'input[type="password"], input[name="password"], input#password'
+  );
+  await passwordInput.waitFor({ state: "visible" });
   await passwordInput.fill(TEST_PASSWORD);
-  
-  const submitButton = page.getByRole('button', { name: 'メールでログイン' });
-  await submitButton.waitFor({ state: 'visible' });
+
+  const submitButton = page.getByRole("button", { name: "メールでログイン" });
+  await submitButton.waitFor({ state: "visible" });
   await submitButton.click();
-  
+
   // ダッシュボードへの遷移を待つ
-  await page.waitForURL('/dashboard', { timeout: 10000 });
+  await page.waitForURL("/dashboard", { timeout: 10000 });
 }
 
 test.describe("Dashboard Display", () => {
@@ -98,7 +102,7 @@ test.describe("Dashboard Display", () => {
 
     // ローディング画面が消えることを確認
     const loadingElement = page.getByText("読み込み中...");
-    
+
     // 最初はローディングが表示される可能性がある
     if (await loadingElement.isVisible({ timeout: 1000 }).catch(() => false)) {
       // ローディングが消えることを確認（最大10秒待機）

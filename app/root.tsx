@@ -17,10 +17,9 @@ import { Home, PenTool, Tag } from "lucide-react";
 import { Toaster } from "sonner";
 
 import { Header } from "~/components/Header";
-import { useAuthRefresh } from "~/hooks/useAuthRefresh";
+import { useAuth, useAuthRefresh } from "~/hooks/useAuth";
 import { UserProvider } from "~/providers/UserProvider";
 import tailwindStyles from "~/tailwind.css?url";
-
 
 export const links: LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -82,87 +81,19 @@ function BottomNav() {
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [isHydrated, setIsHydrated] = useState(false);
+  const { isAuthenticated } = useAuth();
 
   // 認証の自動リフレッシュ（ログインユーザーのみ）
   useAuthRefresh({
-    enabled: isLoggedIn === true,
+    enabled: isAuthenticated,
     onRefreshError: () => {
-      setIsLoggedIn(false);
+      // エラー時の処理はuseAuthStore内で管理
     },
   });
 
   useEffect(() => {
     setIsHydrated(true);
-
-    // 認証状態チェックを1回のみに制限
-    let mounted = true;
-
-    const checkAuth = async () => {
-      const { supabase } = await import("~/lib/supabase.client");
-      if (!mounted) return;
-
-      try {
-        // まずセッションを確認
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-        
-        if (mounted) {
-          console.log("[Root] Initial session check:", !!session);
-          setIsLoggedIn(!!session);
-        }
-        
-        // セッションがない場合のみユーザー情報を確認
-        if (!session) {
-          const {
-            data: { user },
-          } = await supabase.auth.getUser();
-          if (mounted) {
-            console.log("[Root] User check (no session):", !!user);
-            setIsLoggedIn(!!user);
-          }
-        }
-      } catch (error) {
-        console.error("[Root] Auth check error:", error);
-      }
-
-      // セッション変化監視（デバウンス付き）
-      let timeoutId: NodeJS.Timeout;
-      const { data: listener } = supabase.auth.onAuthStateChange(
-        (event, session) => {
-          if (!mounted) return;
-          console.log("[Root] Auth state change:", event, !!session?.user);
-          
-          // SIGNED_INイベントの場合は即座に反映
-          if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-            setIsLoggedIn(true);
-          } else if (event === 'SIGNED_OUT') {
-            setIsLoggedIn(false);
-          } else {
-            clearTimeout(timeoutId);
-            timeoutId = setTimeout(() => {
-              if (mounted) {
-                setIsLoggedIn(!!session?.user);
-              }
-            }, 100);
-          }
-        }
-      );
-
-      return () => {
-        mounted = false;
-        clearTimeout(timeoutId);
-        listener?.subscription.unsubscribe();
-      };
-    };
-
-    checkAuth();
-
-    return () => {
-      mounted = false;
-    };
   }, []);
 
   return (
@@ -212,9 +143,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
           {/* メインコンテンツ */}
           <div className="flex min-h-screen w-full max-w-4xl flex-col rounded-3xl bg-white shadow-lg transition-all duration-300">
-            {isHydrated && isLoggedIn && <Header />}
+            {isHydrated && isAuthenticated && <Header />}
             <main
-              className={`fade-in overflow-y-auto px-2 ${isHydrated && isLoggedIn ? "mt-14 h-[calc(100vh-7rem)]" : "h-full"}`}
+              className={`fade-in overflow-y-auto px-2 ${isHydrated && isAuthenticated ? "mt-14 h-[calc(100vh-7rem)]" : "h-full"}`}
             >
               {children}
             </main>
@@ -224,7 +155,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 position="top-center"
                 toastOptions={{
                   style: {
-                    top: isLoggedIn ? "56px" : "16px",
+                    top: isAuthenticated ? "56px" : "16px",
                     margin: 0,
                   },
                 }}
@@ -236,7 +167,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <div className="hidden w-64 shrink-0 bg-white xl:block" />
         </div>
 
-        {isHydrated && isLoggedIn && <BottomNav />}
+        {isHydrated && isAuthenticated && <BottomNav />}
         <ScrollRestoration />
         <Scripts />
         {/* <LiveReload /> */}

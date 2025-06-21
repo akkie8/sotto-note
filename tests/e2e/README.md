@@ -9,26 +9,31 @@ Playwright and all necessary dependencies have been installed. The browsers (Chr
 ## Running Tests
 
 ### Basic test execution:
+
 ```bash
 npm run test:e2e
 ```
 
 ### Run tests with UI mode (recommended for debugging):
+
 ```bash
 npm run test:e2e:ui
 ```
 
 ### Run tests in debug mode:
+
 ```bash
 npm run test:e2e:debug
 ```
 
 ### Run specific test file:
+
 ```bash
 npx playwright test auth.spec.ts
 ```
 
 ### Run tests in headed mode (see browser):
+
 ```bash
 npx playwright test --headed
 ```
@@ -38,6 +43,7 @@ npx playwright test --headed
 The `auth.spec.ts` file contains:
 
 1. **Main authentication test** - Tests the complete login flow:
+
    - Navigates to login page
    - Enters email and password
    - Submits the form
@@ -45,6 +51,7 @@ The `auth.spec.ts` file contains:
    - Takes screenshots at each step
 
 2. **Invalid credentials test** - Tests error handling:
+
    - Attempts login with invalid credentials
    - Verifies error message is displayed
 
@@ -55,6 +62,7 @@ The `auth.spec.ts` file contains:
 ## Screenshots
 
 Screenshots are automatically saved to `tests/e2e/screenshots/` directory:
+
 - `01-login-page.png` - Initial login page
 - `02-email-entered.png` - After entering email
 - `03-password-entered.png` - After entering password
@@ -65,6 +73,7 @@ Screenshots are automatically saved to `tests/e2e/screenshots/` directory:
 ## Configuration
 
 The test configuration is in `playwright.config.ts`:
+
 - Base URL: http://localhost:5173
 - Browsers: Chromium, Firefox, WebKit
 - Auto-starts dev server before tests
@@ -74,11 +83,13 @@ The test configuration is in `playwright.config.ts`:
 ## Customization
 
 You may need to adjust the selectors in `auth.spec.ts` based on your actual login form structure. The test currently looks for common patterns like:
+
 - Email input: `input[type="email"]`, `input[name="email"]`, `input#email`
 - Password input: `input[type="password"]`, `input[name="password"]`, `input#password`
 - Submit button: `button[type="submit"]`, buttons with text "Login", "Sign in", or "ログイン"
 
 Run the helper test first to see what elements are actually on your login page:
+
 ```bash
 npx playwright test auth.spec.ts -g "capture login page elements"
 ```
@@ -86,6 +97,7 @@ npx playwright test auth.spec.ts -g "capture login page elements"
 ## Troubleshooting
 
 If tests fail:
+
 1. Make sure your dev server is running at http://localhost:5173
 2. Check the HTML report: `npx playwright show-report`
 3. Use UI mode to debug: `npm run test:e2e:ui`

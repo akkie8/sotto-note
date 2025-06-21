@@ -104,7 +104,7 @@ export function Header() {
                     <>
                       {user.user_metadata?.avatar_url && (
                         <img
-                          src={user.user_metadata.avatar_url}
+                          src={user.user_metadata.avatar_url as string}
                           alt="ユーザーアバター"
                           className="h-9 w-9 rounded-full"
                           onError={(e) => {

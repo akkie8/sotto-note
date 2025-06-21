@@ -9,7 +9,7 @@ const VALID_MOODS = [
   "peaceful",
   "frustrated",
   "grateful",
-  "hopeful"
+  "hopeful",
 ];
 
 export function validateMood(mood: string): boolean {
@@ -23,5 +23,5 @@ export function validateContent(content: string): boolean {
 
 // Tag validation
 export function validateTags(tags: string[]): boolean {
-  return tags.every(tag => tag.trim().length > 0 && tag.length <= 50);
+  return tags.every((tag) => tag.trim().length > 0 && tag.length <= 50);
 }

@@ -3,6 +3,18 @@ import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
 
+// User metadata型定義
+interface UserMetadata {
+  name?: string;
+  full_name?: string;
+  [key: string]: unknown;
+}
+
+// Userを拡張して型安全性を向上
+interface ExtendedUser extends Omit<User, "user_metadata"> {
+  user_metadata?: UserMetadata;
+}
+
 export interface UserProfile {
   id: string;
   user_id: string;
@@ -18,9 +30,12 @@ interface AIUsageInfo {
   isAdmin: boolean;
 }
 
+// 環境変数からの管理者ID
+const ADMIN_USER_ID = import.meta.env.VITE_ADMIN_USER_ID || "";
+
 interface UserState {
   // User auth state
-  user: User | null;
+  user: ExtendedUser | null;
   isLoading: boolean;
 
   // Profile state
@@ -46,6 +61,28 @@ interface UserState {
   reset: () => void;
 }
 
+// バリデーション関数
+const validateProfile = (profile: unknown): profile is UserProfile => {
+  if (!profile || typeof profile !== "object") return false;
+  const p = profile as Record<string, unknown>;
+  return (
+    typeof p.id === "string" &&
+    typeof p.user_id === "string" &&
+    typeof p.name === "string" &&
+    (p.role === "free" || p.role === "admin")
+  );
+};
+
+const validateAIUsageInfo = (info: unknown): info is AIUsageInfo => {
+  if (!info || typeof info !== "object") return false;
+  const i = info as Record<string, unknown>;
+  return (
+    (typeof i.remainingCount === "number" || i.remainingCount === null) &&
+    (typeof i.monthlyLimit === "number" || i.monthlyLimit === null) &&
+    typeof i.isAdmin === "boolean"
+  );
+};
+
 export const useUserStore = create<UserState>()(
   subscribeWithSelector(
     immer((set, get) => ({
@@ -56,30 +93,58 @@ export const useUserStore = create<UserState>()(
       profileLoading: false,
       aiUsageInfo: null,
 
-      // Actions
+      // Actions with validation
       setUser: (user) =>
         set((state) => {
-          state.user = user;
+          try {
+            state.user = user as ExtendedUser;
+          } catch (error) {
+            console.error("Error setting user:", error);
+          }
         }),
 
       setProfile: (profile) =>
         set((state) => {
-          state.profile = profile;
+          try {
+            if (profile && !validateProfile(profile)) {
+              console.error("Invalid profile data:", profile);
+              return;
+            }
+            state.profile = profile;
+          } catch (error) {
+            console.error("Error setting profile:", error);
+          }
         }),
 
       setProfileLoading: (loading) =>
         set((state) => {
-          state.profileLoading = loading;
+          try {
+            state.profileLoading = loading;
+          } catch (error) {
+            console.error("Error setting profile loading:", error);
+          }
         }),
 
       setAiUsageInfo: (info) =>
         set((state) => {
-          state.aiUsageInfo = info;
+          try {
+            if (info && !validateAIUsageInfo(info)) {
+              console.error("Invalid AI usage info:", info);
+              return;
+            }
+            state.aiUsageInfo = info;
+          } catch (error) {
+            console.error("Error setting AI usage info:", error);
+          }
         }),
 
       setLoading: (loading) =>
         set((state) => {
-          state.isLoading = loading;
+          try {
+            state.isLoading = loading;
+          } catch (error) {
+            console.error("Error setting loading:", error);
+          }
         }),
 
       // Computed getters
@@ -87,7 +152,7 @@ export const useUserStore = create<UserState>()(
         const state = get();
         return (
           state.profile?.role === "admin" ||
-          state.user?.id === "6571ae84-507f-42cb-94d3-5b23e444be71"
+          (ADMIN_USER_ID && state.user?.id === ADMIN_USER_ID)
         );
       },
 
@@ -103,7 +168,7 @@ export const useUserStore = create<UserState>()(
 
       getUserRole: () => {
         const state = get();
-        if (state.user?.id === "6571ae84-507f-42cb-94d3-5b23e444be71") {
+        if (ADMIN_USER_ID && state.user?.id === ADMIN_USER_ID) {
           return "admin";
         }
         return state.profile?.role || "free";
@@ -112,21 +177,27 @@ export const useUserStore = create<UserState>()(
       // Reset function
       reset: () =>
         set((state) => {
-          state.user = null;
-          state.profile = null;
-          state.aiUsageInfo = null;
-          state.isLoading = false;
-          state.profileLoading = false;
+          try {
+            state.user = null;
+            state.profile = null;
+            state.aiUsageInfo = null;
+            state.isLoading = false;
+            state.profileLoading = false;
+          } catch (error) {
+            console.error("Error resetting store:", error);
+          }
         }),
     }))
   )
 );
 
-// Selectors for easier component usage
+// メモ化されたSelectors
 export const selectUser = (state: UserState) => state.user;
 export const selectProfile = (state: UserState) => state.profile;
+export const selectAiUsageInfo = (state: UserState) => state.aiUsageInfo;
+export const selectIsLoading = (state: UserState) => state.isLoading;
+
+// Computed selectorsはストア内のgetterを呼び出す
 export const selectIsAdmin = (state: UserState) => state.isAdmin();
 export const selectUserName = (state: UserState) => state.getUserName();
 export const selectUserRole = (state: UserState) => state.getUserRole();
-export const selectAiUsageInfo = (state: UserState) => state.aiUsageInfo;
-export const selectIsLoading = (state: UserState) => state.isLoading;
