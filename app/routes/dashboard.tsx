@@ -27,9 +27,23 @@ type JournalEntry = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { user, headers, session } = await requireAuth(request);
+  const authResult = await requireAuth(request);
+  console.log("[Dashboard Loader] Auth result keys:", Object.keys(authResult));
+  console.log("[Dashboard Loader] Auth result:", {
+    hasUser: !!authResult.user,
+    hasHeaders: !!authResult.headers,
+    hasSession: !!authResult.session,
+    hasSupabase: !!authResult.supabase,
+  });
+  
+  const { user, headers, session } = authResult;
 
   console.log("[Dashboard Loader] User:", user?.id, "Session:", !!session);
+  console.log("[Dashboard Loader] Session details:", {
+    hasAccessToken: !!session?.access_token,
+    hasRefreshToken: !!session?.refresh_token,
+    expiresAt: session?.expires_at,
+  });
 
   return json(
     {
@@ -66,7 +80,10 @@ export default function Dashboard() {
     serverUser ? { id: serverUser.id } : null
   );
   const [userName, setUserName] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => {
+    console.log("[Dashboard] Initializing loading state to true");
+    return true;
+  });
   const [refreshing, setRefreshing] = useState(false);
   const [startY, setStartY] = useState(0);
   const [pullDistance, setPullDistance] = useState(0);
@@ -78,6 +95,7 @@ export default function Dashboard() {
   // Fetch user data with caching
   const fetchUserData = useCallback(
     async (userId: string, forceRefresh = false) => {
+      console.log("[Dashboard] fetchUserData called for user:", userId);
       try {
         // Check cache first
         if (!forceRefresh) {
@@ -130,58 +148,69 @@ export default function Dashboard() {
       } catch (error) {
         console.error("Error fetching user data:", error);
       }
+      console.log("[Dashboard] fetchUserData completed");
     },
     []
   );
 
   // Check client-side authentication and sync with server session
   useEffect(() => {
+    console.log("[Dashboard] useEffect starting for auth initialization");
     const initAuth = async () => {
+      console.log("[Dashboard] initAuth function called");
       try {
-        // If we have server tokens, set the session
-        if (accessToken && refreshToken) {
-          console.log("[Dashboard] Setting session from server tokens");
-          const { error } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          });
-
-          if (error) {
-            console.error("[Dashboard] Session set error:", error);
-          }
-        }
-
-        const {
-          data: { user: clientUser },
-          error: getUserError,
-        } = await supabase.auth.getUser();
-
-        if (getUserError) {
-          console.error("[Dashboard] Get user error:", getUserError);
-          setUser(null);
-          setLoading(false);
-          return;
-        }
-
-        setUser(clientUser);
-
-        if (clientUser) {
+        // サーバーからユーザーが渡されている場合は、それを使用
+        if (serverUser) {
+          console.log("[Dashboard] Using server user:", serverUser.id);
+          setUser(serverUser);
+          
+          // ユーザーデータを取得
           try {
-            await fetchUserData(clientUser.id);
+            await fetchUserData(serverUser.id);
           } catch (fetchError) {
             console.error("Error fetching user data:", fetchError);
+          }
+        } else {
+          console.log("[Dashboard] No server user, checking client auth");
+          
+          // クライアント側で認証状態を確認
+          const {
+            data: { user: clientUser },
+            error: getUserError,
+          } = await supabase.auth.getUser();
+
+          if (getUserError) {
+            console.error("[Dashboard] Get user error:", getUserError);
+            setUser(null);
+          } else if (clientUser) {
+            console.log("[Dashboard] Client user found:", clientUser.id);
+            setUser(clientUser);
+            
+            try {
+              await fetchUserData(clientUser.id);
+            } catch (fetchError) {
+              console.error("Error fetching user data:", fetchError);
+            }
+          } else {
+            console.log("[Dashboard] No user found");
+            setUser(null);
           }
         }
       } catch (error) {
         console.error("Auth check error:", error);
         setUser(null);
       } finally {
+        console.log("[Dashboard] Setting loading to false");
         setLoading(false);
       }
     };
 
-    initAuth();
-  }, [fetchUserData, accessToken, refreshToken]);
+    initAuth().catch(error => {
+      console.error("[Dashboard] Unhandled error in initAuth:", error);
+      setLoading(false);
+    });
+    console.log("[Dashboard] useEffect setup complete");
+  }, [fetchUserData, serverUser]);
 
   // 時間帯による挨拶の更新
   useEffect(() => {
@@ -416,8 +445,10 @@ export default function Dashboard() {
 
   // Show loading state
   if (loading) {
+    console.log("[Dashboard] Loading state is true, showing Loading component");
     return <Loading fullScreen />;
   }
+  console.log("[Dashboard] Loading state is false, rendering dashboard");
 
   return (
     <div
