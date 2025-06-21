@@ -3,6 +3,12 @@ export interface AuthUser {
   email?: string;
   user_metadata?: {
     name?: string;
+    full_name?: string;
+    given_name?: string;
+    [key: string]: string | undefined;
+  };
+  app_metadata?: {
+    [key: string]: unknown;
   };
 }
 

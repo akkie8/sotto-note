@@ -271,6 +271,13 @@ export class AuthCore {
   async ensureUserProfile(user: AuthUser, accessToken: string): Promise<void> {
     const supabase = createSupabaseClient(accessToken);
 
+    console.log(`[Auth] Ensuring profile for user:`, {
+      userId: user.id,
+      email: user.email,
+      metadata: user.user_metadata,
+      appMetadata: user.app_metadata,
+    });
+
     try {
       const { error: fetchError } = await supabase
         .from("profiles")
@@ -280,9 +287,17 @@ export class AuthCore {
 
       if (fetchError && fetchError.code === "PGRST116") {
         // プロフィールが存在しない場合は作成
+        // Google OAuthの場合、full_name, name, given_name などが入っている可能性がある
+        const displayName =
+          user.user_metadata?.full_name ||
+          user.user_metadata?.name ||
+          user.user_metadata?.given_name ||
+          user.email?.split("@")[0] ||
+          "";
+
         const profileData = {
           user_id: user.id,
-          name: user.user_metadata?.name || user.email?.split("@")[0] || "",
+          name: displayName,
           role: "free", // デフォルトロール
         };
 
