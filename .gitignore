@@ -55,3 +55,6 @@ Thumbs.db
 
 # Supabase local development
 /supabase
+
+*storybook.log
+storybook-static
